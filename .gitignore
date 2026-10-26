@@ -6,3 +6,5 @@ node_modules/
 frontend/dist/
 *.db
 !backend/storage/.gitkeep
+*.db-wal
+*.db-shm
