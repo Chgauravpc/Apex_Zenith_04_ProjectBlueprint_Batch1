@@ -4,7 +4,33 @@ Do tasks **in order**. Each task is self-contained: read `AGENTS.md` + `ENGINEER
 Signatures are contracts: later tasks call them. Keep names exactly. (`→` = returns.)
 Paths are relative to `backend/` or `frontend/` as shown.
 
-Legend: **Deps** = tasks that must be done first · **Done when** = acceptance tests.
+Legend: **Deps** = tasks that must be done first · **Done when** = acceptance tests · **Real check** = manual end-to-end proof with real data.
+
+**Rule 0 applies to every task (see `AGENTS.md`): implement the real logic — no stubs, fake return values, canned AI output or skipped steps in app code.** Test doubles only in `tests/` at the network boundary.
+
+### Real check — default for every backend task
+1. `uvicorn app.main:app --port 8000` (and `python -m seed.seed` once).
+2. Call each new endpoint with **real inputs** via `curl` / Swagger UI (`/docs`): real audio recorded on a phone, real photos of handwritten notes and chips, a real short video.
+3. With API keys set: confirm the response came from the provider (`"mode": "live"`, logged model name). Without keys: confirm `"mode": "offline"` and that the offline output is computed, not canned.
+4. Check the DB actually changed: `sqlite3 blueprint.db "select count(*) from <table>"` before/after.
+5. `pytest -m live -q` with keys set.
+
+### Real check — default for every frontend task
+Run backend + `npm run dev`, perform the flow in a real browser (phone via tunnel for camera/mic), and confirm the Network tab shows real `/api/...` calls with real responses; no local JSON or hard-coded data.
+
+### Task-specific real checks
+| Task | Real check (in addition to the defaults) |
+|---|---|
+| T04 | One real call each to Groq and OpenRouter returns schema-valid JSON; second identical call is a cache hit |
+| T05 | Transcribe a real Hindi voice recording; text is correct Hindi |
+| T06 | Speak "VMC-3 pe chatter aa raha hai, feed kam kiya" → card with machine VMC-3, symptom chatter |
+| T07 | Photo of a real handwritten page → readable issues/actions; a 30 s phone video → draft steps with keyframes |
+| T09 | Note "VMC-3 slight chatter, feed 0.3 on SS304" → warning citing seeded failures; normal note → none |
+| T10 | Hindi question returns answer citing real seeded cards; unknown topic → not enough data |
+| T13 | Record a real tone from a tone-generator app at 427 Hz → fc ≈ 427, RPM list includes ≈ 12,810 |
+| T14 | Photos of real coloured objects (blue/golden/silver) → correct colour classes |
+| T21 | Rotate/zoom on a phone; click spindle → its real incidents from the API |
+
 
 ---
 

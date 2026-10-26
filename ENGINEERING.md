@@ -92,6 +92,9 @@ When you choose a data structure, say why in a comment if it is not obvious (e.g
 - Personal data: store employee IDs, not phone numbers; consent flag on recordings.
 
 ## 7. Testing
+**Mocks are for tests, never for features.** Application code always runs the real logic; test doubles live only under `tests/` and only replace the *network boundary* (Groq/OpenRouter/edge-tts HTTP). Everything else in a test is real: real SQLite (in-memory), real FastAPI app, real numpy/OpenCV on generated audio/images/videos, real FTS5 search.
+- Every feature also has a **live integration test** marked `@pytest.mark.live` that calls the real providers; run with `pytest -m live` when `GROQ_API_KEY`/`OPENROUTER_API_KEY` are set (skipped automatically otherwise, never skipped by editing the test).
+- A test that only asserts a mock was called is not enough — assert on the real output (DB rows, response fields, computed values).
 - Backend: `pytest`, in-memory SQLite fixture, FastAPI `TestClient`. **Fake LLM provider** fixture (`FakeLLM` returns canned Pydantic objects) — tests never hit the network.
 - Pure functions get table-driven tests (`@pytest.mark.parametrize`): chatter RPM, hue classification, rules.
 - Each task: ≥ 1 happy-path test, ≥ 1 edge/failure test (empty input, too large, unknown machine, provider down).
