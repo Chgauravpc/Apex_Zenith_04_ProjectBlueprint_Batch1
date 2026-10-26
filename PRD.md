@@ -77,14 +77,21 @@ Project Blueprint/
 ├── PLAN.md                      Detailed feature design
 ├── PRD.md                       This document
 ├── README.md                    Setup & run instructions
+├── AGENTS.md                    Rules for AI coding assistants (read first)
+├── ENGINEERING.md               Coding standards, performance budgets, templates
+├── TASKS.md                     Ordered build tasks with signatures & tests
+├── GEMINI.md / CLAUDE.md        Pointers to AGENTS.md
 ├── .gitignore
 ├── backend/
 │   ├── requirements.txt
+│   ├── pyproject.toml           ruff, black, pytest, mypy config
 │   ├── .env.example
 │   ├── app/
 │   │   ├── main.py
 │   │   ├── config.py
 │   │   ├── database.py
+│   │   ├── errors.py
+│   │   ├── prompts/             extract, handwritten, video, guardian, answer, interview
 │   │   ├── models/
 │   │   │   ├── __init__.py
 │   │   │   ├── erp.py
@@ -115,6 +122,7 @@ Project Blueprint/
 │   │   │   ├── llm.py
 │   │   │   ├── stt.py
 │   │   │   ├── tts.py
+│   │   │   ├── embeddings.py
 │   │   │   ├── capture/
 │   │   │   │   ├── voice.py
 │   │   │   │   ├── video.py
@@ -163,6 +171,7 @@ Project Blueprint/
 │   │   └── assets/              handwritten photos, audio clips, chip photos, videos
 │   ├── storage/                 uploaded media (git-ignored)
 │   └── tests/
+│       ├── conftest.py
 │       ├── test_capture.py
 │       ├── test_guardian.py
 │       ├── test_ask.py
@@ -204,6 +213,7 @@ Project Blueprint/
         │   ├── Review.jsx
         │   └── Dashboard.jsx
         ├── components/
+        │   ├── common/ErrorBoundary.jsx
         │   ├── layout/{NavBar,RoleSwitcher}.jsx
         │   ├── capture/{VoiceRecorder,VideoUpload,PhotoUpload,NoteEditor}.jsx
         │   ├── ask/{ChatWindow,AnswerCard,SourceCard,ChatterDoctor,ChipReader}.jsx
@@ -225,6 +235,8 @@ Project Blueprint/
 |---|---|
 | `app/main.py` | Creates FastAPI app, CORS for the React dev server, includes all routers under `/api`, static serving of `storage/` media and the built React app, startup hook (create tables, load lexicon) |
 | `app/config.py` | Pydantic `Settings` from `.env`: `GROQ_API_KEY`, `OPENROUTER_API_KEY`, model IDs per task, DB URL, storage path, feature flags |
+| `app/errors.py` | Domain exceptions (`NotFound`, `ValidationFailed`, `ProviderUnavailable`, `PayloadTooLarge`) + handlers mapping to HTTP with `{detail, code}` |
+| `app/prompts/*.py` | Prompt text constants per feature (kept out of services) |
 | `app/database.py` | SQLAlchemy engine/session, `Base`, `get_db()` dependency, FTS5 virtual table `chunks_fts` creation + index/search helpers |
 | `requirements.txt` | fastapi, uvicorn, pydantic, pydantic-settings, sqlalchemy, python-multipart, openai, groq, numpy, opencv-python, sentence-transformers==5.1.0, edge-tts, jinja2, pytest, httpx |
 | `.env.example` | All env vars with placeholder values |
@@ -238,7 +250,7 @@ Project Blueprint/
 | `transfer.py` | `ExperienceScore`, `KnowledgeBuddy`, `HandoverPlan`, `HandoverTask`, `InterviewSession`, `RoutedQuestion`, `KnowledgeGap` |
 | `guide.py` | `Procedure` (version, status, author, approver), `ProcedureStep` (media, clip_start/end, params, tolerance, component_id), `GuidedRun`, `RunStep`, `SkillMatrix`, `TroubleshootNode`, `QuizItem` |
 | `map3d.py` | `MachineModel` (machine, glb_path), `Component` (mesh_name, display_name, aliases), `ComponentPin` (card_id, component_id, x, y, z, author) |
-| `ops.py` | `Event` (unified machine timeline), `SensorReading`, `Anomaly`, `Query` (question, answer, sources, feedback), `LLMCache`, `AuditLog` |
+| `ops.py` | `Job` (background task status), `Event` (unified machine timeline), `SensorReading`, `Anomaly`, `Query` (question, answer, sources, feedback), `LLMCache`, `AuditLog` |
 
 ### 9.3 Schemas (`app/schemas/`) — Pydantic request/response models
 | File | Contents |
@@ -267,6 +279,7 @@ Project Blueprint/
 | File | Contents |
 |---|---|
 | `llm.py` | One wrapper over the `openai` SDK with Groq and OpenRouter base URLs; `chat_json(task, prompt, schema)`, `vision_json(images, prompt, schema)`; task → provider routing, Pydantic validation, retry, provider fallback, offline rule fallback, `LLMCache` lookups |
+| `embeddings.py` | Singleton multilingual-e5-small model; `embed(texts)` → normalised float32 array |
 | `stt.py` | Groq Whisper transcription (`language` hint hi/mr/en), returns text + segments with timestamps |
 | `tts.py` | edge-tts synthesis to mp3 for answers/steps |
 | `capture/voice.py` | Voice file → STT → `extractor` → card + Guardian check |
@@ -357,5 +370,12 @@ Project Blueprint/
 ## 12. Success metrics (pitch)
 Time-to-independence for new employees · knowledge coverage % per machine/component · handover progress before exit · Guardian warnings per new employee over time · scrap/reject rate.
 
-## 13. Out of scope (hackathon)
+## 13. Build guidance for AI coding assistants
+This repo is written so any coding model (Gemini, GPT, Claude Sonnet/Opus, Copilot) can produce consistent, efficient code:
+- `AGENTS.md`: read order, non-negotiable rules, definition of done (also pointed to by `GEMINI.md`, `CLAUDE.md`).
+- `ENGINEERING.md`: layering, Python 3.9 / React standards, **time & space budgets** (indexes, no N+1, pagination, FTS5, O(n log n) FFT, streamed uploads, background jobs, LLM caching), security, testing, copyable templates.
+- `TASKS.md`: 26 ordered tasks with exact files, function signatures (contracts), complexity notes and acceptance tests.
+Work one task at a time; every task ends with tests + lint passing.
+
+## 14. Out of scope (hackathon)
 Real PLC/OPC-UA integration, production auth/SSO, multi-plant tenancy, native mobile apps, voice cloning of employees.

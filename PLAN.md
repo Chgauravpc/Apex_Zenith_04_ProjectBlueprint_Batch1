@@ -176,7 +176,7 @@ Lane 2: `queries` (question, answer, sources, feedback), `knowledge_gaps`, `soun
 Lane 3: `procedures` (versioned, status draft/approved, author, approver), `procedure_steps` (media, clip_start/end, params, tolerance, safety), `step_tips`, `guided_runs`, `run_steps` (time, values, photo, deviation), `skill_matrix` (employee, operation, level, signed_off_by), `troubleshoot_nodes`, `quiz_items`
 
 ## Files to create
-Tech stack: **Python (FastAPI) backend + React (Vite) frontend** (3D map with @react-three/fiber). Full file structure and what each file contains: see [PRD.md](PRD.md) sections 7–9.
+Tech stack: **Python (FastAPI) backend + React (Vite) frontend** (3D map with @react-three/fiber). Full file structure and what each file contains: see [PRD.md](PRD.md) sections 7–9. Coding rules for AI assistants: [AGENTS.md](AGENTS.md), [ENGINEERING.md](ENGINEERING.md); build order: [TASKS.md](TASKS.md).
 
 ## Build phases
 1. Backbone: schema, mock ERP, seed history (past notes, rejects, failures, old employees with exit dates) (3h)
