@@ -1,5 +1,7 @@
 """Tests for the foundation layer: health route, error handlers, FTS search."""
 
+from datetime import date
+
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
@@ -150,3 +152,34 @@ def test_guardian_and_ops_tables(db: Session) -> None:
 
     assert len(job.id) == 32 and job.status == "queued"
     assert db.get(Warning, 1).evidence == [{"type": "maintenance", "id": 1}]
+
+
+def test_transfer_and_guide_tables(db: Session) -> None:
+    from sqlalchemy import inspect
+
+    from app.models.erp import Employee, Machine
+    from app.models.guide import Procedure, ProcedureStep
+    from app.models.transfer import HandoverPlan
+
+    tables = set(inspect(db.get_bind()).get_table_names())
+    assert {"handover_plans", "routed_questions", "procedures", "skill_matrix"} <= tables
+
+    vmc = Machine(name="VMC-3", type="VMC", rpm_max=12000)
+    ramesh = Employee(name="Ramesh", role="old_employee", exit_date=date(2027, 5, 1))
+    db.add_all([vmc, ramesh])
+    db.flush()
+    db.add(
+        HandoverPlan(
+            employee_id=ramesh.id, exit_date=ramesh.exit_date, sole_holder_machine_ids=[vmc.id]
+        )
+    )
+    proc = Procedure(key="vmc3-face", title="Face SS304 flange", machine_id=vmc.id)
+    db.add(proc)
+    db.flush()
+    db.add(
+        ProcedureStep(
+            procedure_id=proc.id, step_no=1, instruction="Clamp in vise", params={"torque_nm": 40}
+        )
+    )
+    db.commit()
+    assert db.get(HandoverPlan, 1).sole_holder_machine_ids == [vmc.id]
