@@ -22,13 +22,18 @@ from app.models.erp import (
     ROLE_SUPERVISOR,
     Employee,
     Machine,
+    Maintenance,
     Material,
     Operation,
     Part,
+    QCReject,
     Tool,
 )
-from app.models.guardian import ParamLimit
+from app.models.guardian import FailurePrecursor, ParamLimit
+from app.models.knowledge import Document, KnowledgeCard
 from app.models.map3d import Component
+from app.models.ops import Event
+from seed.history import seed_history
 
 logger = logging.getLogger(__name__)
 
@@ -134,8 +139,9 @@ def seed_reference(db: Session, today: date) -> Dict[str, Any]:
         get_or_create(db, Operation, {"name": op}, external_id=f"ERP-OP-{op}")
     for name, tmat, teeth, dia in TOOLS:
         get_or_create(db, Tool, {"name": name}, tool_material=tmat, teeth=teeth, diameter_mm=dia)
+    parts = {}
     for number, name, mat in PARTS:
-        get_or_create(
+        parts[number] = get_or_create(
             db,
             Part,
             {"number": number},
@@ -199,14 +205,30 @@ def seed_reference(db: Session, today: date) -> Dict[str, Any]:
             note=note,
             set_by_id=people["Ramesh"].id,
         )
-    return {"machines": machines, "materials": materials, "people": people}
+    return {"machines": machines, "materials": materials, "parts": parts, "people": people}
 
 
 def seed(db: Session, today: date) -> Dict[str, int]:
     """Load all demo data and return row counts per table."""
-    seed_reference(db, today)
+    ref = seed_reference(db, today)
+    seed_history(db, today, ref)
     db.commit()
-    counted = [Machine, Component, Material, Operation, Tool, Part, Employee, ParamLimit]
+    counted = [
+        Machine,
+        Component,
+        Material,
+        Operation,
+        Tool,
+        Part,
+        Employee,
+        ParamLimit,
+        Maintenance,
+        QCReject,
+        Document,
+        KnowledgeCard,
+        FailurePrecursor,
+        Event,
+    ]
     return {
         m.__tablename__: db.execute(select(func.count()).select_from(m)).scalar_one()
         for m in counted
