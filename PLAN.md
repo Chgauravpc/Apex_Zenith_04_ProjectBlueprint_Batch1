@@ -176,27 +176,7 @@ Lane 2: `queries` (question, answer, sources, feedback), `knowledge_gaps`, `soun
 Lane 3: `procedures` (versioned, status draft/approved, author, approver), `procedure_steps` (media, clip_start/end, params, tolerance, safety), `step_tips`, `guided_runs`, `run_steps` (time, values, photo, deviation), `skill_matrix` (employee, operation, level, signed_off_by), `troubleshoot_nodes`, `quiz_items`
 
 ## Files to create
-```
-blueprint/
-  requirements.txt, README.md, .env.example
-  app/main.py              FastAPI routes, serves web/
-  app/db.py                schema, FTS5, helpers
-  app/llm.py               Groq + OpenRouter wrapper (openai SDK), task routing, JSON validation, fallback chain
-  app/ingest/{voice,video,notes,erp,sensors}.py
-  app/guardian/{check,rules}.py
-  app/transfer/{profiles,handover,routing}.py
-  app/assist/{search,qa,reports,photo_fix,sound_match,analytics}.py
-  app/assist/templates/*.html   Jinja2 report templates
-  app/guide/{authoring,guided,skills,troubleshoot,onboarding}.py
-  app/map3d/{components,pins}.py   component registry, pin CRUD, auto-pinning, per-component stats
-  web/index.html, app.js, style.css   PWA tabs: Capture | Ask | Guide | Machines (3D map) | Handover | Review | Dashboard
-  web/machine3d.js         Three.js viewer: orbit, raycast select, badges, highlight/fly-to API
-  web/models/vmc.glb       free CC-licensed model (or primitive fallback)
-  web/erp-widget.js        embeddable widget (Guardian banner + Ask + Guide inside ERP pages)
-  simulators/mock_erp.py, sensor_sim.py
-  seed/seed.py + sample handwritten note images, meeting notes, cards, SOPs, failure history
-  tests/smoke.py
-```
+Tech stack: **Python (FastAPI) backend + React (Vite) frontend** (3D map with @react-three/fiber). Full file structure and what each file contains: see [PRD.md](PRD.md) sections 7–9.
 
 ## Build phases
 1. Backbone: schema, mock ERP, seed history (past notes, rejects, failures, old employees with exit dates) (3h)
