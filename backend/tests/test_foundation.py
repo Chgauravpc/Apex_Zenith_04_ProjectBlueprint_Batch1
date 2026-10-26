@@ -183,3 +183,27 @@ def test_transfer_and_guide_tables(db: Session) -> None:
     )
     db.commit()
     assert db.get(HandoverPlan, 1).sole_holder_machine_ids == [vmc.id]
+
+
+def test_audit_entry_saved_with_caller_commit(db: Session) -> None:
+    from sqlalchemy import select
+
+    from app.models.ops import AuditLog
+    from app.utils.audit import audit
+
+    audit(db, "card.extracted", target_type="card", target_id=7, mode="offline", note="x" * 900)
+    assert db.execute(select(AuditLog)).scalars().all() != []  # pending in this session
+    db.rollback()
+    assert db.execute(select(AuditLog)).scalars().all() == []  # nothing saved without commit
+
+    audit(db, "warning.raised", target_type="warning", target_id=3, severity="stop")
+    db.commit()
+    row = db.execute(select(AuditLog)).scalar_one()
+    assert row.action == "warning.raised" and row.detail == {"severity": "stop"}
+
+
+def test_audit_shortens_long_text(db: Session) -> None:
+    from app.utils.audit import MAX_DETAIL_CHARS, audit
+
+    entry = audit(db, "card.extracted", note="x" * 900)
+    assert len(entry.detail["note"]) == MAX_DETAIL_CHARS + 1
