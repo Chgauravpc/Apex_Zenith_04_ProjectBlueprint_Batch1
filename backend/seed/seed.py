@@ -30,10 +30,13 @@ from app.models.erp import (
     Tool,
 )
 from app.models.guardian import FailurePrecursor, ParamLimit
-from app.models.knowledge import Document, KnowledgeCard
+from app.models.guide import Procedure, ProcedureStep, SkillMatrix
+from app.models.knowledge import ChipSample, Document, KnowledgeCard, SoundClip
 from app.models.map3d import Component
 from app.models.ops import Event
+from app.models.transfer import KnowledgeBuddy
 from seed.history import seed_history
+from seed.training import seed_training
 
 logger = logging.getLogger(__name__)
 
@@ -212,6 +215,7 @@ def seed(db: Session, today: date) -> Dict[str, int]:
     """Load all demo data and return row counts per table."""
     ref = seed_reference(db, today)
     seed_history(db, today, ref)
+    seed_training(db, ref)
     db.commit()
     counted = [
         Machine,
@@ -228,6 +232,12 @@ def seed(db: Session, today: date) -> Dict[str, int]:
         KnowledgeCard,
         FailurePrecursor,
         Event,
+        KnowledgeBuddy,
+        SkillMatrix,
+        Procedure,
+        ProcedureStep,
+        SoundClip,
+        ChipSample,
     ]
     return {
         m.__tablename__: db.execute(select(func.count()).select_from(m)).scalar_one()

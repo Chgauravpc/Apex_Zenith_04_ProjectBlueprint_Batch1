@@ -1,7 +1,9 @@
 """The demo seed loads the story and is idempotent."""
 
 from datetime import date
+from pathlib import Path
 
+import pytest
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -10,6 +12,14 @@ from app.models.map3d import Component
 from seed.seed import seed
 
 TODAY = date(2026, 10, 27)
+
+
+@pytest.fixture(autouse=True)
+def _tmp_storage(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Seed writes reference WAV/JPEG files; keep them out of the real storage dir."""
+    from app.config import get_settings
+
+    monkeypatch.setattr(get_settings(), "storage_dir", str(tmp_path))
 
 
 def test_seed_is_idempotent(db: Session) -> None:
@@ -56,3 +66,28 @@ def test_seed_is_searchable(db: Session) -> None:
     kinds = {h[0] for h in hits}
     assert {"card", "note", "qc_reject"} <= kinds
     assert fts_search(db, "चैटर", machine_id=vmc3.id)  # Hindi card and note
+
+
+def test_seed_training_and_samples(db: Session, tmp_path: Path) -> None:
+    import wave
+
+    import cv2
+
+    from app.models.guide import ProcedureStep
+    from app.models.knowledge import ChipSample, SoundClip
+    from app.models.transfer import KnowledgeBuddy
+
+    counts = seed(db, TODAY)
+    assert counts["knowledge_buddies"] == 2 and counts["procedure_steps"] == 6
+    step6 = db.execute(select(ProcedureStep).filter_by(step_no=6)).scalar_one()
+    assert (step6.tolerance_min, step6.tolerance_max, step6.critical) == (11.95, 12.05, True)
+    buddy = db.execute(select(KnowledgeBuddy)).scalars().first()
+    assert buddy.old_employee_id != buddy.new_employee_id
+
+    chatter = db.execute(select(SoundClip).filter_by(label="chatter")).scalar_one()
+    with wave.open(chatter.file_path) as w:
+        assert (w.getframerate(), w.getnchannels()) == (44100, 1) and w.getnframes() == 3 * 44100
+    blue = db.execute(select(ChipSample).filter_by(colour="blue")).scalar_one()
+    img = cv2.imread(blue.file_path)
+    assert img is not None and img.shape == (480, 640, 3)
+    assert Path(blue.file_path).parent == tmp_path / "seed"
