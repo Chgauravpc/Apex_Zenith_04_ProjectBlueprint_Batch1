@@ -102,7 +102,7 @@ When you choose a data structure, say why in a comment if it is not obvious (e.g
 - Target ≥ 70 % line coverage on `app/services`.
 
 ## 8. Git & workflow
-- Branch per task: `feat/T07-guardian-rules`. Small commits, Conventional Commits (`feat`, `fix`, `test`, `refactor`, `docs`).
+- Small commits, one logical piece at a time, spread over the session. Messages are short, plain sentences written the way a person would (`Add FTS search with Hindi-friendly tokenizer`, `Fix upload size check`), not tool-generated prefixes.
 - Never commit `.env`, `storage/`, `*.db`, `node_modules/`.
 - PR/commit description: what, why, how tested.
 

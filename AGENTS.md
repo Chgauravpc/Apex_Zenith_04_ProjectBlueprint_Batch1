@@ -63,4 +63,5 @@ If something genuinely cannot be completed (missing key, unclear spec), **stop a
 - [ ] Tests added and passing (happy path + at least one failure/edge case)
 - [ ] Lint/format clean (ruff + black / eslint + prettier)
 - [ ] No TODOs left without an issue note in the task's checklist
-- [ ] Commit message: `feat(<area>): <task id> <short summary>`
+- [ ] Small commits, one logical piece each (e.g. config, then errors, then DB layer), spread out over the work session, not one big commit per task
+- [ ] Commit messages read like a person wrote them: a short plain sentence, e.g. `Add settings loaded from .env` (no `feat(area): T01 ...` prefixes, no generated essays)
