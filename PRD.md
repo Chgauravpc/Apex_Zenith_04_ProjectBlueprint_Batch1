@@ -39,7 +39,7 @@ Capture old employees' know-how from every available source, make it searchable,
 | FR-7 | Unanswered question routed to the old employee; their reply becomes a verified card | Must |
 | FR-8 | **Exit handover**: when ERP sets an exit date → handover plan, knowledge-at-risk per machine/component, AI interview questions | Must |
 | FR-9 | **Guided Jobs**: step-by-step procedure per machine/part/operation, detail adapts to skill level L0–L4, values checked live by Guardian | Must |
-| FR-10 | **3D Machine Knowledge Map**: rotate/zoom model, click a component, pin voice/text/video, see incidents per component | Must |
+| FR-10 | **3D Machine Knowledge Map** *(owned by 3D teammate)*: rotate/zoom model, click a component, pin voice/text/video, see incidents per component | Must |
 | FR-11 | Chatter → stable RPM from a phone recording (RPM = 60·fc/(N·k)) shown next to the old employee's own fix | Must |
 | FR-12 | Chip colour reader from a photo (HSV hue rules by tool material) with the old employee's note | Must |
 | FR-13 | Machine handbook / exit-handover report as PDF | Should |

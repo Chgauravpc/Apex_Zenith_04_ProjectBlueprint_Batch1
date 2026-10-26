@@ -113,6 +113,7 @@ On save of any note (typed / voice / handwritten photo) by a new employee — `a
 - **Transfer metrics**: knowledge coverage % per machine, handover progress per leaving employee, new employee skill level per operation, time-to-independence, Guardian warnings trend per new employee.
 
 ## Core feature C — 3D Machine Knowledge Map (component-pinned knowledge)
+**Owner: 3D teammate** (TASKS T12, T21). AI agents build everything else and integrate only through the API and the optional `component_id`.
 **Idea**: expert knowledge is stored not only as text/voice/video but also **where on the machine it applies**. An interactive 3D model of the CNC/VMC is the visual index of everything Blueprint knows about that machine.
 **How it works**
 1. **3D viewer** (`web/machine3d.js`, Three.js, free/MIT): rotate, zoom, pan; works on phone/tablet (touch) and in the ERP widget. Model = free CC-licensed GLB of a VMC/lathe, or a simple model built from Three.js primitives (fallback). Named meshes = components: spindle, tool holder/ATC, table & vise/fixture, workpiece, coolant system, axes/ways (X/Y/Z), chuck, control panel, chip conveyor.

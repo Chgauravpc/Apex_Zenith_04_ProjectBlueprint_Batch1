@@ -3,6 +3,9 @@
 You are building **Project Blueprint**: knowledge transfer from old employees to new employees in CNC/VMC machining.
 Tech stack is fixed: **Python 3.9+ / FastAPI backend** and **React 18 + Vite frontend**. AI providers: **Groq + OpenRouter free tiers only**.
 
+## Your scope — AI work only
+3D work (the 3D Machine Knowledge Map: T12 and T21, `services/map3d/`, `routers/map3d.py`, `pages/MachineMap.jsx`, `components/map3d/`) is owned by a **human teammate**. Skip tasks tagged **[3D · teammate]** in `TASKS.md` unless the user explicitly asks you to do one. Never import 3D code from AI-track code; treat `component_id` as optional everywhere.
+
 ## Read in this order
 1. `AGENTS.md` (this file) — rules that always apply.
 2. `PRD.md` — what to build, file structure (§8) and what each file contains (§9).

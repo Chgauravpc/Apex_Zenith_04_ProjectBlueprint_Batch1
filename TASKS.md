@@ -4,6 +4,12 @@ Do tasks **in order**. Each task is self-contained: read `AGENTS.md` + `ENGINEER
 Signatures are contracts: later tasks call them. Keep names exactly. (`→` = returns.)
 Paths are relative to `backend/` or `frontend/` as shown.
 
+## Ownership — AI work vs 3D work
+- **AI coding agents (this repo's main track)**: every task except the ones tagged **[3D · teammate]**. That covers all AI work: capture, LLM layer, Note Guardian, Ask Experience, transfer engine, chatter/chips, reports, guidance.
+- **3D teammate**: tasks tagged **[3D · teammate]** — T12 (3D map backend) and T21 (3D map page). AI agents must **not** implement these unless explicitly asked.
+- **Shared contract (built by AI agents in T03)**: `app/models/map3d.py` tables and the `component_id` columns on cards, warnings and procedure steps, so both tracks use the same data. Change them only after agreeing with the 3D teammate.
+- AI-track code must work when the 3D map is not built yet: `component_id` is always optional; never import from `services/map3d` or `components/map3d` in AI-track code — integrate through the API/store only.
+
 Legend: **Deps** = tasks that must be done first · **Done when** = acceptance tests · **Real check** = manual end-to-end proof with real data.
 
 **Rule 0 applies to every task (see `AGENTS.md`): implement the real logic — no stubs, fake return values, canned AI output or skipped steps in app code.** Test doubles only in `tests/` at the network boundary.
@@ -142,7 +148,7 @@ Run backend + `npm run dev`, perform the flow in a real browser (phone via tunne
   - `route_question(db, query_id) -> RoutedQuestion`; `reply(db, routed_id, text|audio) -> KnowledgeCard(verified)`.
 - **Done when**: exit date webhook creates plan listing VMC-3 for Ramesh; reply creates verified card that the next Ask answer cites.
 
-### T12 · 3D Machine Knowledge Map (backend)
+### T12 · 3D Machine Knowledge Map (backend) **[3D · teammate]**
 - **Deps**: T03, T06
 - **Files**: `app/services/map3d/{components,pins}.py`, `app/schemas/map3d.py`, `app/routers/map3d.py`
 - **Spec**
@@ -181,7 +187,7 @@ Run backend + `npm run dev`, perform the flow in a real browser (phone via tunne
 - **Done when**: L1 sees all steps, L3 checklist only; out-of-tolerance value returns inline warning; promotion after N clean runs + sign-off.
 
 ### T17 · ShadowTrace, troubleshooting, onboarding
-- **Deps**: T16, T12
+- **Deps**: T16 (T12 not required: read `component_ids` from `procedure_steps.component_id`; empty list if none)
 - **Files**: `app/services/guide/{shadowtrace,troubleshoot,onboarding}.py`
 - **Spec**: `shadow_trace(db, procedure_id) -> List[TraceStep(step_no, clip_start, clip_end, component_ids)]`; `build_tree(db, machine_id) -> TroubleshootNode` (symptom → causes ranked by frequency, one aggregate query); `daily_briefing(db, employee_id, day) -> Briefing`.
 - **Done when**: tree ranks the most frequent cause first; briefing lists open warnings for assigned machines.
@@ -194,7 +200,7 @@ Each task: page + components + `src/api/<area>.js` + Vitest test for the logic c
 | T18 | `Capture.jsx` | VoiceRecorder (`useRecorder`), PhotoUpload, VideoUpload (job polling with backoff), NoteEditor | records/uploads, shows cards + WarningBanner |
 | T19 | global | WarningBanner, EvidenceList | severity styles + icon + text; evidence links open source |
 | T20 | `Ask.jsx` | ChatWindow, AnswerCard, SourceCard, ChatterDoctor, ChipReader | sources render (photo/clip at timestamp/audio); "Ask Ramesh" when not enough data |
-| T21 | `MachineMap.jsx` (lazy) | MachineViewer, ComponentMesh, PinMarker, ComponentPanel, PinForm | click selects mesh by name; badges coloured by risk; Guardian highlight via store; 60 fps on mid phone, `frameloop="demand"` |
+| T21 **[3D · teammate]** | `MachineMap.jsx` (lazy) | MachineViewer, ComponentMesh, PinMarker, ComponentPanel, PinForm | click selects mesh by name; badges coloured by risk; Guardian highlight via store; 60 fps on mid phone, `frameloop="demand"` |
 | T22 | `GuidedJob.jsx` | StepView, StepList, SkillBadge, ShadowTracePlayer, TroubleshootTree | steps adapt to skill; inline warning blocks "next" on stop severity |
 | T23 | `Handover.jsx`, `Review.jsx` | HandoverPlan, InterviewSession, RoutedQuestions, review list | approve/edit card; interview answers by voice |
 | T24 | `Dashboard.jsx`, `Home.jsx` | RiskHeatmap, TransferMetrics, MachineTimeline | heatmap from `/api/risk`; timeline paginated |
