@@ -191,8 +191,8 @@ def test_audit_entry_saved_with_caller_commit(db: Session) -> None:
     from app.models.ops import AuditLog
     from app.utils.audit import audit
 
-    audit(db, "card.extracted", target_type="card", target_id=7, mode="offline", note="x" * 900)
-    assert db.execute(select(AuditLog)).scalars().all() != []  # pending in this session
+    pending = audit(db, "card.extracted", target_type="card", target_id=7, mode="offline")
+    assert pending in db.new  # added to the caller's session, not committed
     db.rollback()
     assert db.execute(select(AuditLog)).scalars().all() == []  # nothing saved without commit
 
