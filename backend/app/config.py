@@ -1,4 +1,42 @@
-"""Settings (pydantic-settings) loaded from .env: API keys, model IDs per task, DB URL, storage dir, frontend origin; get_settings() cached.
+"""Application settings loaded from environment variables / `.env`.
 
-Implemented in TASKS.md T01. See PRD.md §9 and ENGINEERING.md.
+Only this module reads configuration. Everything else gets a `Settings`
+instance through `get_settings()` (or `Depends(get_settings)` in routers).
 """
+
+from functools import lru_cache
+from typing import Optional
+
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+class Settings(BaseSettings):
+    """Runtime configuration. Field names map to upper-case env vars (e.g. GROQ_API_KEY)."""
+
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        extra="ignore",
+        protected_namespaces=("settings_",),
+    )
+
+    groq_api_key: Optional[str] = None
+    openrouter_api_key: Optional[str] = None
+
+    # Model IDs per task. Free-tier IDs change often, so they live in .env.
+    model_text: str = "llama-3.3-70b-versatile"
+    model_text_fallback: str = "nvidia/nemotron-3-super-120b-a12b:free"
+    model_vision: str = "nvidia/nemotron-3.5-super-vl:free"
+    model_vision_fallback: str = "qwen/qwen3.8-27b"
+    model_stt: str = "whisper-large-v3"
+
+    database_url: str = "sqlite:///./blueprint.db"
+    storage_dir: str = "storage"
+    frontend_origin: str = "http://localhost:5173"
+    erp_base_url: str = "http://localhost:8001"
+
+
+@lru_cache(maxsize=1)
+def get_settings() -> Settings:
+    """Return the process-wide settings, parsed once."""
+    return Settings()
