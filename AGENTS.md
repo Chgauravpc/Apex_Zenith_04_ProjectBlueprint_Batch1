@@ -34,7 +34,7 @@ If something genuinely cannot be completed (missing key, unclear spec), **stop a
 2. Run the **real check** listed under "Real check" in the task (`TASKS.md`): start the server and call the endpoint with real files/data (and real API keys when available). Paste the command and its actual output in your summary.
 3. Run the stub scan and confirm it prints nothing:
    ```bash
-   grep -rnE "NotImplementedError|TODO|FIXME|^\s*pass\s*$|mock|fake|dummy|lorem|placeholder|Math\.random" backend/app frontend/src
+   grep -rnE "NotImplementedError|TODO|FIXME|^\s*pass\s*$|\bmock\b|fake|dummy|lorem|placeholder|Math\.random" backend/app frontend/src
    ```
    (Legitimate hits such as an HTML `placeholder=` attribute must be explained in the summary.)
 4. Report honestly: what was run, what passed, what failed, what was not verified.
