@@ -1,4 +1,60 @@
-"""Capture tests (text/voice/handwritten/video).
+"""Capture (Lane 1): shop-floor lexicon, card extraction, text/voice capture."""
 
-Implemented in TASKS.md T06. See PRD.md §9 and ENGINEERING.md.
-"""
+import pytest
+
+from app.utils import lexicon
+
+
+@pytest.mark.parametrize(
+    "text,expected",
+    [
+        ("VMC-3 slight chatter, increased feed to 0.3 on SS304", {"chatter"}),
+        ("VMC-3 pe chatter aa raha hai, feed kam kiya", {"chatter"}),
+        ("स्पिंडल से चैटर की आवाज़ आ रही है", {"chatter", "noise"}),
+        ("Spindle whine and too hot after 2 hours", {"noise", "overheating"}),
+        ("Burr on holes, chamfer not done", {"burr"}),
+        ("जॉमध्ये गळती आहे", {"coolant_leak"}),
+        ("Finish सुधार हुआ", set()),  # "धार" inside "सुधार" must not mean burr
+        ("Small coolant leak near the pump", {"coolant_leak"}),
+        ("All good today", set()),
+    ],
+)
+def test_find_symptoms(text: str, expected: set) -> None:
+    assert lexicon.find_symptoms(text) == expected
+
+
+@pytest.mark.parametrize(
+    "text,expected",
+    [
+        ("increased feed to 0.3 on SS304", {"feed": 0.3}),
+        ("feed 0.2 then feed = 0.25, rpm 9000", {"feed": 0.25, "speed": 9000.0}),
+        ("running at 9500 rpm, depth of cut 1.5", {"speed": 9500.0, "depth": 1.5}),
+        ("फीड 0.3 किया", {"feed": 0.3}),
+        ("spindle temp 61 after warm-up", {"spindle_temp": 61.0}),
+        ("F0.12 S3800", {"feed": 0.12, "speed": 3800.0}),
+        ("VMC-3 is 3 years old", {}),
+    ],
+)
+def test_find_params(text: str, expected: dict) -> None:
+    assert lexicon.find_params(text) == expected
+
+
+def test_match_machine_handles_spacing_and_prefixes() -> None:
+    names = ["VMC-3", "VMC-1", "Lathe-2", "VMC-31"]
+    assert lexicon.match_machine("vmc 3 pe chatter", names) == "VMC-3"
+    assert lexicon.match_machine("VMC3 spindle", names) == "VMC-3"
+    assert lexicon.match_machine("vmc-31 alarm", names) == "VMC-31"
+    assert lexicon.match_machine("lathe 2 chuck", names) == "Lathe-2"
+    assert lexicon.match_machine("no machine here", names) is None
+
+
+def test_match_components_in_any_language() -> None:
+    aliases = {1: ["spindle", "स्पिंडल"], 2: ["coolant", "nozzle"], 3: ["vise", "vice"]}
+    assert lexicon.match_components("स्पिंडल गरम है", aliases) == [1]
+    assert lexicon.match_components("Coolant nozzle blocked", aliases) == [2]
+    assert lexicon.match_components("advice needed", aliases) == []  # "vice" inside a word
+
+
+def test_expand_query_links_languages() -> None:
+    terms = lexicon.expand_query("चैटर")
+    assert "chatter" in terms and "kaanpna" in terms
