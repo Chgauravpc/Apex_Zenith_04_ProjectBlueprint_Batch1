@@ -113,3 +113,40 @@ def test_core_tables_created_and_linked(db: Session) -> None:
     card = db.execute(select(KnowledgeCard)).scalar_one()
     assert card.params == {"feed": 0.15} and card.created_at is not None
     assert db.get(Component, spindle.id).aliases[1] == "स्पिंडल"
+
+
+def test_guardian_and_ops_tables(db: Session) -> None:
+    from app.models.erp import Machine
+    from app.models.guardian import FailurePrecursor, Warning
+    from app.models.knowledge import Document
+    from app.models.ops import Job, LLMCache
+
+    vmc = Machine(name="VMC-3", type="VMC", rpm_max=12000)
+    note = Document(type="text", text="VMC-3 slight chatter")
+    db.add_all([vmc, note])
+    db.flush()
+    db.add(
+        FailurePrecursor(
+            machine_id=vmc.id,
+            symptom="chatter",
+            failure_kind="spindle failure",
+            preceded_count=3,
+            total_failures=4,
+            evidence_ids=[1, 2, 3],
+        )
+    )
+    db.add(
+        Warning(
+            note_id=note.id,
+            machine_id=vmc.id,
+            severity="stop",
+            message="Chatter",
+            evidence=[{"type": "maintenance", "id": 1}],
+        )
+    )
+    job = Job(kind="video")
+    db.add_all([job, LLMCache(key="a" * 64, model="m", value="{}")])
+    db.commit()
+
+    assert len(job.id) == 32 and job.status == "queued"
+    assert db.get(Warning, 1).evidence == [{"type": "maintenance", "id": 1}]
