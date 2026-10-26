@@ -1,0 +1,8 @@
+{
+  "name": "Blueprint — Machine Knowledge",
+  "short_name": "Blueprint",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#1f2937"
+}

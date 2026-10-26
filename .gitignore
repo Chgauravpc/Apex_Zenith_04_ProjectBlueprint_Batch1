@@ -1,7 +1,8 @@
-backend/storage/
+backend/storage/*
 __pycache__/
 *.pyc
 .env
 node_modules/
 frontend/dist/
 *.db
+!backend/storage/.gitkeep
