@@ -76,3 +76,40 @@ def test_fts_search_ignores_empty_or_operator_only_queries(db: Session, query: s
 
 def test_match_query_quotes_user_operators() -> None:
     assert build_match_query('chatter NEAR "spindle"') == '"chatter" OR "NEAR" OR "spindle"'
+
+
+def test_core_tables_created_and_linked(db: Session) -> None:
+    from sqlalchemy import inspect, select
+
+    from app.models.erp import ROLE_OLD, Employee, Machine
+    from app.models.knowledge import KnowledgeCard
+    from app.models.map3d import Component
+
+    tables = set(inspect(db.get_bind()).get_table_names())
+    assert {"machines", "employees", "knowledge_cards", "components", "chunks_fts"} <= tables
+
+    vmc = Machine(name="VMC-3", type="VMC", rpm_min=500, rpm_max=12000, teeth=2)
+    ramesh = Employee(name="Ramesh", role=ROLE_OLD)
+    db.add_all([vmc, ramesh])
+    db.flush()
+    spindle = Component(
+        machine_id=vmc.id, mesh_name="spindle", display_name="Spindle", aliases=["spindle", "स्पिंडल"]
+    )
+    db.add(spindle)
+    db.flush()
+    db.add(
+        KnowledgeCard(
+            title="Chatter fix",
+            machine_id=vmc.id,
+            component_id=spindle.id,
+            symptom="chatter",
+            action="Drop feed to 0.15",
+            author_id=ramesh.id,
+            params={"feed": 0.15},
+        )
+    )
+    db.commit()
+
+    card = db.execute(select(KnowledgeCard)).scalar_one()
+    assert card.params == {"feed": 0.15} and card.created_at is not None
+    assert db.get(Component, spindle.id).aliases[1] == "स्पिंडल"

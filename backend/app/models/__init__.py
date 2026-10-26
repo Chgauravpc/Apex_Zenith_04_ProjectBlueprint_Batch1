@@ -1,4 +1,3 @@
-"""Imports all SQLAlchemy models so Base.metadata knows every table.
+"""Imports every model module so `Base.metadata` knows all tables before `create_all`."""
 
-Implemented in TASKS.md T03. See PRD.md §9 and ENGINEERING.md.
-"""
+from app.models import erp, knowledge, map3d  # noqa: F401

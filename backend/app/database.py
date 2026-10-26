@@ -7,11 +7,12 @@ record by `(record_type, record_id)`, so search never needs `LIKE '%x%'`.
 
 import logging
 import re
-from typing import Iterator, List, Optional, Tuple
+from datetime import datetime, timezone
+from typing import Any, Iterator, List, Optional, Tuple
 
-from sqlalchemy import create_engine, event, text
+from sqlalchemy import DateTime, ForeignKey, Integer, create_engine, event, text
 from sqlalchemy.engine import Engine
-from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
+from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column, sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from app.config import get_settings
@@ -28,6 +29,27 @@ _FTS_SPLIT = re.compile(r"[\s\"'(){}\[\]*^:+\-.,;!?/\\|<>=&%$#@~`]+")
 
 class Base(DeclarativeBase):
     """Declarative base for every SQLAlchemy model."""
+
+
+def utcnow() -> datetime:
+    """Naive UTC timestamp (SQLite has no time zones)."""
+    return datetime.now(timezone.utc).replace(tzinfo=None)
+
+
+class IdMixin:
+    """Integer primary key + indexed creation time, shared by most tables."""
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, index=True)
+
+
+def fk(target: str, nullable: bool = True, ondelete: str = "SET NULL") -> Any:
+    """Indexed foreign-key column. Every FK is indexed so joins/filters stay O(log n)."""
+    if not nullable and ondelete == "SET NULL":
+        ondelete = "CASCADE"
+    return mapped_column(
+        Integer, ForeignKey(target, ondelete=ondelete), nullable=nullable, index=True
+    )
 
 
 def make_engine(url: str) -> Engine:
