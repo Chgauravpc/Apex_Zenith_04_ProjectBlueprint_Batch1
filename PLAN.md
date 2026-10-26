@@ -109,8 +109,23 @@ On save of any note (typed / voice / handwritten photo) by a new employee — `a
   - Handover progress % visible to management; target 100% before last working day.
 - **Question routing**: if the assistant can't answer from records, the question goes to the experienced employee in-app; their reply becomes a verified card — asked once, answered forever, even after they leave.
 - **Validation loop**: new employees' notes and AI-extracted cards are reviewed by experienced employees → "verified by Ramesh" label + credit.
-- **Shadow mode**: new employee runs a guided job alongside the old employee's recorded steps/tips; deviations logged for review.
+- **ShadowTrace (shadow mode)**: new employee runs a guided job alongside the old employee's recorded steps/tips; deviations logged for review.
 - **Transfer metrics**: knowledge coverage % per machine, handover progress per leaving employee, new employee skill level per operation, time-to-independence, Guardian warnings trend per new employee.
+
+## Core feature C — 3D Machine Knowledge Map (component-pinned knowledge)
+**Idea**: expert knowledge is stored not only as text/voice/video but also **where on the machine it applies**. An interactive 3D model of the CNC/VMC is the visual index of everything Blueprint knows about that machine.
+**How it works**
+1. **3D viewer** (`web/machine3d.js`, Three.js, free/MIT): rotate, zoom, pan; works on phone/tablet (touch) and in the ERP widget. Model = free CC-licensed GLB of a VMC/lathe, or a simple model built from Three.js primitives (fallback). Named meshes = components: spindle, tool holder/ATC, table & vise/fixture, workpiece, coolant system, axes/ways (X/Y/Z), chuck, control panel, chip conveyor.
+2. **Pin knowledge (old employee)**: click a component (raycasting) → optional exact 3D point → attach **voice note / text / repair video / photo** describing symptoms, how the problem was identified, checks performed, and the fix. Reuses Lane 1 pipelines (Groq Whisper, extraction, video→steps) → saved as a **component-linked Know-How Card** (machine + component + 3D point + evidence + author + verified_by).
+3. **Explore (new employee)**: components show **heat-coloured badges** (number of incidents/cards, red = frequent problems); click the spindle → past incidents, old employees' explanations, verified troubleshooting steps, linked videos, who to ask.
+4. **Auto-pinning**: cards/notes/rejects from other sources are mapped to a component by the LLM extraction (`component` field + lexicon, e.g. "chuck jaw", "coolant nozzle", "spindle bearing"), so the map fills itself from logbooks, meetings and ERP history; low-confidence mappings go to the validation queue.
+**Integration with existing features**
+- **Ask Experience**: component click = asset + component filter for retrieval; answers highlight the component in 3D; "ask about this part" button.
+- **Note Guardian**: a warning highlights the affected component in red on the 3D model with its past incidents ("spindle — 3 of last 4 failures started with chatter").
+- **Guided Jobs**: each step can point to a component → camera flies to it and highlights it ("step 4: tighten vise jaw — here"); "watch for" warnings come from that component's history.
+- **ShadowTrace**: the old employee's recorded run shows which components they touched/checked at each step, highlighted on the model, so the new employee sees *where* the expert looked.
+- **Transfer metrics / handover**: knowledge coverage per component (grey = no knowledge captured) → exit interviews target uncovered components of the retiring employee's machines.
+**Free stack**: Three.js + GLTFLoader (CDN), free GLB model (Sketchfab/Poly Haven CC-licensed) or primitive model; no paid 3D services.
 
 ## Lane 2 — Searchable assistant ("Ask Experience")
 **2.1 Retrieval pipeline** (`app/assist/search.py`)
@@ -147,7 +162,7 @@ On save of any note (typed / voice / handwritten photo) by a new employee — `a
 - L1: every step + media + mandatory confirmations; L2: condensed steps, critical checks mandatory; L3: checklist only; L4: can author/validate.
 - Promotion: N successful runs without stop-level Guardian warnings + knowledge-buddy sign-off.
 **3.5 Troubleshooting flows**: generated from history per machine — symptom → likely causes ranked by past frequency → check steps → fixes (each from an old employee's card) as an interactive decision tree; unresolved branch → routes question.
-**3.6 Shadow mode**: new employee follows an old employee's recorded run side by side (their clip per step); deviations logged and reviewed with the buddy.
+**3.6 ShadowTrace (shadow mode)**: new employee follows an old employee's recorded run side by side (their clip per step, plus the components they checked highlighted on the 3D model — Feature C); deviations logged and reviewed with the buddy.
 **3.7 Onboarding learning path** (`app/guide/onboarding.py`): per role & machine — Watch (videos) → Learn (cards + quiz) → Do (guided runs with buddy) → Certify (sign-off → skill level). Daily briefing: today's jobs, known issues on assigned machines, 2 spaced-repetition questions on critical tips, open action items from meetings.
 
 ## Data model (SQLite, Postgres-ready)
@@ -156,6 +171,7 @@ On save of any note (typed / voice / handwritten photo) by a new employee — `a
 `meetings`, `action_items`, `events` (unified timeline), `sensor_readings`, `anomalies`, `chunks_fts` (FTS5)
 `param_limits`, `symptom_lexicon`, `warnings` (note_id, severity, evidence_ids, card_id, status, response)
 `knowledge_buddies`, `experience_scores`, `handover_plans`, `handover_tasks`, `interview_sessions`, `routed_questions`
+3D map: `machine_models` (machine, glb_path), `components` (machine, mesh_name, display_name, aliases), `component_pins` (card_id, component_id, x, y, z, author) — `knowledge_cards`, `warnings`, `procedure_steps` get a `component_id`
 Lane 2: `queries` (question, answer, sources, feedback), `knowledge_gaps`, `sound_clips` (machine, label, fingerprint, contributor), `reports`
 Lane 3: `procedures` (versioned, status draft/approved, author, approver), `procedure_steps` (media, clip_start/end, params, tolerance, safety), `step_tips`, `guided_runs`, `run_steps` (time, values, photo, deviation), `skill_matrix` (employee, operation, level, signed_off_by), `troubleshoot_nodes`, `quiz_items`
 
@@ -172,7 +188,10 @@ blueprint/
   app/assist/{search,qa,reports,photo_fix,sound_match,analytics}.py
   app/assist/templates/*.html   Jinja2 report templates
   app/guide/{authoring,guided,skills,troubleshoot,onboarding}.py
-  web/index.html, app.js, style.css   PWA tabs: Capture | Ask | Guide | Machines | Handover | Review | Dashboard
+  app/map3d/{components,pins}.py   component registry, pin CRUD, auto-pinning, per-component stats
+  web/index.html, app.js, style.css   PWA tabs: Capture | Ask | Guide | Machines (3D map) | Handover | Review | Dashboard
+  web/machine3d.js         Three.js viewer: orbit, raycast select, badges, highlight/fly-to API
+  web/models/vmc.glb       free CC-licensed model (or primitive fallback)
   web/erp-widget.js        embeddable widget (Guardian banner + Ask + Guide inside ERP pages)
   simulators/mock_erp.py, sensor_sim.py
   seed/seed.py + sample handwritten note images, meeting notes, cards, SOPs, failure history
@@ -187,12 +206,13 @@ blueprint/
 5. Old→New transfer: profiles, buddy pairing, handover plan, AI interview, question routing (5h)
 6. Lane 2: retrieval + cited answers + voice (3h), photo-to-fix + sound match (2h), analytics + reports (2h)
 7. Lane 3: video→procedure authoring + step editor (3h), guided job w/ live checks + skill levels (3h), troubleshooting tree + onboarding path (2h)
-8. UI polish, ERP widget, dashboard, demo script (3h)
-Must-have for demo: phases 1–5, Lane 2 sections 2.1, 2.2, 2.5 (handbook), chatter → stable RPM, chip colour reader, Lane 3 sections 3.1 (video→procedure), 3.3, 3.4. Stretch: clip-to-clip sound match, shadow mode, general photo-to-fix, analytics charts, chat bot.
+8. 3D Machine Knowledge Map: viewer + component select + pin/attach + badges (3h), integration hooks into Ask / Guardian / Guided Jobs / ShadowTrace (2h)
+9. UI polish, ERP widget, dashboard, demo script (3h)
+Must-have for demo: phases 1–5, Lane 2 sections 2.1, 2.2, 2.5 (handbook), chatter → stable RPM, chip colour reader, Lane 3 sections 3.1 (video→procedure), 3.3, 3.4, 3D map (pin + explore + Guardian highlight). Stretch: clip-to-clip sound match, ShadowTrace 3D trace, guided-step fly-to, general photo-to-fix, analytics charts, chat bot.
 
 ## Demo script (3 min)
-1. Ramesh (retiring in 7 months) records a voice tip + setup video → card + procedure; photo of handwritten meeting notes → actions + issues.
-2. **Guardian**: Priya (new employee) saves "VMC-3 slight chatter, increased feed to 0.3 on SS304" → instant red warning: chatter preceded 3 of last 4 spindle failures + feed above limit; shows Ramesh's fix; supervisor + Ramesh notified.
+1. Ramesh (retiring in 7 months) records a voice tip + setup video → card + procedure; photo of handwritten meeting notes → actions + issues. On the **3D model of VMC-3** he clicks the spindle and pins his voice note on how he diagnosed a bearing problem.
+2. **Guardian**: Priya (new employee) saves "VMC-3 slight chatter, increased feed to 0.3 on SS304" → instant red warning: chatter preceded 3 of last 4 spindle failures + feed above limit; the **spindle glows red on the 3D model**; shows Ramesh's fix; supervisor + Ramesh notified. Priya clicks the spindle → Ramesh's pinned explanation and past incidents.
 3. Priya opens guided job on VMC-3 → Ramesh's tip appears at step 4.
 4. Her unanswerable question → routed to Ramesh → his reply becomes a verified card.
 5. Dashboard: Ramesh is sole knowledge holder for VMC-3 → handover plan 40% → AI interview session; one-click handbook PDF.
@@ -204,4 +224,5 @@ Must-have for demo: phases 1–5, Lane 2 sections 2.1, 2.2, 2.5 (handbook), chat
 - Transfer tests: employee with exit date → handover plan listing bus-factor-1 machines; unanswerable question routed; reply creates verified card.
 - Provider tests: run with both keys, with only one key (fallback), and with none (offline heuristics).
 - Chatter → RPM: synthetic 427 Hz tone, N = 2 → candidate list includes ≈12,810 RPM (k=1) clipped to machine range. Chip reader: seeded blue/silver chip photos classified correctly with the old employee's note attached.
+- 3D map: clicking each named mesh selects the right component; pinning a voice note creates a component-linked card; seeded spindle incidents show as a red badge; a Guardian warning about chatter highlights the spindle; component filter narrows Ask answers; works with touch on a phone.
 - Manual walkthrough of demo script in browser.
