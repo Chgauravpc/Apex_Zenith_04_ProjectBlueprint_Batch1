@@ -6,8 +6,8 @@ from fastapi import APIRouter, Depends, File, Form, UploadFile
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.schemas.ask import AskAnswer, AskRequest, FeedbackIn, FeedbackOut
-from app.services.ask import qa
+from app.schemas.ask import AskAnswer, AskRequest, ChatterResult, FeedbackIn, FeedbackOut
+from app.services.ask import chatter, qa
 
 router = APIRouter(prefix="/ask", tags=["ask"])
 
@@ -28,6 +28,18 @@ def ask_voice(
 ) -> AskAnswer:
     """Answer a spoken question (Hindi / Marathi / English); the answer can be played back."""
     return qa.answer_voice(db, file, machine_id, language, asked_by_id)
+
+
+@router.post("/chatter", response_model=ChatterResult)
+def ask_chatter(
+    file: UploadFile = File(...),
+    machine_id: int = Form(...),
+    teeth: Optional[int] = Form(None),
+    current_rpm: Optional[int] = Form(None),
+    db: Session = Depends(get_db),
+) -> ChatterResult:
+    """Record 5–10 s of cutting sound: chatter frequency and stable speeds to try."""
+    return chatter.chatter_from_upload(db, file, machine_id, teeth, current_rpm)
 
 
 @router.post("/{query_id}/feedback", response_model=FeedbackOut)

@@ -105,3 +105,29 @@ class FeedbackOut(BaseModel):
     query_id: int
     feedback: int
     cards_updated: int
+
+
+class ExpertCard(BaseModel):
+    id: int
+    title: str
+    action: str
+    why: Optional[str] = None
+    author: Optional[str] = None
+
+
+class ChatterResult(BaseModel):
+    """Chatter analysis of a machine recording. Advice to learn from; the operator decides."""
+
+    fc: float  # dominant chatter frequency, Hz
+    clear_chatter: bool  # peak clearly stands out from the background noise
+    prominence: float  # peak magnitude / median magnitude in the band
+    tooth_passing_hz: Optional[float] = None
+    teeth: int
+    current_rpm: Optional[int] = None
+    rpm_min: int
+    rpm_max: int
+    candidate_rpms: List[int]  # stable speeds, k = 1..3, inside the machine's range
+    nearest_rpm: Optional[int] = None  # candidate closest to the current speed
+    formula: str = "RPM = 60 × fc / (N × k)"
+    explanation: str
+    expert_card: Optional[ExpertCard] = None
