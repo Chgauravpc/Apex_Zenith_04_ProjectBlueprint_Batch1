@@ -1,32 +1,56 @@
-import React from 'react';
+import React, { useState } from 'react';
+import RiskHeatmap from '../components/dashboard/RiskHeatmap';
+import TransferMetrics from '../components/dashboard/TransferMetrics';
+import MachineTimeline from '../components/dashboard/MachineTimeline';
 import { useAuthStore } from '../store/useAuthStore';
 import { t } from '../utils/i18n';
 
 export default function Dashboard() {
   const { language } = useAuthStore();
+  const [activeTab, setActiveTab] = useState('heatmap');
+
+  const tabs = [
+    { id: 'heatmap', label: 'Knowledge Risk Heatmap', icon: '🗺️' },
+    { id: 'metrics', label: 'Transfer & Quality ROI', icon: '📈' },
+    { id: 'timeline', label: 'Machine Event Stream', icon: '⏱️' },
+  ];
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
         <div>
-          <h1 className="text-2xl font-bold text-white tracking-tight flex items-center space-x-2">
+          <h1 className="text-2xl font-extrabold text-white tracking-tight flex items-center space-x-2">
             <span>📊</span>
             <span>{t('navDashboard', language)}</span>
           </h1>
-          <p className="text-slate-400 text-sm mt-1">
-            Plant-wide knowledge coverage, bus-factor risk heatmap, and handover velocity metrics.
+          <p className="text-slate-400 text-xs sm:text-sm mt-1">
+            Plant-wide operational dashboard. Track bus-factor-1 risks, handover velocity, and machine uptime.
           </p>
         </div>
       </div>
 
-      <div className="bg-slate-800/80 border border-slate-700/70 rounded-xl p-8 text-center">
-        <div className="w-16 h-16 mx-auto mb-4 bg-sky-500/10 border border-sky-500/20 text-sky-400 rounded-2xl flex items-center justify-center text-3xl">
-          📊
-        </div>
-        <h2 className="text-xl font-semibold text-white">Operations & Risk Dashboard</h2>
-        <p className="text-slate-400 text-sm max-w-md mx-auto mt-2">
-          RiskHeatmap, TransferMetrics charts, and MachineTimeline are loaded here in T24.
-        </p>
+      <div className="flex flex-wrap gap-2 border-b border-slate-800 pb-2">
+        {tabs.map((tab) => (
+          <button
+            key={tab.id}
+            type="button"
+            onClick={() => setActiveTab(tab.id)}
+            className={`btn-touch px-4 py-2 rounded-xl text-xs font-semibold transition flex items-center space-x-2 ${
+              activeTab === tab.id
+                ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shadow-sm'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+            }`}
+          >
+            <span>{tab.icon}</span>
+            <span>{tab.label}</span>
+          </button>
+        ))}
+      </div>
+
+      <div>
+        {activeTab === 'heatmap' && <RiskHeatmap />}
+        {activeTab === 'metrics' && <TransferMetrics />}
+        {activeTab === 'timeline' && <MachineTimeline />}
       </div>
     </div>
   );
