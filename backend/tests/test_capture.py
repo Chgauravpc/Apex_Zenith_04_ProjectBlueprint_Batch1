@@ -344,3 +344,76 @@ def test_voice_rejects_wrong_file_type(api, shop) -> None:
         data={"author_id": str(shop["ramesh"].id)},
     )
     assert resp.status_code == 422 and resp.json()["code"] == "validation_failed"
+
+
+# --- video key frames ------------------------------------------------------------------------
+
+
+def _write_video(path, scenes, fps=10, seconds=2, size=(320, 240)):
+    """Write a real MJPG video: one solid BGR colour per scene, with light noise."""
+    import cv2
+    import numpy as np
+
+    writer = cv2.VideoWriter(str(path), cv2.VideoWriter_fourcc(*"MJPG"), fps, size)
+    rng = np.random.default_rng(0)
+    for bgr in scenes:
+        for _ in range(fps * seconds):
+            frame = np.full((size[1], size[0], 3), bgr, np.uint8)
+            noise = rng.integers(0, 12, frame.shape, dtype=np.uint8)
+            writer.write(cv2.add(frame, noise))
+    writer.release()
+    return path
+
+
+RED, GREEN, BLUE = (30, 30, 200), (30, 200, 30), (200, 30, 30)
+
+
+def test_keyframes_one_per_scene(tmp_path) -> None:
+    import cv2
+    import numpy as np
+
+    from app.services.capture.video import extract_keyframes
+
+    video = _write_video(tmp_path / "setup.avi", [RED, GREEN, BLUE])
+    frames = extract_keyframes(video)
+
+    assert [f.ts for f in frames] == [0.0, 2.0, 4.0]
+    first = cv2.imdecode(np.frombuffer(frames[0].jpeg_bytes, np.uint8), cv2.IMREAD_COLOR)
+    assert first.shape == (240, 320, 3) and first[..., 2].mean() > 150  # the red scene
+
+
+def test_keyframes_static_video_gives_one(tmp_path) -> None:
+    from app.services.capture.video import extract_keyframes
+
+    video = _write_video(tmp_path / "static.avi", [GREEN, GREEN])
+    assert len(extract_keyframes(video)) == 1
+
+
+def test_keyframes_cap_keeps_biggest_changes_in_time_order(tmp_path) -> None:
+    from app.services.capture.video import extract_keyframes
+
+    grey = (120, 120, 120)
+    video = _write_video(tmp_path / "many.avi", [RED, grey, BLUE], seconds=1)
+    frames = extract_keyframes(video, max_frames=2)
+    assert len(frames) == 2 and frames[0].ts == 0.0 and frames[0].ts < frames[1].ts
+
+
+def test_keyframes_resizes_large_video(tmp_path) -> None:
+    import cv2
+    import numpy as np
+
+    from app.services.capture.video import extract_keyframes
+
+    video = _write_video(tmp_path / "big.avi", [RED], fps=2, seconds=1, size=(1600, 900))
+    frame = extract_keyframes(video)[0]
+    img = cv2.imdecode(np.frombuffer(frame.jpeg_bytes, np.uint8), cv2.IMREAD_COLOR)
+    assert max(img.shape[:2]) == 1280
+
+
+def test_keyframes_rejects_non_video(tmp_path) -> None:
+    from app.services.capture.video import extract_keyframes
+
+    bad = tmp_path / "notes.mp4"
+    bad.write_bytes(b"this is not a video")
+    with pytest.raises(ValidationFailed):
+        extract_keyframes(bad)
