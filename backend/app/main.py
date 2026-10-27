@@ -16,7 +16,7 @@ from fastapi.staticfiles import StaticFiles
 from app.config import get_settings
 from app.database import init_db
 from app.errors import register_handlers
-from app.routers import capture, erp, guardian
+from app.routers import ask, capture, erp, guardian
 from app.services.capture import voice
 from app.services.guardian import check
 
@@ -55,6 +55,7 @@ def create_app() -> FastAPI:
     app.include_router(capture.jobs_router, prefix="/api")
     app.include_router(erp.router, prefix="/api")
     app.include_router(guardian.router, prefix="/api")
+    app.include_router(ask.router, prefix="/api")
     # Every captured note is checked by Note Guardian (idempotent across app instances).
     if check.note_saved_hook not in voice.NOTE_SAVED_HOOKS:
         voice.NOTE_SAVED_HOOKS.append(check.note_saved_hook)

@@ -1,7 +1,7 @@
 """Ask Experience schemas. Field names follow what the frontend reads (AnswerCard, SourceCard)."""
 
 import datetime as dt
-from typing import Literal, Optional
+from typing import List, Literal, Optional
 
 from pydantic import BaseModel, Field
 
@@ -25,6 +25,7 @@ class Hit(BaseModel):
     text: str  # full text given to the LLM
     snippet: str  # short text for the UI
     action: Optional[str] = None  # cards: what to do
+    symptom: Optional[str] = None  # cards: canonical symptom key
     verified: bool = False
     author_id: Optional[int] = None
     author: Optional[str] = None
@@ -40,3 +41,67 @@ class Hit(BaseModel):
     def ref(self) -> str:
         """Citation id used in prompts and answers, e.g. "card:12"."""
         return f"{self.record_type}:{self.record_id}"
+
+
+class AnswerLLM(BaseModel):
+    """JSON the answer prompt must return."""
+
+    answer: str
+    steps: List[str] = Field(default_factory=list)
+    watch_out: Optional[str] = None
+    source_ids: List[str] = Field(default_factory=list, description="e.g. card:12")
+    confidence: float = Field(0.7, ge=0, le=1)
+    not_enough_data: bool = False
+
+
+class SourceOut(BaseModel):
+    """A cited record as shown in SourceCard."""
+
+    id: str  # "card:12"
+    kind: str
+    title: str
+    text: str
+    snippet: str
+    action: Optional[str] = None
+    author: Optional[str] = None
+    machine: Optional[str] = None
+    component: Optional[str] = None
+    media_url: Optional[str] = None
+    timestamp: Optional[float] = None
+    verified: bool = False
+    date: Optional[dt.date] = None
+
+
+class ExpertOut(BaseModel):
+    id: int
+    name: str
+    cards: int  # verified cards this person has on the machine
+
+
+class AskAnswer(BaseModel):
+    query_id: int
+    question: str
+    transcript: Optional[str] = None  # for voice questions
+    answer: str
+    steps: List[str] = Field(default_factory=list)
+    watch_out: Optional[str] = None
+    sources: List[SourceOut] = Field(default_factory=list)
+    experts: List[ExpertOut] = Field(default_factory=list)
+    suggested_expert: Optional[str] = None
+    suggested_expert_id: Optional[int] = None
+    confidence: float = 0.0
+    not_enough_data: bool = False
+    mode: Literal["live", "offline"] = "live"
+    audio_url: Optional[str] = None
+
+
+class FeedbackIn(BaseModel):
+    helpful: bool
+    fix_worked: Optional[bool] = None
+    note: Optional[str] = Field(None, max_length=1000)
+
+
+class FeedbackOut(BaseModel):
+    query_id: int
+    feedback: int
+    cards_updated: int

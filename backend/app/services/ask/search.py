@@ -70,7 +70,7 @@ def _fuse(rankings: Iterable[List[Ref]]) -> Dict[Ref, float]:
     return scores
 
 
-def _media_url(path: Optional[str]) -> Optional[str]:
+def media_url(path: Optional[str]) -> Optional[str]:
     """Public URL of a stored upload (served by main.py under /media)."""
     if not path:
         return None
@@ -121,11 +121,12 @@ def _load_by_type(db: Session, refs: List[Ref]) -> Dict[Ref, Hit]:
             text=text,
             snippet=_snip(text),
             action=c.action,
+            symptom=c.symptom,
             verified=c.verified_by_id is not None,
             author_id=c.author_id,
             machine_id=c.machine_id,
             component_id=c.component_id,
-            media_url=_media_url(src.file_path) if src else None,
+            media_url=media_url(src.file_path) if src else None,
             when=c.created_at.date(),
         )
     for d in (docs[i] for i in ids.get("note", []) if i in docs):
@@ -140,7 +141,7 @@ def _load_by_type(db: Session, refs: List[Ref]) -> Dict[Ref, Hit]:
             snippet=_snip(d.text or ""),
             author_id=d.uploader_id,
             machine_id=d.machine_id,
-            media_url=_media_url(d.file_path),
+            media_url=media_url(d.file_path),
             when=d.created_at.date(),
         )
     for q in rows(QCReject, "qc_reject"):
