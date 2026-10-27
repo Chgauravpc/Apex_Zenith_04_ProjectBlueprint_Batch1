@@ -120,3 +120,66 @@ class PromoteOut(BaseModel):
     promoted: bool
     skill: SkillOut
     reason: str
+
+
+# --- T17: ShadowTrace, troubleshooting, onboarding --------------------------------------------
+
+
+class TraceStep(BaseModel):
+    step_no: int
+    instruction: str
+    clip_start: Optional[float] = None
+    clip_end: Optional[float] = None
+    component_ids: List[int] = Field(default_factory=list)
+    components_checked: List[str] = Field(default_factory=list)
+
+
+class ShadowTraceOut(BaseModel):
+    procedure_id: int
+    title: str
+    author: Optional[str] = None  # whose recorded run this is
+    video_url: Optional[str] = None
+    steps: List[TraceStep]
+
+
+class CauseNode(BaseModel):
+    cause: str
+    count: int
+    share: float  # 0..1 of this symptom's incidents
+    frequency: str  # "65% of past incidents" (as the UI shows it)
+    fix: Optional[str] = None
+    fix_author: Optional[str] = None
+    card_id: Optional[int] = None
+
+
+class SymptomNode(BaseModel):
+    symptom: str  # canonical key
+    label: str
+    incidents: int
+    causes: List[CauseNode]
+
+
+class QuizQuestion(BaseModel):
+    id: int
+    question: str
+    answer: str
+    card_id: int
+
+
+class PathStage(BaseModel):
+    stage: Literal["watch", "learn", "do", "certify"]
+    done: int
+    total: int
+
+
+class Briefing(BaseModel):
+    employee_id: int
+    employee: str
+    day: dt.date
+    machines: List[str]
+    jobs: List[str]
+    open_warnings: List[str]
+    known_issues: List[str]
+    action_items: List[str]
+    quiz: List[QuizQuestion]
+    path: List[PathStage]

@@ -193,3 +193,55 @@ def test_approving_keeps_old_versions(client, db, story) -> None:
         ).status_code
         == 422
     )
+
+
+# --- T17: troubleshooting, ShadowTrace, daily briefing ---------------------------------------
+
+
+def test_troubleshoot_tree_ranks_most_frequent_cause_first(client, db, story) -> None:
+    from app.models.guide import TroubleshootNode
+
+    tree = client.get(f"/api/guide/troubleshoot/{story['vmc'].id}").json()
+    assert tree[0]["symptom"] == "chatter"  # most incidents on VMC-3
+    causes = tree[0]["causes"]
+    assert causes[0]["cause"] == "Spindle bearing wear" and causes[0]["count"] == 21
+    assert [c["count"] for c in causes] == sorted((c["count"] for c in causes), reverse=True)
+    assert causes[0]["frequency"].endswith("% of past incidents")
+    assert causes[0]["fix"] and causes[0]["fix_author"] == "Ramesh Patil"
+    assert any("spindle bearing failure" in c["cause"] for c in causes)  # from precursor stats
+    stored = db.execute(select(TroubleshootNode).filter_by(machine_id=story["vmc"].id)).all()
+    client.get(f"/api/guide/troubleshoot/{story['vmc'].id}")  # rebuild replaces, not appends
+    assert len(db.execute(select(TroubleshootNode)).all()) == len(stored)
+    assert client.get("/api/guide/troubleshoot/999").status_code == 404
+
+
+def test_shadow_trace_lists_parts_checked(client, story) -> None:
+    body = client.get(f"/api/guide/shadowtrace/{story['proc'].id}").json()
+    assert body["author"] == "Ramesh Patil" and len(body["steps"]) == 6
+    step4 = next(s for s in body["steps"] if s["step_no"] == 4)
+    assert step4["components_checked"] == ["Spindle"] and step4["component_ids"]
+
+
+def test_briefing_lists_open_warnings_for_assigned_machines(client, db, story) -> None:
+    priya = story["people"]["Priya"]
+    client.post(
+        "/api/guardian/notes",
+        json={"text": "VMC-3 chatter, feed 0.3 on SS304", "author_id": priya.id},
+    )
+    first = client.get(f"/api/guide/briefing/{priya.id}?day=2026-10-28").json()
+    assert "VMC-3" in first["machines"] and "Lathe-2" in first["machines"]  # buddy pairs
+    assert any("VMC-3" in w and "[stop]" in w for w in first["open_warnings"])
+    assert any("WO-T1" in j for j in first["jobs"])
+    assert len(first["quiz"]) == 2 and all(q["answer"] for q in first["quiz"])
+    next_day = client.get(f"/api/guide/briefing/{priya.id}?day=2026-10-29").json()
+    assert {q["card_id"] for q in next_day["quiz"]} != {q["card_id"] for q in first["quiz"]}
+    stages = {s["stage"]: s for s in first["path"]}
+    assert stages["do"]["total"] >= 1 and stages["do"]["done"] == 0
+
+
+def test_briefing_path_counts_real_runs(client, story) -> None:
+    _clean_run(client, story)
+    priya = story["people"]["Priya"]
+    stages = {s["stage"]: s for s in client.get(f"/api/guide/briefing/{priya.id}").json()["path"]}
+    assert stages["do"]["done"] == 1
+    assert client.get("/api/guide/briefing/999").status_code == 404

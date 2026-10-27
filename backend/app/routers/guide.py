@@ -1,5 +1,6 @@
 """Step-by-step guidance endpoints (paths match frontend/src/api/guide.js)."""
 
+from datetime import date
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends
@@ -7,6 +8,7 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.schemas.guide import (
+    Briefing,
     GuidedRunOut,
     ProcedureOut,
     ProcedureSummary,
@@ -16,9 +18,18 @@ from app.schemas.guide import (
     RunStartIn,
     RunStepIn,
     RunStepOut,
+    ShadowTraceOut,
     SkillOut,
+    SymptomNode,
 )
-from app.services.guide import authoring, guided, skills
+from app.services.guide import (
+    authoring,
+    guided,
+    onboarding,
+    shadowtrace,
+    skills,
+    troubleshoot,
+)
 
 router = APIRouter(prefix="/guide", tags=["guide"])
 
@@ -67,3 +78,23 @@ def get_skills(employee_id: int, db: Session = Depends(get_db)) -> List[SkillOut
 def promote(employee_id: int, payload: PromoteIn, db: Session = Depends(get_db)) -> PromoteOut:
     """Promote one level: needs enough clean runs and an old employee's sign-off."""
     return skills.maybe_promote(db, employee_id, payload.operation_id, payload.signed_off_by)
+
+
+@router.get("/troubleshoot/{machine_id}", response_model=List[SymptomNode])
+def troubleshoot_tree(machine_id: int, db: Session = Depends(get_db)) -> List[SymptomNode]:
+    """Symptom → causes ranked by how often they happened here → the old employee's fix."""
+    return troubleshoot.build_tree(db, machine_id)
+
+
+@router.get("/shadowtrace/{procedure_id}", response_model=ShadowTraceOut)
+def shadow_trace(procedure_id: int, db: Session = Depends(get_db)) -> ShadowTraceOut:
+    """The old employee's recorded run: clip and parts checked for every step."""
+    return shadowtrace.shadow_trace_out(db, procedure_id)
+
+
+@router.get("/briefing/{employee_id}", response_model=Briefing)
+def briefing(
+    employee_id: int, day: Optional[date] = None, db: Session = Depends(get_db)
+) -> Briefing:
+    """Daily briefing: jobs, open warnings, known issues, two quiz questions, learning path."""
+    return onboarding.daily_briefing(db, employee_id, day or date.today())
