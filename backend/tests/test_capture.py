@@ -677,3 +677,91 @@ def test_handwritten_rejects_unreadable_image(db, shop, tmp_path, fake_llm) -> N
     with pytest.raises(ValidationFailed):
         process_handwritten(db, bad, shop["ramesh"].id)
     assert fake_llm.calls == []
+
+
+# --- sensors ---------------------------------------------------------------------------------
+
+
+def test_detect_anomalies_finds_injected_spike() -> None:
+    import numpy as np
+
+    from app.services.capture.sensors import detect_anomalies
+
+    rng = np.random.default_rng(1)
+    signal = 2.0 + 0.05 * rng.standard_normal(300)
+    signal[200] = 3.5  # vibration spike
+    # At z=3 Gaussian noise alone crosses the line ~0.3% of the time, so expect the spike
+    # among a few false alarms; a stricter limit keeps only the spike.
+    assert 200 in detect_anomalies(signal, window=60, z=3.0)
+    assert detect_anomalies(signal, window=60, z=5.0) == [200]
+
+
+def test_detect_anomalies_matches_slow_reference() -> None:
+    import numpy as np
+
+    from app.services.capture.sensors import detect_anomalies
+
+    rng = np.random.default_rng(7)
+    x = rng.standard_normal(500) + np.where(rng.random(500) < 0.02, 6.0, 0.0)
+    w, z = 30, 2.5
+    slow = [
+        i
+        for i in range(w, x.size)
+        if abs(x[i] - x[i - w : i].mean()) / max(x[i - w : i].std(), 1e-6) > z
+    ]
+    assert detect_anomalies(x, window=w, z=z) == slow
+
+
+@pytest.mark.parametrize(
+    "values,expected", [([5.0] * 70 + [9.0], [70]), ([1.0] * 10, []), ([5.0] * 80, [])]
+)
+def test_detect_anomalies_edge_cases(values, expected) -> None:
+    from app.services.capture.sensors import detect_anomalies
+
+    assert detect_anomalies(values, window=60) == expected
+
+
+def _batch(machine_id, values, start_s=0):
+    from datetime import datetime, timedelta
+
+    from app.schemas.capture import SensorBatchIn
+
+    t0 = datetime(2026, 10, 27, 8, 0)
+    return SensorBatchIn(
+        machine_id=machine_id,
+        sensor="vibration",
+        readings=[
+            {"ts": t0 + timedelta(seconds=start_s + i), "value": v} for i, v in enumerate(values)
+        ],
+    )
+
+
+def test_ingest_uses_history_across_batches(db, shop) -> None:
+    import numpy as np
+
+    from app.models.ops import Anomaly, Event, SensorReading
+    from app.services.capture.sensors import ingest_readings
+
+    rng = np.random.default_rng(3)
+    calm = (2.0 + 0.05 * rng.standard_normal(80)).tolist()
+    first = ingest_readings(db, _batch(shop["vmc"].id, calm))
+    second = ingest_readings(db, _batch(shop["vmc"].id, [3.6, 2.0, 2.01], start_s=80))
+
+    assert first.anomalies == 0
+    assert second.stored == 3 and second.anomalies == 1  # spike is first reading of batch 2
+    anomaly = db.get(Anomaly, second.anomaly_ids[0])
+    assert anomaly.value == 3.6 and anomaly.zscore > 3
+    assert db.query(SensorReading).count() == 83
+    assert db.query(Event).filter_by(kind="anomaly").count() == 1
+
+
+def test_ingest_rejects_bad_batches(db, shop) -> None:
+    from app.errors import NotFound
+    from app.services.capture.sensors import ingest_readings
+
+    with pytest.raises(NotFound):
+        ingest_readings(db, _batch(999, [1.0]))
+    batch = _batch(shop["vmc"].id, [1.0, 2.0])
+    batch.readings.reverse()
+    with pytest.raises(ValidationFailed):
+        ingest_readings(db, batch)

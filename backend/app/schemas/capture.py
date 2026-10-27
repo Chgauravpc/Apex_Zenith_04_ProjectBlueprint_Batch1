@@ -4,6 +4,7 @@
 so field descriptions here double as instructions to the model.
 """
 
+from datetime import datetime
 from typing import Any, Dict, List, Literal, Optional
 
 from pydantic import BaseModel, Field
@@ -144,3 +145,22 @@ class HandwrittenResult(BaseModel):
     document_id: Optional[int] = Field(None, description="Set by the server")
     meeting_id: Optional[int] = Field(None, description="Set by the server")
     needs_review: int = Field(0, description="Set by the server: low-confidence items")
+
+
+class Reading(BaseModel):
+    ts: datetime
+    value: float
+
+
+class SensorBatchIn(BaseModel):
+    """Readings of one sensor on one machine, oldest first (simulator or gateway)."""
+
+    machine_id: int
+    sensor: Literal["vibration", "spindle_temp", "spindle_load"]
+    readings: List[Reading] = Field(min_length=1, max_length=10000)
+
+
+class IngestReport(BaseModel):
+    stored: int
+    anomalies: int
+    anomaly_ids: List[int] = Field(default_factory=list)
