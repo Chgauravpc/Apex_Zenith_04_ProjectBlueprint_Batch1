@@ -20,6 +20,7 @@ from typing import Any, Callable, Dict, List, Optional, Type, TypeVar
 
 import openai
 from pydantic import BaseModel, ValidationError
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from app.config import Settings, get_settings
@@ -111,9 +112,13 @@ def _cache_get(keys: List[str], schema: Type[T]) -> Optional[T]:
 
 
 def _cache_put(key: str, model: str, value: BaseModel) -> None:
-    with session_factory() as db:
-        db.merge(LLMCache(key=key, model=model, value=value.model_dump_json()))
-        db.commit()
+    """Best effort: a busy database must never fail the request that got a good answer."""
+    try:
+        with session_factory() as db:
+            db.merge(LLMCache(key=key, model=model, value=value.model_dump_json()))
+            db.commit()
+    except SQLAlchemyError as exc:
+        logger.warning("llm cache write skipped: %s", type(exc).__name__)
 
 
 _FENCE = re.compile(r"^\s*```(?:json)?\s*|\s*```\s*$")

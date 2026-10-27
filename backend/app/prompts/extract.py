@@ -12,6 +12,10 @@ EXTRACT_SYSTEM = (
     "exactly as written.\n"
     "- symptom must be one of the canonical keys listed in the schema, or null.\n"
     "- Put every number with its parameter in params (feed, speed, depth, spindle_temp ...).\n"
+    "- why: ONLY the reason the note itself gives. If the note gives no reason, why is null. "
+    "Never add an explanation from general knowledge: a wrong reason teaches the wrong thing.\n"
+    '- If the note reports what someone did ("increased feed to 0.3"), write action as that '
+    "report, not as advice; only notes that give advice become advice.\n"
     "- Do not invent facts that are not in the note. If the note has no know-how, return "
     "an empty cards list.\n"
     "- Lower confidence when the note is vague or the transcript looks garbled.\n"

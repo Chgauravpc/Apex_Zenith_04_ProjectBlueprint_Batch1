@@ -798,3 +798,11 @@ def test_sensor_sim_streams_to_api_and_spike_is_flagged(api, shop, db) -> None:
     assert [r["stored"] for r in reports] == [60, 60, 60, 60]
     flagged = {a.ts for a in db.query(Anomaly).filter_by(machine_id=shop["vmc"].id)}
     assert readings[150][0] in flagged
+
+
+def test_capture_response_carries_guardian_under_frontend_name(api, shop, fake_llm) -> None:
+    body = api.post(
+        "/api/capture/text",
+        json={"text": "VMC-3 pe chatter, feed 0.3 tha", "author_id": shop["ramesh"].id},
+    ).json()
+    assert body["guardian_result"] == body["guardian"]  # NoteEditor reads guardian_result

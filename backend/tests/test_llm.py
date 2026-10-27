@@ -146,3 +146,24 @@ def test_live_provider_returns_valid_json(task: str, db: Session, monkeypatch) -
     assert card.machine.upper().replace(" ", "") == "VMC-3"
     again = llm.chat_json(task, "Extract the machine name and the symptom (one word).", note, Card)
     assert again == card  # cache hit
+
+
+def test_cache_write_failure_does_not_fail_the_call(providers, monkeypatch) -> None:
+    from sqlalchemy.exc import OperationalError
+
+    class LockedSession:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *exc):
+            return False
+
+        def get(self, *a):
+            return None
+
+        def merge(self, *a):
+            raise OperationalError("INSERT", {}, Exception("database is locked"))
+
+    monkeypatch.setattr(llm, "session_factory", LockedSession)
+    providers[llm.GROQ].script = [GOOD]
+    assert llm.chat_json("extract", "E.", "n", Card).machine == "VMC-3"

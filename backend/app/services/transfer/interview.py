@@ -116,19 +116,41 @@ def _topics(db: Session, session: InterviewSession, n: int) -> List[Topic]:
     ).scalars():
         if not any(g.topic in t[1] for t in topics):
             topics.append(("gap", f"A new employee asked: {g.topic}", g.id, g.component_id, None))
-    covered = {c for (m, c) in holders(db, machine_id) if m == machine_id and c is not None}
+    who = holders(db, machine_id)
+    cards_on = {
+        c: sum(h.cards for h in hs)
+        for (m, c), hs in who.items()
+        if m == machine_id and c is not None
+    }
     taken = {t[3] for t in topics}
-    for comp in db.execute(select(Component).filter_by(machine_id=machine_id)).scalars():
-        if comp.id not in covered and comp.id not in taken:
+    comps = list(db.execute(select(Component).filter_by(machine_id=machine_id)).scalars())
+    for comp in comps:
+        if comp.id not in cards_on and comp.id not in taken:
             topics.append(
                 (
                     "part",
-                    f"Nothing recorded yet about the {comp.display_name.lower()}",
+                    f"Nothing recorded yet about the " f"{comp.display_name.lower()}",
                     None,
                     comp.id,
                     None,
                 )
             )
+            taken.add(comp.id)
+    # Nothing obviously missing: still go deeper, where the least has been recorded.
+    if len(topics) < n:
+        topics.append(("general", "What only you know about this machine", None, None, None))
+        for comp in sorted(comps, key=lambda c: (cards_on.get(c.id, 0), c.id)):
+            if comp.id not in taken:
+                topics.append(
+                    (
+                        "thin",
+                        f"Only {cards_on.get(comp.id, 0)} tip(s) recorded about "
+                        f"the {comp.display_name.lower()}",
+                        None,
+                        comp.id,
+                        None,
+                    )
+                )
     return topics[:n]
 
 
@@ -139,6 +161,12 @@ def _template(kind: str, text: str, machine: str) -> str:
         return (
             f'A new employee asked: "{asked}" How do you handle that on {machine}, '
             f"and how do you know it is time?"
+        )
+    if kind == "thin":
+        part = text.split("about the ", 1)[-1]
+        return (
+            f"We have very little about the {part} on {machine}. What is one thing about "
+            f"it that a new employee always gets wrong, and how do you check it?"
         )
     if "nothing recorded yet" in text.lower() or kind == "part":
         part = (
@@ -233,7 +261,7 @@ def start_interview(db: Session, payload: InterviewStartIn) -> InterviewSessionO
         employee_id=emp.id, machine_id=machine_id, plan_id=plan.id if plan else None, questions=[]
     )
     db.add(session)
-    db.flush()
+    db.commit()  # never hold SQLite's write lock while waiting for the LLM
     questions = next_interview_questions(db, session.id)
     if payload.component_id is not None:
         questions.sort(key=lambda q: q.component_id != payload.component_id)

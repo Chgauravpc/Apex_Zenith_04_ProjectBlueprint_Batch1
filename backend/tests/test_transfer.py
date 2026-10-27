@@ -209,3 +209,14 @@ def test_offline_answer_card_reads_question_then_answer(db, story, fake_llm) -> 
     assert q.startswith("What do you know about VMC-3") and "VMC-3 on VMC-3" not in q
     part = _template("task", "Explain the spindle on VMC-3 (nothing recorded yet)", "VMC-3")
     assert part.startswith("What usually goes wrong with the spindle on VMC-3?")
+
+
+def test_interview_still_asks_when_no_gaps_are_left(db, story, fake_llm) -> None:
+    """All parts covered and no open gaps: ask what only they know, then the thinnest parts."""
+    ramesh = story["people"]["Ramesh"]
+    session = interview.start_interview(
+        db, InterviewStartIn(employee_id=ramesh.id, machine_id=story["machines"]["VMC-3"].id)
+    )
+    texts = [q.text for q in session.questions]
+    assert len(texts) == 5 and texts[0].startswith("What do you know about VMC-3")
+    assert all("very little about the" in t for t in texts[1:])
