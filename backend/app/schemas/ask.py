@@ -131,3 +131,31 @@ class ChatterResult(BaseModel):
     formula: str = "RPM = 60 × fc / (N × k)"
     explanation: str
     expert_card: Optional[ExpertCard] = None
+
+
+class ChipColour(BaseModel):
+    colour: str  # silver / straw / bronze / violet / blue
+    hue: float  # OpenCV hue 0..179 (circular mean over chip pixels)
+    saturation: float  # 0..255
+    value: float  # 0..255
+    coverage: float  # % of the photo that is chips
+
+
+class ChipResult(BaseModel):
+    """Chip colour as a learning cue about cutting heat; lighting and coolant affect it."""
+
+    colour: str
+    hue: float
+    saturation: float
+    coverage: float
+    temperature_range: str
+    severity: Literal["ok", "caution", "stop"]
+    diagnosis: str
+    recommendation: str
+    tool_material: str
+    workpiece: str
+    note: str = (
+        "Colour is a cue, not a measurement: light, coolant and the camera change it. "
+        "Compare with the old employee's note and decide."
+    )
+    expert_card: Optional[ExpertCard] = None

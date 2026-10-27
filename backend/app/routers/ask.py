@@ -6,8 +6,15 @@ from fastapi import APIRouter, Depends, File, Form, UploadFile
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.schemas.ask import AskAnswer, AskRequest, ChatterResult, FeedbackIn, FeedbackOut
-from app.services.ask import chatter, qa
+from app.schemas.ask import (
+    AskAnswer,
+    AskRequest,
+    ChatterResult,
+    ChipResult,
+    FeedbackIn,
+    FeedbackOut,
+)
+from app.services.ask import chatter, chips, qa
 
 router = APIRouter(prefix="/ask", tags=["ask"])
 
@@ -40,6 +47,18 @@ def ask_chatter(
 ) -> ChatterResult:
     """Record 5–10 s of cutting sound: chatter frequency and stable speeds to try."""
     return chatter.chatter_from_upload(db, file, machine_id, teeth, current_rpm)
+
+
+@router.post("/chips", response_model=ChipResult)
+def ask_chips(
+    file: UploadFile = File(...),
+    tool_material: str = Form("carbide"),
+    workpiece: str = Form("SS304"),
+    machine_id: Optional[int] = Form(None),
+    db: Session = Depends(get_db),
+) -> ChipResult:
+    """Photo of chips: colour, what it says about cutting heat, and the old employee's note."""
+    return chips.read_chips(db, file, tool_material, workpiece, machine_id)
 
 
 @router.post("/{query_id}/feedback", response_model=FeedbackOut)
