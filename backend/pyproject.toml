@@ -15,3 +15,10 @@ ignore = ["UP006", "UP007", "UP035"]
 testpaths = ["tests"]
 markers = ["live: calls real Groq/OpenRouter APIs (needs keys)"]
 addopts = "-m 'not live'"
+
+[tool.ruff.lint.flake8-bugbear]
+# FastAPI declares dependencies and form fields as call defaults; that is intended.
+extend-immutable-calls = [
+  "fastapi.Depends", "fastapi.File", "fastapi.Form", "fastapi.Query", "fastapi.Path",
+  "fastapi.Body", "fastapi.params.Depends",
+]

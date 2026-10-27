@@ -226,3 +226,121 @@ def test_embeddings_unavailable_returns_none(monkeypatch) -> None:
     monkeypatch.setattr(embeddings, "_load_failed", True)
     assert embeddings.try_embed(["chatter"]) is None
     assert embeddings.embed([]).shape == (0, 384)
+
+
+# --- capture endpoints -----------------------------------------------------------------------
+
+
+@pytest.fixture()
+def api(client, shop, tmp_path, monkeypatch):
+    """Client with temp storage and no heavy embedding model (vectors tested above)."""
+    from app.config import get_settings
+    from app.services import embeddings
+
+    monkeypatch.setattr(get_settings(), "storage_dir", str(tmp_path))
+    monkeypatch.setattr(embeddings, "try_embed", lambda texts, kind="passage": None)
+    return client
+
+
+def test_text_note_offline_makes_card(api, shop, fake_llm) -> None:
+    resp = api.post(
+        "/api/capture/text",
+        json={"text": "VMC-3 pe chatter, feed 0.3 tha", "author_id": shop["ramesh"].id},
+    )
+    body = resp.json()
+    assert resp.status_code == 200, body
+    assert body["mode"] == "offline" and body["transcript"] is None
+    card = body["cards"][0]
+    assert card["machine_id"] == shop["vmc"].id and card["symptom"] == "chatter"
+    assert card["params"] == {"feed": 0.3} and card["verified_by_id"] is None
+
+
+def test_text_note_live_and_hook_result(api, shop, fake_llm, monkeypatch) -> None:
+    from app.services.capture import voice
+
+    fake_llm.responses["extract"] = ExtractionResult(
+        cards=[
+            ExtractedCard(
+                title="Coolant nozzle", machine="VMC-3", component="nozzle", action="Clean it daily"
+            )
+        ]
+    )
+    seen = []
+
+    def failing_hook(db, doc):
+        raise RuntimeError("boom")
+
+    def guardian_hook(db, doc):
+        seen.append(doc.id)
+        return {"severity": "info", "warnings": []}
+
+    monkeypatch.setattr(voice, "NOTE_SAVED_HOOKS", [failing_hook, guardian_hook])
+    body = api.post(
+        "/api/capture/text",
+        json={"text": "Clean the coolant nozzle daily", "author_id": shop["ramesh"].id},
+    ).json()
+
+    assert body["mode"] == "live" and body["cards"][0]["title"] == "Coolant nozzle"
+    assert body["guardian"] == {"severity": "info", "warnings": []}
+    assert seen == [body["document_id"]]
+
+
+def test_voice_note_is_transcribed_and_saved(api, shop, fake_llm, monkeypatch) -> None:
+    from app.services import stt
+
+    def transcribe(path, language=None):
+        assert path.is_file() and path.suffix == ".webm"
+        return stt.Transcript(text="स्पिंडल से चैटर आ रहा है", language="hindi")
+
+    monkeypatch.setattr(stt, "transcribe", transcribe)
+    resp = api.post(
+        "/api/capture/voice",
+        files={"file": ("blob", b"\x1aE\xdf\xa3audio", "audio/webm")},
+        data={
+            "author_id": str(shop["ramesh"].id),
+            "machine_id": str(shop["vmc"].id),
+            "language": "hi",
+        },
+    )
+    body = resp.json()
+    assert resp.status_code == 200, body
+    assert body["transcript"] == "स्पिंडल से चैटर आ रहा है"
+    assert body["cards"][0]["component_id"] == shop["spindle"].id
+
+
+def test_voice_note_kept_when_stt_unavailable(api, shop, db, monkeypatch) -> None:
+    from app.config import get_settings
+    from app.models.knowledge import Document
+
+    monkeypatch.setattr(get_settings(), "groq_api_key", None)
+    resp = api.post(
+        "/api/capture/voice",
+        files={"file": ("n.wav", b"RIFFdata", "audio/wav")},
+        data={"author_id": str(shop["ramesh"].id)},
+    )
+    body = resp.json()
+    assert resp.status_code == 200 and body["mode"] == "offline" and body["cards"] == []
+    doc = db.get(Document, body["document_id"])
+    assert doc.type == "voice" and doc.text is None and doc.file_path.endswith(".wav")
+
+
+@pytest.mark.parametrize(
+    "payload,status",
+    [
+        ({"text": "chatter", "author_id": 999}, 404),
+        ({"text": "chatter", "author_id": 1, "machine_id": 999}, 404),
+        ({"text": "", "author_id": 1}, 422),
+        ({"text": "x" * 8001, "author_id": 1}, 422),
+    ],
+)
+def test_text_note_bad_input(api, shop, payload, status) -> None:
+    assert api.post("/api/capture/text", json=payload).status_code == status
+
+
+def test_voice_rejects_wrong_file_type(api, shop) -> None:
+    resp = api.post(
+        "/api/capture/voice",
+        files={"file": ("x.pdf", b"%PDF", "application/pdf")},
+        data={"author_id": str(shop["ramesh"].id)},
+    )
+    assert resp.status_code == 422 and resp.json()["code"] == "validation_failed"

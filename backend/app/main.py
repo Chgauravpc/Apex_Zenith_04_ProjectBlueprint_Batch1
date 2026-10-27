@@ -16,6 +16,7 @@ from fastapi.staticfiles import StaticFiles
 from app.config import get_settings
 from app.database import init_db
 from app.errors import register_handlers
+from app.routers import capture
 
 logger = logging.getLogger(__name__)
 
@@ -47,6 +48,8 @@ def create_app() -> FastAPI:
     def health() -> Dict[str, str]:
         """Liveness check used by the frontend and the demo tunnel."""
         return {"status": "ok"}
+
+    app.include_router(capture.router, prefix="/api")
 
     storage = Path(settings.storage_dir)
     storage.mkdir(parents=True, exist_ok=True)

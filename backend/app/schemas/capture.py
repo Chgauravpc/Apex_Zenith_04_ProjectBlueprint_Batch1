@@ -4,7 +4,7 @@
 so field descriptions here double as instructions to the model.
 """
 
-from typing import Dict, List, Literal, Optional
+from typing import Any, Dict, List, Literal, Optional
 
 from pydantic import BaseModel, Field
 
@@ -41,3 +41,45 @@ class ExtractionResult(BaseModel):
     """Top-level JSON object returned by the extraction prompt."""
 
     cards: List[ExtractedCard] = Field(default_factory=list)
+
+
+class TextNoteIn(BaseModel):
+    """Typed note from the PWA or the ERP widget."""
+
+    text: str = Field(min_length=1, max_length=8000)
+    author_id: int
+    machine_id: Optional[int] = None
+    language: Optional[Literal["hi", "mr", "en"]] = None
+
+
+class CardOut(BaseModel):
+    """A saved Know-How Card as shown to the user."""
+
+    model_config = {"from_attributes": True}
+
+    id: int
+    title: str
+    machine_id: Optional[int] = None
+    component_id: Optional[int] = None
+    symptom: Optional[str] = None
+    context: Optional[str] = None
+    action: str
+    why: Optional[str] = None
+    params: Dict[str, float] = Field(default_factory=dict)
+    confidence: float
+    author_id: Optional[int] = None
+    verified_by_id: Optional[int] = None
+    unofficial: bool = False
+
+
+class VoiceNoteOut(BaseModel):
+    """Result of saving a typed or spoken note."""
+
+    document_id: int
+    transcript: Optional[str] = None  # None for typed notes or when speech-to-text is down
+    language: Optional[str] = None
+    cards: List[CardOut] = Field(default_factory=list)
+    mode: Mode = "live"  # offline = rules/lexicon only, no AI provider reached
+    message: Optional[str] = None
+    # Filled by Note Guardian (registered on the on_note_saved hook); None until it runs.
+    guardian: Optional[Dict[str, Any]] = None
