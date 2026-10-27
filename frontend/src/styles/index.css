@@ -1,1 +1,25 @@
-/* Tailwind directives + global styles. Implemented in TASKS.md T02. */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: light dark;
+  }
+
+  body {
+    @apply bg-slate-900 text-slate-100 min-h-screen font-sans antialiased selection:bg-cyan-500 selection:text-white;
+    margin: 0;
+    padding: 0;
+  }
+
+  button, a, input, select, textarea {
+    @apply focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:ring-offset-2 focus:ring-offset-slate-900;
+  }
+}
+
+/* Touch targets >= 44px for shop floor tablet & mobile use per ENGINEERING.md */
+.btn-touch {
+  min-height: 44px;
+  min-width: 44px;
+}

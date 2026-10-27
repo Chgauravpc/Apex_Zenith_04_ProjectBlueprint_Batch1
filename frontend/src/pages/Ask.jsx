@@ -1,2 +1,33 @@
-// Ask Experience chat + Chatter Doctor + Chip Reader.
-// Implemented in TASKS.md T20. See PRD.md §9 and ENGINEERING.md.
+import React from 'react';
+import { useAuthStore } from '../store/useAuthStore';
+import { t } from '../utils/i18n';
+
+export default function Ask() {
+  const { language } = useAuthStore();
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-4">
+        <div>
+          <h1 className="text-2xl font-bold text-white tracking-tight flex items-center space-x-2">
+            <span>💡</span>
+            <span>{t('navAsk', language)}</span>
+          </h1>
+          <p className="text-slate-400 text-sm mt-1">
+            Grounded Q&A citing experienced machinists, plus Chatter Doctor and Chip Colour Reader.
+          </p>
+        </div>
+      </div>
+
+      <div className="bg-slate-800/80 border border-slate-700/70 rounded-xl p-8 text-center">
+        <div className="w-16 h-16 mx-auto mb-4 bg-amber-500/10 border border-amber-500/20 text-amber-400 rounded-2xl flex items-center justify-center text-3xl">
+          💡
+        </div>
+        <h2 className="text-xl font-semibold text-white">Ask Experience Interface</h2>
+        <p className="text-slate-400 text-sm max-w-md mx-auto mt-2">
+          ChatWindow with cited sources, ChatterDoctor (audio FFT to stable RPM), and ChipReader (HSV colour segmentation) are loaded here in T20.
+        </p>
+      </div>
+    </div>
+  );
+}
