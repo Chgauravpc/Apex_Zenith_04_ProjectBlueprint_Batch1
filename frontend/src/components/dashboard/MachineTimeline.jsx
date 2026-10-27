@@ -87,11 +87,11 @@ export default function MachineTimeline() {
         </div>
 
         <div className="flex items-center space-x-2 text-xs">
-          <label className="text-slate-300">Filter Machine:</label>
+          <label className="text-slate-400 font-medium">Filter Machine:</label>
           <select
             value={machineFilter}
             onChange={(e) => setMachineFilter(e.target.value)}
-            className="bg-slate-900 border border-slate-700 text-slate-200 py-1 px-2.5 rounded-lg"
+            className="bg-slate-900 border border-slate-700 text-slate-200 py-1 pl-2.5 pr-7 rounded-lg font-semibold focus:border-cyan-400 text-xs"
           >
             <option value="all">All Machines</option>
             <option value="VMC-3">VMC-3</option>
@@ -101,15 +101,15 @@ export default function MachineTimeline() {
       </div>
 
       {/* Timeline Stream */}
-      <div className="relative border-l-2 border-slate-700 ml-4 pl-6 space-y-6">
+      <div className="relative border-l-2 border-slate-800 ml-4 pl-6 space-y-6">
         {filteredEvents.map((event) => (
           <div key={event.id} className="relative group">
             {/* Timeline node icon */}
-            <div className="absolute -left-[35px] top-0.5 w-6 h-6 rounded-full bg-slate-900 border-2 border-slate-600 flex items-center justify-center text-[11px] shadow group-hover:border-cyan-400 transition">
-              {event.icon}
+            <div className="absolute -left-[38px] top-0.5 w-7 h-7 rounded-full bg-slate-950 border-2 border-slate-700 flex items-center justify-center text-xs shadow-md group-hover:border-cyan-400 transition-colors">
+              <span aria-hidden="true">{event.icon}</span>
             </div>
 
-            <div className="bg-slate-900/70 border border-slate-800 rounded-xl p-3.5 space-y-1.5 shadow-sm transition hover:border-slate-700">
+            <div className="bg-slate-900/90 hover:bg-slate-900 border border-slate-800 hover:border-slate-700/80 rounded-2xl p-4 space-y-2 shadow-sm transition-all">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-xs">
                 <div className="flex items-center space-x-2">
                   <span
@@ -117,7 +117,7 @@ export default function MachineTimeline() {
                   >
                     {event.kindLabel}
                   </span>
-                  <span className="font-bold text-slate-200">
+                  <span className="font-bold text-slate-200 font-mono">
                     {event.machine}
                   </span>
                 </div>
@@ -128,7 +128,7 @@ export default function MachineTimeline() {
                 {event.summary}
               </p>
 
-              <div className="text-[10px] text-slate-400 flex items-center space-x-1 pt-1">
+              <div className="text-[10px] text-slate-400 flex items-center space-x-1 pt-1 border-t border-slate-800/80">
                 <span>Logged by:</span>
                 <span className="text-cyan-300 font-semibold">{event.actor}</span>
               </div>

@@ -55,36 +55,36 @@ export default function VoiceRecorder({ onSaved }) {
 
   return (
     <div className="bg-slate-800/90 border border-slate-700/80 rounded-2xl p-6 shadow-xl space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-700/60 pb-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-700/60 pb-5">
         <div>
-          <h2 className="text-lg font-bold text-white flex items-center space-x-2">
-            <span>🎙️</span>
+          <h2 className="text-lg font-bold text-white flex items-center space-x-2.5">
+            <span aria-hidden="true">🎙️</span>
             <span>Voice Note Capture</span>
           </h2>
-          <p className="text-slate-400 text-xs mt-1">
+          <p className="text-slate-400 text-xs mt-1.5 font-medium">
             Speak naturally in Hindi, Marathi, or English. AI transcribes and extracts shop-floor know-how cards.
           </p>
         </div>
 
-        <div className="flex items-center space-x-3 text-xs">
-          <label className="flex items-center space-x-1 text-slate-300">
-            <span>Machine:</span>
+        <div className="flex items-center space-x-2.5 text-xs">
+          <label className="flex items-center space-x-1.5 text-slate-300">
+            <span className="font-medium text-slate-400">Machine:</span>
             <select
               value={machineId}
               onChange={(e) => setMachineId(Number(e.target.value))}
-              className="bg-slate-900 border border-slate-700 text-slate-200 py-1 px-2 rounded-lg"
+              className="bg-slate-900 border border-slate-700 text-slate-200 py-1 pl-2 pr-6 rounded-lg font-semibold"
             >
               <option value={1}>VMC-3</option>
               <option value={2}>Lathe-2</option>
             </select>
           </label>
 
-          <label className="flex items-center space-x-1 text-slate-300">
-            <span>Audio Lang:</span>
+          <label className="flex items-center space-x-1.5 text-slate-300">
+            <span className="font-medium text-slate-400">Lang:</span>
             <select
               value={selectedLanguage}
               onChange={(e) => setSelectedLanguage(e.target.value)}
-              className="bg-slate-900 border border-slate-700 text-slate-200 py-1 px-2 rounded-lg"
+              className="bg-slate-900 border border-slate-700 text-slate-200 py-1 pl-2 pr-6 rounded-lg font-semibold"
             >
               <option value="hi">हिन्दी (Hindi)</option>
               <option value="mr">मराठी (Marathi)</option>
@@ -95,28 +95,28 @@ export default function VoiceRecorder({ onSaved }) {
       </div>
 
       {/* Recording Controls */}
-      <div className="flex flex-col items-center justify-center py-6 bg-slate-900/60 rounded-xl border border-slate-800/80">
-        <div className="text-3xl font-mono font-bold text-slate-200 mb-4 tracking-wider">
+      <div className="flex flex-col items-center justify-center py-8 px-4 bg-slate-950/70 rounded-2xl border border-slate-800 shadow-inner relative overflow-hidden">
+        <div className="text-4xl font-mono font-extrabold text-white mb-5 tracking-widest bg-slate-900/90 px-6 py-2 rounded-xl border border-slate-800 shadow-inner">
           {formatSeconds(duration)}
         </div>
 
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-3">
           {!isRecording ? (
             <button
               type="button"
               onClick={startRecording}
-              className="btn-touch px-6 py-3 bg-red-600 hover:bg-red-500 text-white font-bold rounded-full shadow-lg hover:shadow-red-500/20 transition flex items-center space-x-2 text-sm"
+              className="btn-touch px-6 py-3 bg-red-600 hover:bg-red-500 active:scale-[0.98] text-white font-extrabold rounded-xl shadow-lg shadow-red-600/30 transition-all flex items-center space-x-2 text-sm"
             >
-              <span className="w-3 h-3 bg-white rounded-full animate-pulse" />
+              <span className="w-2.5 h-2.5 bg-white rounded-full animate-pulse" />
               <span>{t('record', language)}</span>
             </button>
           ) : (
             <button
               type="button"
               onClick={stopRecording}
-              className="btn-touch px-6 py-3 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-full shadow-lg transition flex items-center space-x-2 text-sm"
+              className="btn-touch px-6 py-3 bg-amber-500 hover:bg-amber-400 active:scale-[0.98] text-slate-950 font-extrabold rounded-xl shadow-lg shadow-amber-500/30 transition-all flex items-center space-x-2 text-sm"
             >
-              <span className="w-3 h-3 bg-slate-950 rounded-sm" />
+              <span className="w-2.5 h-2.5 bg-slate-950 rounded-sm" />
               <span>{t('stopRecord', language)}</span>
             </button>
           )}
@@ -125,7 +125,7 @@ export default function VoiceRecorder({ onSaved }) {
             <button
               type="button"
               onClick={resetRecording}
-              className="btn-touch px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium rounded-xl border border-slate-700 transition text-xs"
+              className="btn-touch px-4 py-2.5 bg-slate-800 hover:bg-slate-700 active:scale-[0.98] text-slate-300 hover:text-white font-medium rounded-xl border border-slate-700 transition text-xs"
             >
               Reset
             </button>
@@ -133,22 +133,22 @@ export default function VoiceRecorder({ onSaved }) {
         </div>
 
         {isRecording && (
-          <p className="text-red-400 text-xs font-medium mt-3 flex items-center space-x-1.5">
+          <p className="text-red-400 text-xs font-semibold mt-4 flex items-center space-x-2">
             <span className="animate-ping w-2 h-2 rounded-full bg-red-400" />
             <span>Recording audio... speak into the microphone</span>
           </p>
         )}
 
         {recorderError && (
-          <p className="text-red-400 text-xs mt-3 bg-red-950/50 px-3 py-1.5 rounded-lg border border-red-500/30">
+          <p className="text-red-400 text-xs mt-3 bg-red-950/60 px-3.5 py-2 rounded-xl border border-red-500/40">
             {recorderError}
           </p>
         )}
 
         {/* Audio Player */}
         {audioUrl && !isRecording && (
-          <div className="mt-4 w-full max-w-md px-4">
-            <audio controls src={audioUrl} className="w-full h-10 rounded-lg" />
+          <div className="mt-5 w-full max-w-md px-2">
+            <audio controls src={audioUrl} className="w-full h-10 rounded-xl" />
           </div>
         )}
       </div>
@@ -160,7 +160,7 @@ export default function VoiceRecorder({ onSaved }) {
             type="button"
             disabled={isSubmitting}
             onClick={handleSubmit}
-            className="btn-touch px-6 py-2.5 bg-cyan-500 hover:bg-cyan-400 disabled:opacity-50 text-slate-950 font-bold rounded-xl shadow transition text-sm flex items-center space-x-2"
+            className="btn-touch px-6 py-2.5 bg-gradient-to-r from-cyan-400 to-cyan-500 hover:from-cyan-300 hover:to-cyan-400 active:scale-[0.98] disabled:opacity-50 text-slate-950 font-extrabold rounded-xl shadow-lg shadow-cyan-500/20 transition-all text-sm flex items-center space-x-2"
           >
             {isSubmitting ? (
               <>

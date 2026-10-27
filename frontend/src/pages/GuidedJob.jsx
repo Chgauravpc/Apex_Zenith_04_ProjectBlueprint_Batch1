@@ -117,45 +117,45 @@ export default function GuidedJob() {
   return (
     <div className="space-y-6">
       {/* Header with Skill Badge & Toggles */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-700/60 pb-5">
         <div>
-          <div className="flex items-center space-x-2 mb-1">
+          <div className="flex flex-wrap items-center gap-2 mb-1.5">
             <span className="text-xl" aria-hidden="true">📋</span>
-            <h1 className="text-2xl font-extrabold text-white tracking-tight">
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
               {t('navGuide', language)}
             </h1>
-            <span className="text-slate-500">•</span>
+            <span className="text-slate-600">•</span>
             <SkillBadge level={skillLevel} showDetails />
           </div>
-          <p className="text-slate-400 text-xs sm:text-sm">
-            {DEMO_PROCEDURE.title} (v{DEMO_PROCEDURE.version}) on {DEMO_PROCEDURE.machine}
+          <p className="text-slate-400 text-xs sm:text-sm font-medium">
+            <span className="text-slate-200">{DEMO_PROCEDURE.title}</span> (v{DEMO_PROCEDURE.version}) on <span className="text-cyan-300 font-mono">{DEMO_PROCEDURE.machine}</span>
           </p>
         </div>
 
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-2.5">
           <button
             type="button"
             onClick={() => setShowShadowTrace(!showShadowTrace)}
-            className={`btn-touch px-3 py-1.5 rounded-xl text-xs font-semibold border transition flex items-center space-x-1.5 ${
+            className={`btn-touch px-3.5 py-1.5 rounded-xl text-xs font-semibold border transition-all flex items-center space-x-1.5 active:scale-[0.98] ${
               showShadowTrace
-                ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40'
-                : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border-slate-700'
+                ? 'bg-slate-800 text-cyan-300 border-slate-600 shadow-sm'
+                : 'bg-slate-900/90 hover:bg-slate-800 text-slate-300 border-slate-700'
             }`}
           >
-            <span>🎬</span>
+            <span aria-hidden="true">🎬</span>
             <span>ShadowTrace™</span>
           </button>
 
           <button
             type="button"
             onClick={() => setShowTroubleshoot(!showTroubleshoot)}
-            className={`btn-touch px-3 py-1.5 rounded-xl text-xs font-semibold border transition flex items-center space-x-1.5 ${
+            className={`btn-touch px-3.5 py-1.5 rounded-xl text-xs font-semibold border transition-all flex items-center space-x-1.5 active:scale-[0.98] ${
               showTroubleshoot
-                ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
-                : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border-slate-700'
+                ? 'bg-amber-950/40 text-amber-300 border-amber-500/50 shadow-sm'
+                : 'bg-slate-900/90 hover:bg-slate-800 text-slate-300 border-slate-700'
             }`}
           >
-            <span>🌳</span>
+            <span aria-hidden="true">🌳</span>
             <span>Troubleshoot</span>
           </button>
         </div>

@@ -6,9 +6,9 @@ export default function RoleSwitcher() {
   const { currentUser, setUser, language, setLanguage } = useAuthStore();
 
   return (
-    <div className="flex flex-wrap items-center gap-3 bg-slate-800/80 border border-slate-700/60 rounded-xl px-3 py-1.5 shadow-sm text-xs">
-      <div className="flex items-center space-x-2">
-        <span className="text-slate-400 font-medium">
+    <div className="flex items-center gap-1.5 sm:gap-2 bg-slate-900/90 border border-slate-700/80 rounded-xl px-2 sm:px-2.5 py-1 shadow-sm text-xs backdrop-blur-sm flex-shrink-0">
+      <div className="flex items-center space-x-1 sm:space-x-1.5">
+        <span className="text-slate-400 font-medium text-[11px] whitespace-nowrap hidden xl:inline">
           {t('activeRole', language)}:
         </span>
         <select
@@ -18,7 +18,7 @@ export default function RoleSwitcher() {
             if (found) setUser(found);
           }}
           aria-label="Select Demo User and Role"
-          className="bg-slate-900 border border-slate-700 text-cyan-300 font-semibold py-1 px-2.5 rounded-lg cursor-pointer focus:ring-1 focus:ring-cyan-400 text-xs"
+          className="bg-slate-800/90 border border-slate-700 text-cyan-300 font-semibold py-1 pl-2 pr-6 rounded-lg cursor-pointer hover:border-slate-600 transition text-xs max-w-[125px] sm:max-w-[155px] xl:max-w-[185px] truncate focus:border-cyan-400"
         >
           {DEMO_USERS.map((user) => (
             <option key={user.id} value={user.id}>
@@ -28,9 +28,9 @@ export default function RoleSwitcher() {
         </select>
       </div>
 
-      <div className="h-4 w-px bg-slate-700 hidden sm:block" />
+      <div className="h-4 w-px bg-slate-700/80 hidden sm:block" />
 
-      <div className="flex items-center space-x-1">
+      <div className="flex items-center">
         <label htmlFor="lang-select" className="sr-only">
           Language
         </label>
@@ -39,7 +39,7 @@ export default function RoleSwitcher() {
           value={language}
           onChange={(e) => setLanguage(e.target.value)}
           aria-label="Language selection"
-          className="bg-slate-900 border border-slate-700 text-slate-300 py-1 px-2 rounded-lg cursor-pointer focus:ring-1 focus:ring-cyan-400 text-xs"
+          className="bg-slate-800/90 border border-slate-700 text-slate-200 py-1 pl-2 pr-6 rounded-lg cursor-pointer hover:border-slate-600 transition text-xs focus:border-cyan-400"
         >
           {LANGUAGES.map((lang) => (
             <option key={lang.code} value={lang.code}>

@@ -57,23 +57,23 @@ export default function TransferMetrics() {
         {metrics.map((m) => (
           <div
             key={m.label}
-            className="bg-slate-900 border border-slate-800 rounded-xl p-4 space-y-2 shadow-sm flex flex-col justify-between"
+            className="group bg-slate-900/90 hover:bg-slate-900 border border-slate-800 hover:border-slate-700/80 rounded-2xl p-5 space-y-3 shadow-md transition-all flex flex-col justify-between"
           >
             <div>
-              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block font-mono">
                 {m.label}
               </span>
-              <div className="text-2xl font-black text-white mt-1 font-mono tracking-tight">
+              <div className="text-3xl font-extrabold text-white mt-1 font-mono tracking-tight group-hover:text-cyan-300 transition-colors">
                 {m.value}
               </div>
-              <span className="inline-block mt-1 px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                {m.delta}
+              <span className="inline-flex items-center space-x-1 mt-2 px-2.5 py-0.5 rounded-lg text-[10px] font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 font-mono shadow-sm">
+                <span>{m.delta}</span>
               </span>
             </div>
 
-            <div className="pt-2 border-t border-slate-800 text-[11px] text-slate-400">
+            <div className="pt-3 border-t border-slate-800/80 text-[11px] text-slate-400 leading-snug">
               <span className="font-semibold text-slate-300 block">{m.baseline}</span>
-              <span className="text-slate-500 leading-tight block mt-0.5">{m.desc}</span>
+              <span className="text-slate-500 leading-normal block mt-1">{m.desc}</span>
             </div>
           </div>
         ))}

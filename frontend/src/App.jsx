@@ -55,9 +55,15 @@ export default function App() {
         </ErrorBoundary>
       </main>
 
-      <footer className="border-t border-slate-800/80 bg-slate-950/60 py-4 text-center text-xs text-slate-500">
-        <div className="max-w-7xl mx-auto px-4">
-          Project Blueprint • CNC/VMC Machine Knowledge Transfer • Offline-first shop floor assistant
+      <footer className="border-t border-slate-700/60 bg-slate-950/80 backdrop-blur-sm py-4 text-xs text-slate-400">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-2 text-center sm:text-left">
+          <div className="flex items-center space-x-2">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" aria-hidden="true" />
+            <span className="font-medium text-slate-400">Project Blueprint — CNC/VMC Machine Knowledge Transfer</span>
+          </div>
+          <div className="text-slate-500 font-mono text-[11px]">
+            Offline-first Shop Floor Assistant • v0.1.0
+          </div>
         </div>
       </footer>
     </div>

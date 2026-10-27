@@ -103,26 +103,30 @@ export default function Review() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-700/60 pb-5">
         <div>
-          <h1 className="text-2xl font-extrabold text-white tracking-tight flex items-center space-x-2">
-            <span>✅</span>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight flex items-center space-x-2.5">
+            <span aria-hidden="true">✅</span>
             <span>{t('navReview', language)}</span>
           </h1>
-          <p className="text-slate-400 text-xs sm:text-sm mt-1">
+          <p className="text-slate-400 text-xs sm:text-sm mt-1.5 font-medium leading-relaxed">
             Sign-off queue for experienced employees. Verify, correct, or reject AI-extracted know-how before it reaches operators.
           </p>
         </div>
 
-        <span className="text-xs bg-slate-800 border border-slate-700 text-cyan-300 px-3 py-1.5 rounded-xl font-semibold">
-          {pendingCards.length} Cards Pending Verification
+        <span className="text-xs bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 px-3.5 py-1.5 rounded-xl font-semibold font-mono shadow-sm flex items-center space-x-2 self-start sm:self-auto">
+          <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" aria-hidden="true" />
+          <span>{pendingCards.length} Cards Pending Verification</span>
         </span>
       </div>
 
       {feedbackMsg && (
-        <div className="p-3 bg-emerald-950/80 border border-emerald-500/50 rounded-xl text-emerald-200 text-xs font-semibold flex items-center justify-between">
-          <span>✓ {feedbackMsg}</span>
-          <button type="button" onClick={() => setFeedbackMsg(null)} className="text-emerald-400 font-bold">
+        <div className="p-3.5 bg-emerald-950/80 border border-emerald-500/50 rounded-xl text-emerald-200 text-xs font-semibold flex items-center justify-between shadow-lg">
+          <span className="flex items-center space-x-2">
+            <span className="text-emerald-400 font-bold">✓</span>
+            <span>{feedbackMsg}</span>
+          </span>
+          <button type="button" onClick={() => setFeedbackMsg(null)} className="text-emerald-400 font-bold hover:text-emerald-300 px-2 py-1">
             ✕
           </button>
         </div>
@@ -230,7 +234,7 @@ export default function Review() {
                     <button
                       type="button"
                       onClick={() => handleReject(card.id)}
-                      className="btn-touch px-3 py-1.5 text-red-400 hover:text-red-300 text-xs font-semibold"
+                      className="btn-touch px-3 py-1.5 text-red-400 hover:text-red-300 text-xs font-semibold rounded-lg hover:bg-red-950/40 border border-transparent hover:border-red-500/30 transition"
                     >
                       Discard / Reject
                     </button>
@@ -239,7 +243,7 @@ export default function Review() {
                       <button
                         type="button"
                         onClick={() => startEdit(card)}
-                        className="btn-touch px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-lg border border-slate-700"
+                        className="btn-touch px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 active:scale-[0.98] text-slate-200 text-xs font-semibold rounded-xl border border-slate-700 transition"
                       >
                         Edit Details ✏️
                       </button>
@@ -248,7 +252,7 @@ export default function Review() {
                         type="button"
                         disabled={isSubmitting}
                         onClick={() => handleApprove(card, false)}
-                        className="btn-touch px-5 py-1.5 bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-slate-950 font-bold text-xs rounded-lg shadow"
+                        className="btn-touch px-5 py-1.5 bg-emerald-500 hover:bg-emerald-400 active:scale-[0.98] disabled:opacity-50 text-slate-950 font-extrabold text-xs rounded-xl shadow-lg shadow-emerald-500/20 transition"
                       >
                         Approve & Verify ✓
                       </button>

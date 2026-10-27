@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import RoleSwitcher from './RoleSwitcher';
+import ThemeToggle from './ThemeToggle';
 import { useAuthStore } from '../../store/useAuthStore';
 import { t } from '../../utils/i18n';
 
@@ -20,58 +21,59 @@ export default function NavBar() {
   ];
 
   return (
-    <header className="sticky top-0 z-40 bg-slate-900/95 backdrop-blur border-b border-slate-800 shadow-md">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
+    <header className="sticky top-0 z-40 bg-slate-950/90 backdrop-blur-md border-b border-slate-700/80 shadow-lg shadow-black/20">
+      <div className="max-w-[1600px] w-full mx-auto px-2 sm:px-4 lg:px-6">
+        <div className="flex items-center justify-between h-16 gap-2">
           {/* Brand Logo */}
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center flex-shrink-0">
             <NavLink
               to="/"
-              className="flex items-center space-x-2 text-slate-100 hover:text-cyan-400 transition"
+              className="flex items-center space-x-2 text-slate-100 hover:text-cyan-400 transition group"
             >
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center font-black text-slate-950 text-base shadow-sm">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-400 via-cyan-500 to-blue-600 flex items-center justify-center font-black text-slate-950 text-sm shadow-sm ring-1 ring-cyan-300/40 group-hover:scale-105 transition-transform">
                 BP
               </div>
-              <span className="font-bold text-lg tracking-tight hidden sm:inline-block">
+              <span className="font-extrabold text-sm sm:text-base tracking-tight text-white hidden sm:inline-block">
                 {t('appName', language)}
               </span>
             </NavLink>
           </div>
 
-          {/* Desktop Navigation Links */}
-          <nav className="hidden lg:flex items-center space-x-1" aria-label="Main Navigation">
+          {/* Desktop Navigation Links Rail */}
+          <nav className="hidden lg:flex items-center space-x-0.5 bg-slate-900/80 p-1 rounded-xl border border-slate-800 flex-shrink-0" aria-label="Main Navigation">
             {navItems.map((item) => (
               <NavLink
                 key={item.to}
                 to={item.to}
                 end={item.to === '/'}
                 className={({ isActive }) =>
-                  `px-3 py-1.5 rounded-lg text-xs font-medium transition flex items-center space-x-1.5 ${
+                  `px-2 xl:px-2.5 py-1.5 rounded-lg text-xs transition-all flex items-center space-x-1 ${
                     isActive
-                      ? 'bg-cyan-500/15 text-cyan-400 border border-cyan-500/30'
-                      : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+                      ? 'bg-slate-800 text-cyan-300 font-semibold border border-slate-700 shadow-sm'
+                      : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50 border border-transparent font-medium'
                   }`
                 }
               >
-                <span aria-hidden="true">{item.icon}</span>
+                <span aria-hidden="true" className="text-xs">{item.icon}</span>
                 <span>{t(item.labelKey, language)}</span>
               </NavLink>
             ))}
           </nav>
 
-          {/* Right Action: Role Switcher & Mobile Menu Button */}
-          <div className="flex items-center space-x-3">
+          {/* Right Action: Role Switcher, Theme Toggle & Mobile Menu Button */}
+          <div className="flex items-center space-x-1.5 sm:space-x-2 flex-shrink-0">
             <RoleSwitcher />
+            <ThemeToggle />
 
             {/* Mobile Hamburger Button */}
             <button
               type="button"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="lg:hidden p-2 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+              className="lg:hidden p-2 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-slate-800/80 border border-slate-700/60 focus:outline-none focus:ring-2 focus:ring-cyan-500 transition"
               aria-label="Toggle navigation menu"
               aria-expanded={mobileMenuOpen}
             >
-              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 {mobileMenuOpen ? (
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 ) : (
@@ -85,7 +87,11 @@ export default function NavBar() {
 
       {/* Mobile Drawer */}
       {mobileMenuOpen && (
-        <div className="lg:hidden border-t border-slate-800 bg-slate-900 px-4 pt-2 pb-4 space-y-1">
+        <div className="lg:hidden border-t border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-950/95 backdrop-blur-md px-4 pt-3 pb-5 space-y-2 shadow-2xl">
+          <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-slate-800">
+            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Theme Preference:</span>
+            <ThemeToggle />
+          </div>
           {navItems.map((item) => (
             <NavLink
               key={item.to}
@@ -93,10 +99,10 @@ export default function NavBar() {
               end={item.to === '/'}
               onClick={() => setMobileMenuOpen(false)}
               className={({ isActive }) =>
-                `block px-3 py-2 rounded-lg text-sm font-medium transition flex items-center space-x-2 ${
+                `px-3 py-2.5 rounded-xl text-xs font-medium transition flex items-center space-x-2.5 ${
                   isActive
-                    ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40'
-                    : 'text-slate-300 hover:bg-slate-800'
+                    ? 'bg-emerald-500/10 text-emerald-700 dark:bg-teal-500/15 dark:text-teal-300 font-semibold border border-emerald-500/30 dark:border-teal-500/30'
+                    : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/80 border border-transparent'
                 }`
               }
             >
