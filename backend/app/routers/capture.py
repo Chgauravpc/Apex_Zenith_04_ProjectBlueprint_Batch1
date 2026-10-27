@@ -2,7 +2,7 @@
 
 from typing import Literal, Optional
 
-from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, UploadFile
+from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, Query, UploadFile
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -10,12 +10,15 @@ from app.schemas.capture import (
     IngestReport,
     JobCreated,
     JobOut,
+    ReviewIn,
+    ReviewOut,
+    ReviewQueueOut,
     SensorBatchIn,
     TextNoteIn,
     VoiceNoteOut,
 )
 from app.services import jobs
-from app.services.capture import handwritten, sensors, video, voice
+from app.services.capture import handwritten, review, sensors, video, voice
 
 router = APIRouter(prefix="/capture", tags=["capture"])
 jobs_router = APIRouter(prefix="/jobs", tags=["jobs"])
@@ -72,6 +75,23 @@ def capture_handwritten(
 def capture_sensors(batch: SensorBatchIn, db: Session = Depends(get_db)) -> IngestReport:
     """Store a batch of readings from one sensor and report anomalies found in it."""
     return sensors.ingest_readings(db, batch)
+
+
+@router.get("/review-queue", response_model=ReviewQueueOut)
+def review_queue(
+    limit: int = Query(20, ge=1, le=100),
+    offset: int = Query(0, ge=0),
+    db: Session = Depends(get_db),
+) -> ReviewQueueOut:
+    """Cards waiting for an old employee to check them, least confident first."""
+    return review.review_queue(db, limit, offset)
+
+
+@router.post("/review/{card_id}", response_model=ReviewOut)
+def review_card(card_id: int, payload: ReviewIn, db: Session = Depends(get_db)) -> ReviewOut:
+    """Approve, correct or reject a captured card."""
+    outcome, card = review.review_card(db, card_id, payload)
+    return ReviewOut(outcome=outcome, card=card)
 
 
 @jobs_router.get("/{job_id}", response_model=JobOut)

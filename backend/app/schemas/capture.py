@@ -164,3 +164,43 @@ class IngestReport(BaseModel):
     stored: int
     anomalies: int
     anomaly_ids: List[int] = Field(default_factory=list)
+
+
+class SyncReport(BaseModel):
+    """Per ERP DocType: how many rows were created, updated, unchanged or skipped."""
+
+    created: Dict[str, int] = Field(default_factory=dict)
+    updated: Dict[str, int] = Field(default_factory=dict)
+    unchanged: Dict[str, int] = Field(default_factory=dict)
+    skipped: Dict[str, int] = Field(default_factory=dict)
+
+
+class ErpWebhookIn(BaseModel):
+    """Event pushed by the ERP. `data` uses ERP record names (external ids)."""
+
+    event: Literal["job_start", "job_close", "qc_reject", "exit_date_set"]
+    data: Dict[str, Any]
+
+
+class ReviewIn(BaseModel):
+    """An old employee or supervisor approving, correcting or rejecting a captured card."""
+
+    reviewer_id: int
+    action: Literal["approve", "edit", "reject"]
+    title: Optional[str] = Field(None, max_length=200)
+    action_text: Optional[str] = Field(None, description="Corrected 'what to do' text")
+    why: Optional[str] = None
+    symptom: Optional[str] = None
+    params: Optional[Dict[str, float]] = None
+
+
+class ReviewQueueOut(BaseModel):
+    items: List[CardOut]
+    total: int
+    limit: int
+    offset: int
+
+
+class ReviewOut(BaseModel):
+    outcome: Literal["verified", "rejected"]
+    card: CardOut

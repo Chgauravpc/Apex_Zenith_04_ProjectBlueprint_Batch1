@@ -16,7 +16,7 @@ from fastapi.staticfiles import StaticFiles
 from app.config import get_settings
 from app.database import init_db
 from app.errors import register_handlers
-from app.routers import capture
+from app.routers import capture, erp
 
 logger = logging.getLogger(__name__)
 
@@ -51,6 +51,7 @@ def create_app() -> FastAPI:
 
     app.include_router(capture.router, prefix="/api")
     app.include_router(capture.jobs_router, prefix="/api")
+    app.include_router(erp.router, prefix="/api")
 
     storage = Path(settings.storage_dir)
     storage.mkdir(parents=True, exist_ok=True)
