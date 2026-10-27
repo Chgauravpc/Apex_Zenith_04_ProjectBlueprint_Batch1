@@ -16,9 +16,10 @@ from fastapi.staticfiles import StaticFiles
 from app.config import get_settings
 from app.database import init_db
 from app.errors import register_handlers
-from app.routers import ask, capture, erp, guardian
-from app.services.capture import voice
+from app.routers import ask, capture, erp, guardian, transfer
+from app.services.capture import erp_sync, voice
 from app.services.guardian import check
+from app.services.transfer import handover
 
 logger = logging.getLogger(__name__)
 
@@ -56,9 +57,13 @@ def create_app() -> FastAPI:
     app.include_router(erp.router, prefix="/api")
     app.include_router(guardian.router, prefix="/api")
     app.include_router(ask.router, prefix="/api")
+    app.include_router(transfer.router, prefix="/api")
     # Every captured note is checked by Note Guardian (idempotent across app instances).
     if check.note_saved_hook not in voice.NOTE_SAVED_HOOKS:
         voice.NOTE_SAVED_HOOKS.append(check.note_saved_hook)
+    # An exit date from the ERP starts the old employee's handover plan.
+    if handover.exit_date_hook not in erp_sync.EXIT_DATE_HOOKS:
+        erp_sync.EXIT_DATE_HOOKS.append(handover.exit_date_hook)
 
     storage = Path(settings.storage_dir)
     storage.mkdir(parents=True, exist_ok=True)
