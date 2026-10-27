@@ -564,3 +564,116 @@ def test_unknown_job_and_bad_video_requests(api, shop) -> None:
         data={"author_id": "999"},
     )
     assert resp.status_code == 404  # unknown employee checked before storing anything
+
+
+# --- handwritten pages -----------------------------------------------------------------------
+
+
+@pytest.fixture()
+def page_photo(tmp_path):
+    """A real JPEG of a page with dark handwriting-like strokes."""
+    import cv2
+    import numpy as np
+
+    img = np.full((2000, 1500, 3), 235, np.uint8)
+    for y in range(150, 1900, 90):
+        cv2.putText(
+            img,
+            "VMC-3 chatter - Ramesh check spindle",
+            (80, y),
+            cv2.FONT_HERSHEY_SCRIPT_SIMPLEX,
+            2,
+            (40, 40, 40),
+            3,
+        )
+    path = tmp_path / "page.jpg"
+    cv2.imwrite(str(path), img)
+    return path
+
+
+def _page_reading():
+    from app.schemas.capture import ActionItemIn, HandwrittenResult, NoteItem
+
+    return HandwrittenResult(
+        title="Shift meeting",
+        meeting_date="2026-10-20",
+        text="VMC-3 chatter on flange job. Ramesh to check spindle bearing by Friday.",
+        issues=[NoteItem(text="VMC-3 chatter on flange job", machine="VMC-3", confidence=0.9)],
+        decisions=[NoteItem(text="Feed max 0.2 on SS304", confidence=0.5)],
+        action_items=[
+            ActionItemIn(
+                text="Check spindle bearing",
+                owner="Ramesh bhau",
+                machine="VMC-3",
+                due="2026-10-24",
+                confidence=0.85,
+            ),
+            ActionItemIn(text="[?] coolant", owner="unknown", due="next week", confidence=0.3),
+        ],
+    )
+
+
+def test_process_handwritten_saves_meeting_and_actions(db, shop, page_photo, fake_llm) -> None:
+    from datetime import date
+
+    from app.database import fts_search
+    from app.models.knowledge import ActionItem, Meeting
+    from app.services.capture.handwritten import process_handwritten
+
+    fake_llm.responses["vision"] = _page_reading()
+    out = process_handwritten(db, page_photo, shop["ramesh"].id)
+
+    meeting = db.get(Meeting, out.meeting_id)
+    assert meeting.held_on == date(2026, 10, 20) and "Decision: Feed max 0.2" in meeting.summary
+    actions = db.query(ActionItem).filter_by(meeting_id=meeting.id).order_by("id").all()
+    assert actions[0].owner_id == shop["ramesh"].id and actions[0].due_on == date(2026, 10, 24)
+    assert actions[0].machine_id == shop["vmc"].id and actions[0].status == "open"
+    assert actions[1].owner_id is None and actions[1].due_on is None
+    assert actions[1].status == "needs_review"
+    assert out.needs_review == 2  # the unclear action and the 0.5 decision
+    assert [h[1] for h in fts_search(db, "spindle bearing")] == [meeting.id]
+
+
+def test_handwritten_photo_is_shrunk_before_sending(db, shop, page_photo, fake_llm) -> None:
+    import cv2
+    import numpy as np
+
+    from app.services.capture import handwritten
+
+    sent = handwritten._page_jpeg(page_photo)
+    img = cv2.imdecode(np.frombuffer(sent, np.uint8), cv2.IMREAD_COLOR)
+    assert max(img.shape[:2]) == 1280
+
+
+def test_handwritten_job_without_vision_fails_clearly(api, shop, job_db, page_photo) -> None:
+    with open(page_photo, "rb") as fh:
+        resp = api.post(
+            "/api/capture/handwritten",
+            files={"file": ("page.jpg", fh, "image/jpeg")},
+            data={"uploader_id": str(shop["ramesh"].id)},
+        )
+    assert resp.status_code == 202
+    job = api.get(f"/api/jobs/{resp.json()['job_id']}").json()
+    assert job["status"] == "failed" and "vision" in job["error"]
+
+
+def test_handwritten_job_done(api, shop, job_db, page_photo, fake_llm) -> None:
+    fake_llm.responses["vision"] = _page_reading()
+    with open(page_photo, "rb") as fh:
+        job_id = api.post(
+            "/api/capture/handwritten",
+            files={"file": ("page.jpg", fh, "image/jpeg")},
+            data={"uploader_id": str(shop["ramesh"].id)},
+        ).json()["job_id"]
+    job = api.get(f"/api/jobs/{job_id}").json()
+    assert job["status"] == "done" and job["result"]["action_items"] == 2
+
+
+def test_handwritten_rejects_unreadable_image(db, shop, tmp_path, fake_llm) -> None:
+    from app.services.capture.handwritten import process_handwritten
+
+    bad = tmp_path / "x.jpg"
+    bad.write_bytes(b"not an image")
+    with pytest.raises(ValidationFailed):
+        process_handwritten(db, bad, shop["ramesh"].id)
+    assert fake_llm.calls == []

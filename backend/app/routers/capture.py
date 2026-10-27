@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.schemas.capture import JobCreated, JobOut, TextNoteIn, VoiceNoteOut
 from app.services import jobs
-from app.services.capture import video, voice
+from app.services.capture import handwritten, video, voice
 
 router = APIRouter(prefix="/capture", tags=["capture"])
 jobs_router = APIRouter(prefix="/jobs", tags=["jobs"])
@@ -43,6 +43,20 @@ def capture_video(
 ) -> JobCreated:
     """Store a setup video (≤ 100 MB) and draft a procedure from it in the background."""
     job, work = video.start_video_job(db, file, author_id, machine_id)
+    background.add_task(jobs.run_job, job.id, work)
+    return JobCreated(job_id=job.id)
+
+
+@router.post("/handwritten", response_model=JobCreated, status_code=202)
+def capture_handwritten(
+    background: BackgroundTasks,
+    file: UploadFile = File(...),
+    uploader_id: int = Form(...),
+    machine_id: Optional[int] = Form(None),
+    db: Session = Depends(get_db),
+) -> JobCreated:
+    """Store a photo of a handwritten page (≤ 10 MB) and read it in the background."""
+    job, work = handwritten.start_handwritten_job(db, file, uploader_id, machine_id)
     background.add_task(jobs.run_job, job.id, work)
     return JobCreated(job_id=job.id)
 

@@ -119,3 +119,28 @@ class JobOut(BaseModel):
     status: Literal["queued", "running", "done", "failed"]
     result: Optional[Dict[str, Any]] = None
     error: Optional[str] = None
+
+
+class NoteItem(BaseModel):
+    text: str
+    machine: Optional[str] = Field(None, description="Machine name as written, if any")
+    confidence: float = Field(0.8, ge=0, le=1)
+
+
+class ActionItemIn(NoteItem):
+    owner: Optional[str] = Field(None, description="Person's name as written")
+    due: Optional[str] = Field(None, description="Due date YYYY-MM-DD if written")
+
+
+class HandwrittenResult(BaseModel):
+    """What the vision model read from the page; ids are filled in by the server."""
+
+    title: str = Field("Handwritten note", description="Short title, e.g. Shift meeting")
+    meeting_date: Optional[str] = Field(None, description="YYYY-MM-DD if written on the page")
+    text: str = Field("", description="Everything readable, line by line")
+    issues: List[NoteItem] = Field(default_factory=list)
+    decisions: List[NoteItem] = Field(default_factory=list)
+    action_items: List[ActionItemIn] = Field(default_factory=list)
+    document_id: Optional[int] = Field(None, description="Set by the server")
+    meeting_id: Optional[int] = Field(None, description="Set by the server")
+    needs_review: int = Field(0, description="Set by the server: low-confidence items")
