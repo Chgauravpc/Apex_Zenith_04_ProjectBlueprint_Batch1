@@ -87,3 +87,52 @@ class PrecursorStat(BaseModel):
     preceded_count: int
     total_failures: int
     evidence_ids: List[int] = Field(default_factory=list)
+
+
+# --- LLM output and API records -------------------------------------------------------------
+
+
+class LLMWarning(BaseModel):
+    message: str
+    severity: Severity
+    evidence_ids: List[str] = Field(description="Record ids exactly as given, e.g. card:12")
+
+
+class GuardianLLMResult(BaseModel):
+    warnings: List[LLMWarning] = Field(default_factory=list)
+
+
+class WarningRecord(BaseModel):
+    """A stored warning, for the warnings list and after a response."""
+
+    model_config = {"from_attributes": True}
+
+    id: int
+    note_id: int
+    machine_id: Optional[int] = None
+    component_id: Optional[int] = None
+    employee_id: Optional[int] = None
+    severity: Severity
+    message: str
+    evidence: List[dict] = Field(default_factory=list)
+    card_id: Optional[int] = None
+    status: str
+    response: Optional[str] = None
+    mode: str = "live"
+    created_at: dt.datetime
+
+
+class WarningRespondIn(BaseModel):
+    """acknowledge = I will check it; override = not a problem here (reason required);
+    resolve = fixed."""
+
+    action: Literal["acknowledge", "override", "resolve"]
+    reason: Optional[str] = Field(None, max_length=1000)
+    employee_id: Optional[int] = None
+
+
+class WarningList(BaseModel):
+    items: List[WarningRecord]
+    total: int
+    limit: int
+    offset: int

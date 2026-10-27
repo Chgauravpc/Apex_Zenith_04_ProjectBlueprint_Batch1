@@ -1,11 +1,24 @@
 """Note Guardian: pure rules (this file) and the save-and-check flow."""
 
+import time
 from datetime import date
 
 import pytest
+from sqlalchemy import select
 
-from app.schemas.guardian import Finding, ParamLimitDTO, PrecursorStat
+from app.models.erp import Employee, Machine
+from app.models.guardian import Warning
+from app.models.ops import Notification
+from app.schemas.guardian import (
+    Finding,
+    GuardianLLMResult,
+    LLMWarning,
+    NoteIn,
+    ParamLimitDTO,
+    PrecursorStat,
+)
 from app.services.guardian import rules
+from app.services.guardian.check import save_and_check
 
 FEED = ParamLimitDTO(
     id=1,
@@ -116,3 +129,123 @@ def test_max_severity() -> None:
 
     assert rules.max_severity([f("info"), f("stop"), f("caution")]) == "stop"
     assert rules.max_severity([]) is None
+
+
+# --- save_and_check on the seeded demo story -------------------------------------------------
+
+
+DEMO_NOTE = "VMC-3 slight chatter, increased feed to 0.3 on SS304"
+
+
+@pytest.fixture()
+def story(db, tmp_path, monkeypatch):
+    from app.config import get_settings
+    from seed.seed import seed
+
+    monkeypatch.setattr(get_settings(), "storage_dir", str(tmp_path))
+    seed(db, date.today())
+    people = {e.name.split()[0]: e for e in db.execute(select(Employee)).scalars()}
+    machines = {m.name: m for m in db.execute(select(Machine)).scalars()}
+    return {"people": people, "machines": machines}
+
+
+def test_demo_note_gets_stop_warning_with_evidence(db, story, fake_llm) -> None:
+    priya, ramesh = story["people"]["Priya"], story["people"]["Ramesh"]
+    start = time.perf_counter()
+    result = save_and_check(db, NoteIn(text=DEMO_NOTE, author_id=priya.id))
+    elapsed = time.perf_counter() - start
+
+    assert result.severity == "stop" and result.machine_id == story["machines"]["VMC-3"].id
+    rules_hit = {w.rule for w in result.warnings}
+    assert {"param_limit", "precursor", "maintenance"} <= rules_hit
+    assert any("4 of the last 5" in w.message for w in result.warnings)
+    kinds = {e.type for e in result.evidence}
+    assert {"param_limit", "maintenance"} <= kinds
+    assert all(e.title for e in result.evidence)
+    assert result.author_name == "Ramesh Patil" and "0.12" in result.expert_fix
+    assert result.mode == "offline"  # FakeLLM has no "guardian" answer -> rules only
+    assert elapsed < 3.0  # budget from ENGINEERING.md §4
+
+    saved = db.execute(select(Warning).filter_by(note_id=result.note_id)).scalars().all()
+    assert len(saved) == len(result.warnings) and all(w.evidence for w in saved)
+    notified = {n.employee_id for n in db.execute(select(Notification)).scalars()}
+    assert {ramesh.id, story["people"]["Anil"].id} <= notified and priya.id not in notified
+
+
+def test_normal_note_has_no_warning(db, story, fake_llm) -> None:
+    priya = story["people"]["Priya"]
+    vmc = story["machines"]["VMC-3"]
+    result = save_and_check(
+        db,
+        NoteIn(
+            text="Coolant level topped up, ran 20 flanges", author_id=priya.id, machine_id=vmc.id
+        ),
+    )
+    assert result.severity is None and result.warnings == [] and result.expert_fix is None
+    assert db.execute(select(Warning)).scalars().all() == []
+
+
+def test_llm_adds_grounded_warning_and_drops_invented_ids(db, story, fake_llm) -> None:
+    from app.models.knowledge import KnowledgeCard
+
+    card = db.execute(select(KnowledgeCard).filter_by(title="Burr on FL-101 holes")).scalar_one()
+    fake_llm.responses["guardian"] = GuardianLLMResult(
+        warnings=[
+            LLMWarning(
+                message="Last time burrs came back when the chamfer step was skipped.",
+                severity="caution",
+                evidence_ids=[f"card:{card.id}"],
+            ),
+            LLMWarning(message="Invented risk", severity="stop", evidence_ids=["card:99999"]),
+        ]
+    )
+    result = save_and_check(
+        db,
+        NoteIn(
+            text="VMC-3 burr on FL-101 holes, skipped chamfer",
+            author_id=story["people"]["Priya"].id,
+        ),
+    )
+
+    messages = [w.message for w in result.warnings]
+    assert "Invented risk" not in messages
+    assert any("chamfer step" in m for m in messages) and result.mode == "live"
+    task, prompt = fake_llm.calls[-1]
+    assert task == "guardian" and f'<record id="card:{card.id}">' in prompt
+
+
+def test_note_without_machine_asks_for_one(db, story, fake_llm) -> None:
+    result = save_and_check(db, NoteIn(text="something rattles", author_id=1))
+    assert result.warnings == [] and "Choose a machine" in result.message
+
+
+def test_guardian_endpoints_and_capture_hook(client, db, story, fake_llm) -> None:
+    priya = story["people"]["Priya"]
+    body = client.post(
+        "/api/guardian/notes", json={"text": DEMO_NOTE, "author_id": priya.id}
+    ).json()
+    assert body["severity"] == "stop" and body["evidence"]
+
+    listed = client.get("/api/guardian/warnings").json()
+    assert listed["total"] == len(body["warnings"])
+    wid = listed["items"][0]["id"]
+    assert (
+        client.post(
+            f"/api/guardian/warnings/{wid}/respond", json={"action": "override"}
+        ).status_code
+        == 422
+    )  # reason required
+    ok = client.post(
+        f"/api/guardian/warnings/{wid}/respond",
+        json={"action": "acknowledge", "employee_id": priya.id},
+    ).json()
+    assert ok["status"] == "acknowledged"
+    assert (
+        client.post("/api/guardian/warnings/9999/respond", json={"action": "resolve"}).status_code
+        == 404
+    )
+
+    captured = client.post(
+        "/api/capture/text", json={"text": DEMO_NOTE, "author_id": priya.id}
+    ).json()
+    assert captured["guardian"]["severity"] == "stop"  # hook ran on the captured note
