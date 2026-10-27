@@ -417,3 +417,82 @@ def test_keyframes_rejects_non_video(tmp_path) -> None:
     bad.write_bytes(b"this is not a video")
     with pytest.raises(ValidationFailed):
         extract_keyframes(bad)
+
+
+# --- video -> draft procedure ----------------------------------------------------------------
+
+
+@pytest.fixture()
+def setup_video(tmp_path, monkeypatch):
+    from app.config import get_settings
+
+    monkeypatch.setattr(get_settings(), "storage_dir", str(tmp_path / "store"))
+    return _write_video(tmp_path / "setup.avi", [RED, GREEN, BLUE])
+
+
+def _speech(monkeypatch, segments):
+    from app.services import stt
+
+    def transcribe(path, language=None):
+        segs = [stt.Segment(start=a, end=b, text=t) for a, b, t in segments]
+        return stt.Transcript(text=" ".join(t for _, _, t in segments), segments=segs)
+
+    monkeypatch.setattr(stt, "transcribe", transcribe)
+
+
+def test_draft_procedure_live_vision(db, shop, setup_video, fake_llm, monkeypatch) -> None:
+    from pathlib import Path
+
+    from app.models.guide import ProcedureStep
+    from app.schemas.capture import DraftStep, VideoProcedureDraft
+    from app.services.capture.video import draft_procedure
+
+    _speech(monkeypatch, [(0.5, 1.5, "vise saaf karo"), (2.2, 3.0, "face mill lagao")])
+    fake_llm.responses["vision"] = VideoProcedureDraft(
+        title="Face milling FL-101",
+        steps=[
+            DraftStep(frame_index=1, instruction="Load the face mill", params={"speed": 3500}),
+            DraftStep(frame_index=0, instruction="Clean the vise", safety="Safety glasses"),
+            DraftStep(frame_index=7, instruction="Out of range frame is dropped"),
+        ],
+    )
+    proc = draft_procedure(db, setup_video, shop["ramesh"].id, shop["vmc"].id)
+
+    assert proc.status == "draft" and proc.title == "Face milling FL-101"
+    steps = db.query(ProcedureStep).filter_by(procedure_id=proc.id).order_by("step_no").all()
+    assert [s.instruction for s in steps] == ["Clean the vise", "Load the face mill"]
+    assert (steps[0].clip_start, steps[0].clip_end, steps[1].clip_start) == (0.0, 2.0, 2.0)
+    assert Path(steps[0].media_path).is_file() and steps[1].params == {"speed": 3500}
+    assert "vise saaf karo" in fake_llm.calls[0][1]  # transcript went to the model
+    assert draft_procedure(db, setup_video, shop["ramesh"].id, shop["vmc"].id).id == proc.id
+
+
+def test_draft_procedure_offline_uses_transcript(db, shop, setup_video, monkeypatch) -> None:
+    from app.services.capture.video import OFFLINE_TITLE, draft_procedure
+
+    _speech(monkeypatch, [(0.2, 1.0, "vise saaf karo"), (4.1, 5.0, "thickness napo")])
+    proc = draft_procedure(db, setup_video, shop["ramesh"].id, None)  # FakeLLM: no vision
+
+    steps = sorted(proc_steps(db, proc.id), key=lambda s: s.step_no)
+    assert proc.title == OFFLINE_TITLE
+    assert [(s.instruction, s.clip_start) for s in steps] == [
+        ("vise saaf karo", 0.0),
+        ("thickness napo", 4.0),
+    ]
+
+
+def proc_steps(db, procedure_id):
+    from app.models.guide import ProcedureStep
+
+    return db.query(ProcedureStep).filter_by(procedure_id=procedure_id).all()
+
+
+def test_draft_procedure_needs_vision_or_speech(db, shop, setup_video, monkeypatch) -> None:
+    from app.config import get_settings
+    from app.errors import ProviderUnavailable
+    from app.services.capture.video import draft_procedure
+
+    monkeypatch.setattr(get_settings(), "groq_api_key", None)
+    monkeypatch.setattr(get_settings(), "openrouter_api_key", None)
+    with pytest.raises(ProviderUnavailable):
+        draft_procedure(db, setup_video, shop["ramesh"].id, None)

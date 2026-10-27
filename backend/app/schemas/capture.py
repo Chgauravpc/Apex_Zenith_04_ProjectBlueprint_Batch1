@@ -83,3 +83,23 @@ class VoiceNoteOut(BaseModel):
     message: Optional[str] = None
     # Filled by Note Guardian (registered on the on_note_saved hook); None until it runs.
     guardian: Optional[Dict[str, Any]] = None
+
+
+class DraftStep(BaseModel):
+    """One step proposed from the video; the old employee reviews it before approval."""
+
+    frame_index: int = Field(ge=0, description="0-based index of the frame showing this step")
+    instruction: str = Field(description="What to do, short and concrete")
+    params: Dict[str, float] = Field(default_factory=dict)
+    safety: Optional[str] = None
+    check_name: Optional[str] = Field(None, description="Measurement taken, e.g. thickness")
+    tolerance_min: Optional[float] = None
+    tolerance_max: Optional[float] = None
+    unit: Optional[str] = None
+
+
+class VideoProcedureDraft(BaseModel):
+    """JSON returned by the vision model for a setup video."""
+
+    title: str = Field(description="Short name of the job, e.g. Face milling FL-101")
+    steps: List[DraftStep] = Field(default_factory=list)

@@ -9,12 +9,23 @@ besides the kept JPEGs.
 import logging
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
 import cv2
 import numpy as np
+from sqlalchemy import select
+from sqlalchemy.orm import Session
 
-from app.errors import ValidationFailed
+from app.config import get_settings
+from app.database import fts_index
+from app.errors import ProviderUnavailable, ValidationFailed
+from app.models.guide import Procedure, ProcedureStep
+from app.models.knowledge import Document
+from app.prompts import wrap_records
+from app.prompts.video import VIDEO_PROMPT
+from app.schemas.capture import DraftStep, VideoProcedureDraft
+from app.services import llm, stt
+from app.utils.audit import audit
 
 logger = logging.getLogger(__name__)
 
@@ -24,6 +35,10 @@ HIST_SIDE = 160  # px, small copy used only for the histogram (fast, noise-toler
 HIST_BINS = [32, 32]  # hue × saturation
 SCENE_CHANGE = 0.35  # Bhattacharyya distance above which a new scene starts (0 = same)
 JPEG_QUALITY = 85
+# Free vision models accept a limited number of images per request; frames are thinned
+# evenly to this many before the call (the rest still exist for the step editor).
+VISION_MAX_IMAGES = 12
+OFFLINE_TITLE = "Setup procedure (draft from video)"
 
 
 @dataclass(frozen=True)
@@ -109,3 +124,136 @@ def extract_keyframes(
     ]
     logger.info("keyframes video=%s sampled_every=%d kept=%d", video_path.name, step, len(frames))
     return frames
+
+
+def _thin(frames: List[Keyframe], n: int) -> List[Keyframe]:
+    """Keep n frames spread evenly over the video (first and last included)."""
+    if len(frames) <= n:
+        return frames
+    idx = np.linspace(0, len(frames) - 1, n).round().astype(int)
+    return [frames[i] for i in sorted(set(idx.tolist()))]
+
+
+def _steps_from_transcript(frames: List[Keyframe], transcript: stt.Transcript) -> List[DraftStep]:
+    """Offline draft: each step is what was said while that scene was on screen."""
+    steps = []
+    for i, frame in enumerate(frames):
+        end = frames[i + 1].ts if i + 1 < len(frames) else float("inf")
+        words = [s.text for s in transcript.segments if frame.ts <= s.start < end]
+        if words:
+            steps.append(DraftStep(frame_index=i, instruction=" ".join(words)))
+    return steps
+
+
+def _draft(
+    frames: List[Keyframe], transcript: Optional[stt.Transcript]
+) -> Tuple[str, List[DraftStep], str]:
+    """Return (title, steps, mode): vision model first, transcript-only fallback."""
+    listing = "\n".join(f"{i}: at {f.ts:.0f} s" for i, f in enumerate(frames))
+    spoken = "(no speech)"
+    if transcript is not None:
+        spoken = "\n".join(f"[{s.start:.0f}-{s.end:.0f} s] {s.text}" for s in transcript.segments)
+    prompt = VIDEO_PROMPT.format(frames=listing, transcript=wrap_records([("transcript", spoken)]))
+    try:
+        draft = llm.vision_json(
+            "vision", [f.jpeg_bytes for f in frames], prompt, VideoProcedureDraft
+        )
+        steps = [s for s in draft.steps if s.frame_index < len(frames) and s.instruction.strip()]
+        return draft.title.strip() or OFFLINE_TITLE, steps, "live"
+    except ProviderUnavailable:
+        if transcript is None or not transcript.segments:
+            raise ProviderUnavailable(
+                "video needs either the vision model or speech-to-text to draft steps"
+            ) from None
+        return OFFLINE_TITLE, _steps_from_transcript(frames, transcript), "offline"
+
+
+def _save_frame(doc_id: int, i: int, frame: Keyframe) -> str:
+    folder = Path(get_settings().storage_dir) / "keyframes"
+    folder.mkdir(parents=True, exist_ok=True)
+    path = folder / f"{doc_id}_{i}.jpg"
+    path.write_bytes(frame.jpeg_bytes)
+    return str(path)
+
+
+def draft_procedure(
+    db: Session, video_path: Path, author_id: int, machine_id: Optional[int]
+) -> Procedure:
+    """Turn a setup video into a draft procedure (status "draft") for the author to review.
+
+    Steps are ordered by time; each keeps its key frame and the clip range it came from,
+    so the new employee can watch exactly that part of the old employee's video.
+    Running it again for the same video returns the existing draft.
+
+    Raises:
+        ValidationFailed: unreadable video. ProviderUnavailable: no vision and no speech.
+    """
+    doc = db.execute(select(Document).filter_by(file_path=str(video_path))).scalar_one_or_none()
+    if doc is None:
+        doc = Document(
+            type="video", file_path=str(video_path), uploader_id=author_id, machine_id=machine_id
+        )
+        db.add(doc)
+        db.commit()
+    existing = db.execute(select(Procedure).filter_by(source_doc_id=doc.id)).scalars().first()
+    if existing is not None:
+        return existing
+
+    frames = _thin(extract_keyframes(video_path), VISION_MAX_IMAGES)
+    try:
+        transcript: Optional[stt.Transcript] = stt.transcribe(video_path)
+        doc.text = transcript.text
+    except ProviderUnavailable:
+        transcript = None
+    title, steps, mode = _draft(frames, transcript)
+    if not steps:
+        raise ValidationFailed("no steps could be drafted from this video")
+
+    proc = Procedure(
+        key=f"video-{doc.id}",
+        version=1,
+        title=title[:200],
+        machine_id=machine_id,
+        status="draft",
+        author_id=author_id,
+        source_doc_id=doc.id,
+    )
+    db.add(proc)
+    db.flush()
+    steps = sorted(steps, key=lambda s: frames[s.frame_index].ts)
+    for no, step in enumerate(steps, start=1):
+        frame = frames[step.frame_index]
+        nxt = steps[no].frame_index if no < len(steps) else None
+        db.add(
+            ProcedureStep(
+                procedure_id=proc.id,
+                step_no=no,
+                instruction=step.instruction,
+                media_path=_save_frame(doc.id, step.frame_index, frame),
+                clip_start=frame.ts,
+                clip_end=frames[nxt].ts if nxt is not None else None,
+                params=step.params,
+                safety=step.safety,
+                check_name=step.check_name,
+                tolerance_min=step.tolerance_min,
+                tolerance_max=step.tolerance_max,
+                unit=step.unit,
+            )
+        )
+    fts_index(
+        db, "procedure", proc.id, machine_id, " ".join([title] + [s.instruction for s in steps])
+    )
+    audit(
+        db,
+        "procedure.drafted",
+        actor_id=author_id,
+        target_type="procedure",
+        target_id=proc.id,
+        mode=mode,
+        steps=len(steps),
+    )
+    db.commit()
+    logger.info(
+        "drafted procedure %s from doc %s (%s, %d steps)", proc.id, doc.id, mode, len(steps)
+    )
+    return proc
