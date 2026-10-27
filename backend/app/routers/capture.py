@@ -6,9 +6,16 @@ from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, UploadFile
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.schemas.capture import JobCreated, JobOut, TextNoteIn, VoiceNoteOut
+from app.schemas.capture import (
+    IngestReport,
+    JobCreated,
+    JobOut,
+    SensorBatchIn,
+    TextNoteIn,
+    VoiceNoteOut,
+)
 from app.services import jobs
-from app.services.capture import handwritten, video, voice
+from app.services.capture import handwritten, sensors, video, voice
 
 router = APIRouter(prefix="/capture", tags=["capture"])
 jobs_router = APIRouter(prefix="/jobs", tags=["jobs"])
@@ -59,6 +66,12 @@ def capture_handwritten(
     job, work = handwritten.start_handwritten_job(db, file, uploader_id, machine_id)
     background.add_task(jobs.run_job, job.id, work)
     return JobCreated(job_id=job.id)
+
+
+@router.post("/sensors", response_model=IngestReport)
+def capture_sensors(batch: SensorBatchIn, db: Session = Depends(get_db)) -> IngestReport:
+    """Store a batch of readings from one sensor and report anomalies found in it."""
+    return sensors.ingest_readings(db, batch)
 
 
 @jobs_router.get("/{job_id}", response_model=JobOut)

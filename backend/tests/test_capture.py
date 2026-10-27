@@ -765,3 +765,36 @@ def test_ingest_rejects_bad_batches(db, shop) -> None:
     batch.readings.reverse()
     with pytest.raises(ValidationFailed):
         ingest_readings(db, batch)
+
+
+# --- sensor simulator -> API -----------------------------------------------------------------
+
+
+def test_sensor_sim_generates_profile_with_spikes() -> None:
+    from datetime import datetime
+
+    from simulators.sensor_sim import generate
+
+    start = datetime(2026, 10, 27, 8, 0)
+    a = generate("spindle_temp", 120, start, spikes=[100], seed=4)
+    assert a == generate("spindle_temp", 120, start, spikes=[100], seed=4)  # reproducible
+    values = [v for _, v in a]
+    assert 37 < sum(values[:90]) / 90 < 39 and values[100] > 48
+    assert a[1][0] - a[0][0] == (a[2][0] - a[1][0])  # 1 Hz
+    with pytest.raises(ValueError):
+        generate("pressure", 10, start)
+
+
+def test_sensor_sim_streams_to_api_and_spike_is_flagged(api, shop, db) -> None:
+    from datetime import datetime
+
+    from app.models.ops import Anomaly
+    from simulators.sensor_sim import generate, stream
+
+    start = datetime(2026, 10, 27, 8, 0)
+    readings = generate("vibration", 240, start, spikes=[150], seed=2)
+    reports = stream(api, shop["vmc"].id, "vibration", readings, batch=60)
+
+    assert [r["stored"] for r in reports] == [60, 60, 60, 60]
+    flagged = {a.ts for a in db.query(Anomaly).filter_by(machine_id=shop["vmc"].id)}
+    assert readings[150][0] in flagged
