@@ -92,6 +92,23 @@ export async function pollJob(jobId, onProgress, maxAttempts = 30, baseDelay = 1
   throw new Error('Background job processing timed out');
 }
 
+/**
+ * Fetch cards pending verification in the review queue.
+ * @param {Object} [params] { limit, offset }
+ * @param {AbortSignal} [signal]
+ */
+export const getReviewQueue = (params, signal) =>
+  client.get('/capture/review-queue', { params, signal }).then((r) => r.data);
+
+/**
+ * Approve or edit a card in the review queue.
+ * @param {number|string} cardId
+ * @param {Object} reviewData { verified_by, action, why, symptom, approved }
+ * @param {AbortSignal} [signal]
+ */
+export const reviewCard = (cardId, reviewData, signal) =>
+  client.post(`/capture/review/${cardId}`, reviewData, { signal }).then((r) => r.data);
+
 export default {
   captureText,
   captureVoice,
@@ -99,4 +116,6 @@ export default {
   captureHandwritten,
   getJob,
   pollJob,
+  getReviewQueue,
+  reviewCard,
 };
