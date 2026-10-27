@@ -1,7 +1,7 @@
 """Ask Experience schemas. Field names follow what the frontend reads (AnswerCard, SourceCard)."""
 
 import datetime as dt
-from typing import List, Literal, Optional
+from typing import Any, List, Literal, Optional
 
 from pydantic import BaseModel, Field
 
@@ -159,3 +159,27 @@ class ChipResult(BaseModel):
         "Compare with the old employee's note and decide."
     )
     expert_card: Optional[ExpertCard] = None
+
+
+class AnalyticsRequest(BaseModel):
+    question: str = Field(min_length=3, max_length=500)
+
+
+class AnalyticsLLM(BaseModel):
+    """JSON from the analytics prompt (or the offline rule matcher)."""
+
+    sql: str
+    explanation: str = ""
+    chart: Literal["bar", "line", "none"] = "none"
+
+
+class AnalyticsResult(BaseModel):
+    question: str
+    sql: str  # shown so people can see exactly what was counted
+    columns: List[str]
+    rows: List[List[Any]]
+    row_count: int
+    truncated: bool  # more than 200 rows existed
+    chart: Literal["bar", "line", "none"]
+    explanation: str
+    mode: Literal["live", "offline"]

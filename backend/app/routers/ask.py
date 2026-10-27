@@ -7,6 +7,8 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.schemas.ask import (
+    AnalyticsRequest,
+    AnalyticsResult,
     AskAnswer,
     AskRequest,
     ChatterResult,
@@ -14,7 +16,7 @@ from app.schemas.ask import (
     FeedbackIn,
     FeedbackOut,
 )
-from app.services.ask import chatter, chips, qa
+from app.services.ask import analytics, chatter, chips, qa
 
 router = APIRouter(prefix="/ask", tags=["ask"])
 
@@ -59,6 +61,12 @@ def ask_chips(
 ) -> ChipResult:
     """Photo of chips: colour, what it says about cutting heat, and the old employee's note."""
     return chips.read_chips(db, file, tool_material, workpiece, machine_id)
+
+
+@router.post("/analytics", response_model=AnalyticsResult)
+def ask_analytics(payload: AnalyticsRequest, db: Session = Depends(get_db)) -> AnalyticsResult:
+    """Counting / trend questions answered with one read-only SELECT (max 200 rows)."""
+    return analytics.run_analytics(db, payload)
 
 
 @router.post("/{query_id}/feedback", response_model=FeedbackOut)
