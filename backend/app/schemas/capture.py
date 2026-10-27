@@ -103,3 +103,19 @@ class VideoProcedureDraft(BaseModel):
 
     title: str = Field(description="Short name of the job, e.g. Face milling FL-101")
     steps: List[DraftStep] = Field(default_factory=list)
+
+
+class JobCreated(BaseModel):
+    job_id: str
+
+
+class JobOut(BaseModel):
+    """Status of a background job; `result` holds ids of what was created."""
+
+    model_config = {"from_attributes": True}
+
+    id: str
+    kind: str
+    status: Literal["queued", "running", "done", "failed"]
+    result: Optional[Dict[str, Any]] = None
+    error: Optional[str] = None

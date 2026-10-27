@@ -354,7 +354,8 @@ def _write_video(path, scenes, fps=10, seconds=2, size=(320, 240)):
     import cv2
     import numpy as np
 
-    writer = cv2.VideoWriter(str(path), cv2.VideoWriter_fourcc(*"MJPG"), fps, size)
+    codec = "mp4v" if str(path).endswith(".mp4") else "MJPG"
+    writer = cv2.VideoWriter(str(path), cv2.VideoWriter_fourcc(*codec), fps, size)
     rng = np.random.default_rng(0)
     for bgr in scenes:
         for _ in range(fps * seconds):
@@ -427,7 +428,7 @@ def setup_video(tmp_path, monkeypatch):
     from app.config import get_settings
 
     monkeypatch.setattr(get_settings(), "storage_dir", str(tmp_path / "store"))
-    return _write_video(tmp_path / "setup.avi", [RED, GREEN, BLUE])
+    return _write_video(tmp_path / "setup.mp4", [RED, GREEN, BLUE])
 
 
 def _speech(monkeypatch, segments):
@@ -496,3 +497,70 @@ def test_draft_procedure_needs_vision_or_speech(db, shop, setup_video, monkeypat
     monkeypatch.setattr(get_settings(), "openrouter_api_key", None)
     with pytest.raises(ProviderUnavailable):
         draft_procedure(db, setup_video, shop["ramesh"].id, None)
+
+
+# --- background jobs + video endpoint --------------------------------------------------------
+
+
+@pytest.fixture()
+def job_db(db, monkeypatch):
+    """Job threads open their own session; point them at the test database."""
+    from sqlalchemy.orm import Session
+
+    from app.services import jobs
+
+    monkeypatch.setattr(jobs, "session_factory", lambda: Session(bind=db.get_bind()))
+    return db
+
+
+def test_video_endpoint_runs_job_to_done(api, shop, job_db, setup_video, monkeypatch) -> None:
+    _speech(monkeypatch, [(0.2, 1.0, "vise saaf karo"), (2.1, 3.0, "face mill lagao")])
+    with open(setup_video, "rb") as fh:
+        resp = api.post(
+            "/api/capture/video",
+            files={"file": ("setup.mp4", fh, "video/mp4")},
+            data={"author_id": str(shop["ramesh"].id), "machine_id": str(shop["vmc"].id)},
+        )
+    assert resp.status_code == 202, resp.json()
+    job = api.get(f"/api/jobs/{resp.json()['job_id']}").json()  # TestClient ran the task
+
+    assert job["status"] == "done" and job["error"] is None
+    assert job["result"]["procedure_id"] > 0
+
+
+def test_video_job_failure_is_reported(api, shop, job_db, setup_video, monkeypatch) -> None:
+    from app.config import get_settings
+
+    monkeypatch.setattr(get_settings(), "groq_api_key", None)  # no speech, no vision
+    with open(setup_video, "rb") as fh:
+        job_id = api.post(
+            "/api/capture/video",
+            files={"file": ("s.mp4", fh, "video/mp4")},
+            data={"author_id": str(shop["ramesh"].id)},
+        ).json()["job_id"]
+    job = api.get(f"/api/jobs/{job_id}").json()
+    assert job["status"] == "failed" and "vision model or speech" in job["error"]
+
+
+def test_run_job_hides_unexpected_errors(job_db) -> None:
+    from app.services import jobs
+
+    job = jobs.create_job(job_db, "test")
+
+    def crash(db):
+        raise KeyError("secret detail")
+
+    jobs.run_job(job.id, crash)
+    job_db.expire_all()
+    stored = jobs.get_job(job_db, job.id)
+    assert stored.status == "failed" and stored.error == "internal error while processing"
+
+
+def test_unknown_job_and_bad_video_requests(api, shop) -> None:
+    assert api.get("/api/jobs/doesnotexist").status_code == 404
+    resp = api.post(
+        "/api/capture/video",
+        files={"file": ("a.mp4", b"x", "video/mp4")},
+        data={"author_id": "999"},
+    )
+    assert resp.status_code == 404  # unknown employee checked before storing anything

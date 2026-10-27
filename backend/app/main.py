@@ -50,6 +50,7 @@ def create_app() -> FastAPI:
         return {"status": "ok"}
 
     app.include_router(capture.router, prefix="/api")
+    app.include_router(capture.jobs_router, prefix="/api")
 
     storage = Path(settings.storage_dir)
     storage.mkdir(parents=True, exist_ok=True)

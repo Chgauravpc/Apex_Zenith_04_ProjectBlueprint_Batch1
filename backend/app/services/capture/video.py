@@ -9,10 +9,11 @@ besides the kept JPEGs.
 import logging
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 import cv2
 import numpy as np
+from fastapi import UploadFile
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -21,11 +22,14 @@ from app.database import fts_index
 from app.errors import ProviderUnavailable, ValidationFailed
 from app.models.guide import Procedure, ProcedureStep
 from app.models.knowledge import Document
+from app.models.ops import Job
 from app.prompts import wrap_records
 from app.prompts.video import VIDEO_PROMPT
 from app.schemas.capture import DraftStep, VideoProcedureDraft
-from app.services import llm, stt
+from app.services import jobs, llm, stt
+from app.services.capture.voice import check_refs
 from app.utils.audit import audit
+from app.utils.files import save_upload
 
 logger = logging.getLogger(__name__)
 
@@ -257,3 +261,18 @@ def draft_procedure(
         "drafted procedure %s from doc %s (%s, %d steps)", proc.id, doc.id, mode, len(steps)
     )
     return proc
+
+
+def start_video_job(
+    db: Session, file: UploadFile, author_id: int, machine_id: Optional[int]
+) -> Tuple[Job, jobs.Work]:
+    """Store the video and create a queued job; return the job and the work to run later."""
+    check_refs(db, author_id, machine_id)
+    path = save_upload(file, "video")
+    job = jobs.create_job(db, "video_procedure")
+
+    def work(job_db: Session) -> Dict[str, Any]:
+        proc = draft_procedure(job_db, path, author_id, machine_id)
+        return {"procedure_id": proc.id, "title": proc.title}
+
+    return job, work
