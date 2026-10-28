@@ -29,16 +29,16 @@ const BoltIcon = ({ className = 'w-3 h-3' }) => (
 );
 
 const KINDS = {
-  warning: { label: 'Guardian Warning', badge: 'bg-red-500/20 text-red-400 border-red-500/40', icon: <AlertTriangleIcon className="w-3 h-3 text-red-400" /> },
-  note: { label: 'Note Captured', badge: 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40', icon: <MicIcon className="w-3 h-3 text-cyan-300" /> },
-  anomaly: { label: 'Sensor Anomaly', badge: 'bg-amber-500/20 text-amber-300 border-amber-500/40', icon: <BoltIcon className="w-3 h-3 text-amber-300" /> },
-  qc_reject: { label: 'QC Reject', badge: 'bg-orange-500/20 text-orange-300 border-orange-500/40', icon: <XIcon className="w-3 h-3 text-orange-400" /> },
-  maintenance: { label: 'Maintenance', badge: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40', icon: <WrenchIcon className="w-3 h-3 text-emerald-300" /> },
-  meeting: { label: 'Team Meeting', badge: 'bg-purple-500/20 text-purple-300 border-purple-500/40', icon: <UsersIcon className="w-3 h-3 text-purple-300" /> },
-  run: { label: 'Guided Run', badge: 'bg-blue-500/20 text-blue-300 border-blue-500/40', icon: <PlayIcon className="w-3 h-3 text-blue-300" /> },
-  chatter: { label: 'Chatter Check', badge: 'bg-amber-500/20 text-amber-300 border-amber-500/40', icon: <VolumeIcon className="w-3 h-3 text-amber-300" /> },
+  warning: { label: 'Guardian Warning', badge: 'bg-rose-50 text-rose-800 border-rose-200', icon: <AlertTriangleIcon className="w-3 h-3 text-rose-700" /> },
+  note: { label: 'Note Captured', badge: 'bg-maroon-50 text-maroon-800 border-maroon-200', icon: <MicIcon className="w-3 h-3 text-maroon-700" /> },
+  anomaly: { label: 'Sensor Anomaly', badge: 'bg-amber-50 text-amber-800 border-amber-200', icon: <BoltIcon className="w-3 h-3 text-amber-700" /> },
+  qc_reject: { label: 'QC Reject', badge: 'bg-orange-50 text-orange-800 border-orange-200', icon: <XIcon className="w-3 h-3 text-orange-700" /> },
+  maintenance: { label: 'Maintenance', badge: 'bg-emerald-50 text-emerald-800 border-emerald-200', icon: <WrenchIcon className="w-3 h-3 text-emerald-700" /> },
+  meeting: { label: 'Team Meeting', badge: 'bg-purple-50 text-purple-800 border-purple-200', icon: <UsersIcon className="w-3 h-3 text-purple-700" /> },
+  run: { label: 'Guided Run', badge: 'bg-blue-50 text-blue-800 border-blue-200', icon: <PlayIcon className="w-3 h-3 text-blue-700" /> },
+  chatter: { label: 'Chatter Check', badge: 'bg-amber-50 text-amber-800 border-amber-200', icon: <VolumeIcon className="w-3 h-3 text-amber-700" /> },
 };
-const OTHER = { label: 'Event', badge: 'bg-slate-500/20 text-slate-300 border-slate-500/40', icon: <FileTextIcon className="w-3 h-3 text-slate-300" /> };
+const OTHER = { label: 'Event', badge: 'bg-slate-100 text-slate-800 border-slate-200', icon: <FileTextIcon className="w-3 h-3 text-slate-700" /> };
 
 const formatWhen = (iso) =>
   new Date(iso).toLocaleString('en-IN', {
@@ -87,30 +87,30 @@ export default function MachineTimeline() {
   };
 
   return (
-    <div className="bg-slate-800/90 border border-slate-700/80 rounded-2xl p-6 shadow-xl space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-700/60 pb-4">
+    <div className="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-sm space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 pb-4">
         <div>
-          <span className="text-[10px] uppercase font-bold text-cyan-400 tracking-wider">
+          <span className="text-[10px] uppercase font-bold text-maroon-700 tracking-wider">
             Shop-Floor Activity Stream
           </span>
-          <h2 className="text-lg font-bold text-white flex items-center space-x-2 mt-0.5">
-            <ClockIcon className="w-5 h-5 text-cyan-400" />
+          <h2 className="text-lg font-bold text-slate-900 flex items-center space-x-2 mt-0.5">
+            <ClockIcon className="w-5 h-5 text-maroon-700" />
             <span>Machine Event Timeline</span>
           </h2>
-          <p className="text-slate-400 text-xs mt-1">
+          <p className="text-slate-600 text-xs mt-1">
             ERP records, sensor spikes, operator notes, meetings and safety warnings in one stream.
           </p>
         </div>
 
         <div className="flex items-center space-x-2 text-xs">
-          <label htmlFor="timeline-machine" className="text-slate-300 font-medium">
+          <label htmlFor="timeline-machine" className="text-slate-700 font-medium">
             Machine:
           </label>
           <select
             id="timeline-machine"
             value={selectedMachineId || ''}
             onChange={(e) => setSelectedMachineId(Number(e.target.value))}
-            className="bg-slate-900 border border-slate-700 text-slate-200 py-1 px-2.5 rounded-lg font-semibold focus:border-cyan-400 text-xs"
+            className="bg-white border border-slate-200 text-slate-800 py-1.5 px-3 rounded-xl font-semibold focus:border-maroon-700 focus:ring-1 focus:ring-maroon-700 text-xs shadow-xs outline-none"
           >
             {(machines.data || []).map((m) => (
               <option key={m.id} value={m.id}>
@@ -129,21 +129,21 @@ export default function MachineTimeline() {
       />
 
       {!first.loading && !first.error && events.length === 0 && (
-        <div className="text-center text-slate-400 text-xs py-6">Nothing recorded on this machine yet.</div>
+        <div className="text-center text-slate-500 text-xs py-6">Nothing recorded on this machine yet.</div>
       )}
 
       {/* Timeline Stream */}
       {events.length > 0 && (
-        <div className="relative border-l-2 border-slate-700 ml-4 pl-6 space-y-6">
+        <div className="relative border-l-2 border-slate-200 ml-4 pl-6 space-y-6">
           {events.map((event) => {
             const kind = KINDS[event.kind] || OTHER;
             return (
               <div key={event.id} className="relative group">
-                <div className="absolute -left-[35px] top-0.5 w-6 h-6 rounded-full bg-slate-900 border-2 border-slate-600 flex items-center justify-center text-[11px] shadow group-hover:border-cyan-400 transition">
+                <div className="absolute -left-[35px] top-0.5 w-6 h-6 rounded-full bg-white border-2 border-slate-300 flex items-center justify-center text-[11px] shadow-xs group-hover:border-maroon-700 group-hover:shadow-sm transition">
                   {kind.icon}
                 </div>
 
-                <div className="bg-slate-900/70 border border-slate-800 rounded-xl p-3.5 space-y-1.5 shadow-sm transition hover:border-slate-700">
+                <div className="bg-white border border-slate-200/90 rounded-xl p-3.5 space-y-1.5 shadow-xs transition hover:border-slate-300 hover:shadow-sm">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-xs">
                     <div className="flex items-center space-x-2">
                       <span
@@ -151,12 +151,12 @@ export default function MachineTimeline() {
                       >
                         {kind.label}
                       </span>
-                      <span className="font-bold text-slate-200">{first.data && first.data.machine}</span>
+                      <span className="font-bold text-slate-900">{first.data && first.data.machine}</span>
                     </div>
                     <span className="text-slate-500 text-[10px] font-mono">{formatWhen(event.occurred_at)}</span>
                   </div>
 
-                  <p className="text-xs text-slate-200 leading-relaxed font-medium">{event.summary}</p>
+                  <p className="text-xs text-slate-800 leading-relaxed font-medium">{event.summary}</p>
                 </div>
               </div>
             );
@@ -164,7 +164,7 @@ export default function MachineTimeline() {
         </div>
       )}
 
-      {moreError && <div className="text-red-300 text-xs">Could not load more: {moreError}</div>}
+      {moreError && <div className="text-rose-600 text-xs">Could not load more: {moreError}</div>}
 
       {events.length < total && (
         <div className="flex justify-center">
@@ -172,7 +172,7 @@ export default function MachineTimeline() {
             type="button"
             disabled={loadingMore}
             onClick={loadMore}
-            className="btn-touch px-4 py-1.5 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 text-slate-200 text-xs font-semibold rounded-lg border border-slate-700"
+            className="btn-touch px-4 py-2 bg-white hover:bg-slate-50 disabled:opacity-50 text-slate-800 hover:text-maroon-800 text-xs font-semibold rounded-xl border border-slate-200 shadow-xs transition"
           >
             {loadingMore ? 'Loading…' : `Load older events (${total - events.length} more)`}
           </button>

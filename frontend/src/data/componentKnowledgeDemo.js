@@ -26,7 +26,7 @@ export const COMPONENT_KNOWLEDGE_DEMO = {
       'Coolant': 'Through-Spindle + Ring Nozzles',
     },
     position: [0, 1.45, -0.15],
-    pin_position: [0, 1.85, 0.15],
+    pin_position: [0, 1.95, 0.05],
     expert_tips: [
       {
         id: 101,
@@ -140,7 +140,7 @@ export const COMPONENT_KNOWLEDGE_DEMO = {
       'Max Tool Diameter': '80 mm (adjacent empty: 120 mm)',
     },
     position: [-0.72, 1.55, -0.1],
-    pin_position: [-0.78, 1.95, 0.15],
+    pin_position: [-0.85, 1.95, 0.15],
     expert_tips: [
       {
         id: 104,
@@ -234,7 +234,7 @@ export const COMPONENT_KNOWLEDGE_DEMO = {
       'Rapid Traverse': '36 m/min',
     },
     position: [0, 0.65, 0.05],
-    pin_position: [0.55, 0.85, 0.35],
+    pin_position: [0.65, 0.95, 0.35],
     expert_tips: [
       {
         id: 106,
@@ -306,7 +306,7 @@ export const COMPONENT_KNOWLEDGE_DEMO = {
       'Bed Height': '73.0 ± 0.01 mm matched',
     },
     position: [0, 0.84, 0.0],
-    pin_position: [0, 1.05, 0.25],
+    pin_position: [-0.25, 1.15, 0.25],
     expert_tips: [
       {
         id: 108,
@@ -378,7 +378,7 @@ export const COMPONENT_KNOWLEDGE_DEMO = {
       'Tower Light': '3-Tier Industrial LED (Green / Amber / Red)',
     },
     position: [1.35, 1.45, 0.95],
-    pin_position: [1.4, 1.8, 1.05],
+    pin_position: [1.45, 1.85, 1.05],
     expert_tips: [
       {
         id: 110,
@@ -449,7 +449,7 @@ export const COMPONENT_KNOWLEDGE_DEMO = {
       Action: 'Dual-slide counterbalanced guide rails',
     },
     position: [0, 1.35, 0.95],
-    pin_position: [0.35, 1.55, 1.05],
+    pin_position: [0.55, 1.65, 1.05],
     expert_tips: [
       {
         id: 112,
@@ -521,7 +521,7 @@ export const COMPONENT_KNOWLEDGE_DEMO = {
       'Chip Handling': 'Integrated Chute with Conveyor Trough',
     },
     position: [0, 1.35, 0],
-    pin_position: [-0.95, 0.45, 0.85],
+    pin_position: [-1.05, 0.55, 0.85],
     expert_tips: [
       {
         id: 114,

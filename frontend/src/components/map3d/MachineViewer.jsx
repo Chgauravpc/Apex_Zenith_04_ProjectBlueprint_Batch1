@@ -65,6 +65,7 @@ export default function MachineViewer({
   const [wireframe, setWireframe] = useState(false);
   const [autoRotate, setAutoRotate] = useState(false);
   const [showPins, setShowPins] = useState(true);
+  const [pinMode, setPinMode] = useState('compact');
   const [cameraPreset, setCameraPreset] = useState('iso');
   const [hoveredName, setHoveredName] = useState(null);
   const controlsRef = useRef();
@@ -96,23 +97,23 @@ export default function MachineViewer({
         className="w-full h-full"
       >
         {/* Dark Industrial Background Color */}
-        <color attach="background" args={['#090d16']} />
+        <color attach="background" args={['#0a0f1d']} />
 
         {/* Ambient & Directional Lighting */}
-        <ambientLight intensity={0.7} color="#94a3b8" />
+        <ambientLight intensity={0.75} color="#94a3b8" />
         {/* Overhead Key Sunlight */}
         <directionalLight
           position={[5, 8, 5]}
-          intensity={1.2}
+          intensity={1.3}
           color="#f8fafc"
           castShadow
           shadow-mapSize-width={1024}
           shadow-mapSize-height={1024}
         />
-        {/* Soft Cool Rim Light */}
-        <directionalLight position={[-6, 4, -4]} intensity={0.6} color="#38bdf8" />
-        {/* Front Warm Fill */}
-        <directionalLight position={[0, 2, 6]} intensity={0.4} color="#fde047" />
+        {/* Signature Industrial Maroon Rim Light */}
+        <directionalLight position={[-6, 4, -4]} intensity={0.8} color="#9f1239" />
+        {/* Front Neutral Fill */}
+        <directionalLight position={[0, 2, 6]} intensity={0.45} color="#e2e8f0" />
 
         {/* Camera Preset Handler */}
         <CameraController cameraPreset={cameraPreset} controlsRef={controlsRef} />
@@ -131,7 +132,7 @@ export default function MachineViewer({
         />
 
         {/* Shop Floor Grid */}
-        <gridHelper args={[16, 32, '#334155', '#1e293b']} position={[0, -0.01, 0]} />
+        <gridHelper args={[16, 32, '#475569', '#1e293b']} position={[0, -0.01, 0]} />
 
         {/* Floor Shadow Contact Disk */}
         <mesh position={[0, -0.015, 0]} rotation={[-Math.PI / 2, 0, 0]}>
@@ -154,16 +155,21 @@ export default function MachineViewer({
         {showPins &&
           components.map((c) => {
             if (!c.pin_position) return null;
-            const topNote = c.expert_notes?.[0];
+            const topNote = c.expert_notes?.[0] || c.expert_tips?.[0];
             return (
               <PinMarker
                 key={`pin-${c.id || c.mesh_name}`}
                 position={c.pin_position}
                 componentId={c.mesh_name}
-                title={topNote?.title ? topNote.title.slice(0, 26) + '...' : c.display_name}
+                componentName={c.display_name}
+                title={topNote?.title || c.display_name}
                 author={topNote?.author}
                 risk={c.risk}
+                noteCount={c.expert_tips?.length || c.expert_notes?.length || 0}
+                incidentCount={c.incident_count || c.past_incidents?.length || 0}
                 isSelected={selectedComponent === c.mesh_name}
+                isHighlighted={highlightedComponent === c.mesh_name}
+                pinMode={pinMode}
                 onClick={onSelectComponent}
               />
             );
@@ -172,28 +178,28 @@ export default function MachineViewer({
 
       {/* Top Left HUD: Machine Info & Live Telemetry */}
       <div className="absolute top-4 left-4 z-10 flex flex-col space-y-2 pointer-events-auto">
-        <div className="flex items-center space-x-2 bg-slate-900/85 backdrop-blur-md border border-slate-700/80 px-3 py-1.5 rounded-lg shadow-lg">
-          <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
-          <span className="text-xs font-semibold text-white tracking-wide">
+        <div className="flex items-center space-x-2 bg-white/95 backdrop-blur-md border border-slate-200/80 px-3.5 py-1.5 rounded-xl shadow-sm">
+          <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+          <span className="text-xs font-bold text-slate-900 tracking-wide">
             VMC-3 • 3D MACHINE MAP
           </span>
-          <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+          <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-200 font-bold">
             ONLINE
           </span>
         </div>
 
         {/* Selection indicator pill with quick reset */}
         {selectedData ? (
-          <div className="flex items-center space-x-2 bg-cyan-950/90 backdrop-blur-md border border-cyan-400/60 px-3 py-1.5 rounded-lg shadow-xl animate-fade-in">
-            <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping" />
-            <span className="text-xs font-bold text-white">
-              Selected: <span className="text-cyan-300">{selectedData.display_name}</span>
+          <div className="flex items-center space-x-2 bg-white/95 backdrop-blur-md border border-maroon-200 px-3.5 py-1.5 rounded-xl shadow-sm animate-fade-in">
+            <span className="w-2 h-2 rounded-full bg-rose-600 animate-ping" />
+            <span className="text-xs font-semibold text-slate-700">
+              Selected: <span className="font-bold text-maroon-800">{selectedData.display_name}</span>
             </span>
             {onResetSelection && (
               <button
                 type="button"
                 onClick={onResetSelection}
-                className="ml-1 text-[11px] font-bold text-slate-300 hover:text-white bg-slate-800/80 hover:bg-slate-700 px-2 py-0.5 rounded border border-slate-600 transition"
+                className="ml-1.5 text-[11px] font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 px-2 py-0.5 rounded-md border border-slate-300 transition shadow-2xs"
                 title="Reset Selection"
               >
                 ↺ Clear
@@ -201,12 +207,12 @@ export default function MachineViewer({
             )}
           </div>
         ) : hoveredName ? (
-          <div className="bg-slate-900/80 backdrop-blur-md border border-slate-700 px-3 py-1 rounded-md text-xs font-medium text-slate-300 shadow">
-            Hovering: <span className="font-semibold text-cyan-300">{hoveredName}</span>{' '}
-            <span className="text-[10px] text-slate-400">(Click to select)</span>
+          <div className="bg-white/95 backdrop-blur-md border border-slate-200 px-3 py-1 rounded-lg text-xs font-medium text-slate-700 shadow-xs">
+            Hovering: <span className="font-semibold text-maroon-700">{hoveredName}</span>{' '}
+            <span className="text-[10px] text-slate-500">(Click to select)</span>
           </div>
         ) : (
-          <div className="bg-slate-900/60 backdrop-blur-sm border border-slate-800/80 px-3 py-1 rounded-md text-[11px] text-slate-400 shadow">
+          <div className="bg-white/90 backdrop-blur-sm border border-slate-200 px-3 py-1 rounded-lg text-[11px] text-slate-600 shadow-xs">
             Click on spindle, tool holder, worktable, vise, control panel, or doors to inspect
           </div>
         )}
@@ -219,7 +225,7 @@ export default function MachineViewer({
           <button
             type="button"
             onClick={onResetSelection}
-            className="btn-touch px-3 py-1.5 text-xs font-bold rounded-lg bg-cyan-600/90 hover:bg-cyan-500 text-slate-950 border border-cyan-400 shadow-lg transition flex items-center space-x-1"
+            className="btn-touch px-3 py-1.5 text-xs font-bold rounded-lg bg-maroon-800 hover:bg-maroon-900 text-white border border-maroon-900 shadow-xs transition flex items-center space-x-1"
             title="Reset Component Selection"
           >
             <span>↺ Reset Selection</span>
@@ -230,10 +236,10 @@ export default function MachineViewer({
         <button
           type="button"
           onClick={onToggleDoors}
-          className={`btn-touch px-3 py-1.5 text-xs font-medium rounded-lg border shadow-lg transition flex items-center space-x-1.5 ${
+          className={`btn-touch px-3 py-1.5 text-xs font-medium rounded-lg border shadow-xs transition flex items-center space-x-1.5 ${
             doorsOpen
-              ? 'bg-amber-600/90 hover:bg-amber-500 text-white border-amber-400'
-              : 'bg-slate-800/90 hover:bg-slate-700 text-slate-200 border-slate-700'
+              ? 'bg-amber-600 hover:bg-amber-700 text-white border-amber-700'
+              : 'bg-white/95 hover:bg-slate-50 text-slate-700 border-slate-200/90'
           }`}
           title={doorsOpen ? 'Close Enclosure Doors' : 'Open Enclosure Doors to View Inside'}
         >
@@ -244,10 +250,10 @@ export default function MachineViewer({
         <button
           type="button"
           onClick={() => setWireframe(!wireframe)}
-          className={`btn-touch px-3 py-1.5 text-xs font-medium rounded-lg border shadow-lg transition ${
+          className={`btn-touch px-3 py-1.5 text-xs font-medium rounded-lg border shadow-xs transition ${
             wireframe
-              ? 'bg-cyan-600 text-white border-cyan-400'
-              : 'bg-slate-800/90 hover:bg-slate-700 text-slate-300 border-slate-700'
+              ? 'bg-maroon-700 text-white border-maroon-800'
+              : 'bg-white/95 hover:bg-slate-50 text-slate-700 border-slate-200/90'
           }`}
           title="Toggle Wireframe / X-Ray Mode"
         >
@@ -258,10 +264,10 @@ export default function MachineViewer({
         <button
           type="button"
           onClick={() => setAutoRotate(!autoRotate)}
-          className={`btn-touch px-3 py-1.5 text-xs font-medium rounded-lg border shadow-lg transition ${
+          className={`btn-touch px-3 py-1.5 text-xs font-medium rounded-lg border shadow-xs transition ${
             autoRotate
-              ? 'bg-cyan-600 text-white border-cyan-400'
-              : 'bg-slate-800/90 hover:bg-slate-700 text-slate-300 border-slate-700'
+              ? 'bg-maroon-700 text-white border-maroon-800'
+              : 'bg-white/95 hover:bg-slate-50 text-slate-700 border-slate-200/90'
           }`}
           title="Toggle Turntable 360° Rotation"
         >
@@ -272,21 +278,37 @@ export default function MachineViewer({
         <button
           type="button"
           onClick={() => setShowPins(!showPins)}
-          className={`btn-touch px-3 py-1.5 text-xs font-medium rounded-lg border shadow-lg transition ${
+          className={`btn-touch px-3 py-1.5 text-xs font-medium rounded-lg border shadow-xs transition ${
             showPins
-              ? 'bg-indigo-600 text-white border-indigo-400'
-              : 'bg-slate-800/90 hover:bg-slate-700 text-slate-400 border-slate-700'
+              ? 'bg-maroon-700 text-white border-maroon-800'
+              : 'bg-white/95 hover:bg-slate-50 text-slate-700 border-slate-200/90'
           }`}
           title="Toggle Component Knowledge Pins"
         >
           <span>📍 Pins</span>
         </button>
 
+        {/* Toggle Pin Density if Pins are visible */}
+        {showPins && (
+          <button
+            type="button"
+            onClick={() => setPinMode((prev) => (prev === 'compact' ? 'expanded' : 'compact'))}
+            className={`btn-touch px-2.5 py-1.5 text-xs font-medium rounded-lg border shadow-xs transition ${
+              pinMode === 'compact'
+                ? 'bg-white/95 hover:bg-slate-50 text-slate-700 border-slate-200/90'
+                : 'bg-maroon-50 text-maroon-800 border-maroon-300 font-semibold'
+            }`}
+            title={pinMode === 'compact' ? 'Expand all pins' : 'Collapse pins to compact labels'}
+          >
+            <span>{pinMode === 'compact' ? '🔍 Compact' : '📖 Expanded'}</span>
+          </button>
+        )}
+
         {/* Reset View Button */}
         <button
           type="button"
           onClick={handleResetCamera}
-          className="btn-touch px-3 py-1.5 text-xs font-medium rounded-lg bg-slate-800/90 hover:bg-slate-700 text-slate-300 border border-slate-700 shadow-lg transition"
+          className="btn-touch px-3 py-1.5 text-xs font-medium rounded-lg bg-white/95 hover:bg-slate-50 text-slate-700 border border-slate-200/90 shadow-xs transition"
           title="Reset Camera to Default"
         >
           <span>🎯 Camera</span>
@@ -294,8 +316,8 @@ export default function MachineViewer({
       </div>
 
       {/* Bottom Floating Camera Presets Bar */}
-      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 flex items-center space-x-1 bg-slate-900/90 backdrop-blur-md border border-slate-700/80 px-2.5 py-1.5 rounded-full shadow-2xl">
-        <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider px-2 hidden sm:inline">
+      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 flex items-center space-x-1 bg-white/95 backdrop-blur-md border border-slate-200/80 px-2.5 py-1.5 rounded-full shadow-md max-w-[95%] overflow-x-auto">
+        <span className="shrink-0 text-[11px] font-bold text-slate-500 uppercase tracking-wider px-2 hidden sm:inline">
           View:
         </span>
         {[
@@ -310,10 +332,10 @@ export default function MachineViewer({
             key={p.key}
             type="button"
             onClick={() => setCameraPreset(p.key)}
-            className={`px-3 py-1 text-xs font-medium rounded-full transition ${
+            className={`shrink-0 whitespace-nowrap px-3 py-1 text-xs font-medium rounded-full transition ${
               cameraPreset === p.key
-                ? 'bg-cyan-500 text-slate-950 font-bold shadow'
-                : 'text-slate-300 hover:text-white hover:bg-slate-800'
+                ? 'bg-maroon-700 text-white font-semibold shadow-xs ring-1 ring-maroon-400'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
             }`}
           >
             {p.label}
@@ -322,7 +344,7 @@ export default function MachineViewer({
       </div>
 
       {/* Bottom Left Navigation Tips */}
-      <div className="absolute bottom-4 left-4 z-10 hidden md:block text-[10px] text-slate-500 pointer-events-none bg-slate-950/60 px-2.5 py-1 rounded-md border border-slate-800/60 backdrop-blur-sm">
+      <div className="absolute bottom-4 left-4 z-10 hidden md:block text-[10px] text-slate-600 pointer-events-none bg-white/90 px-2.5 py-1 rounded-md border border-slate-200 shadow-xs backdrop-blur-sm">
         Rotate: Left Click + Drag • Pan: Right Click + Drag • Zoom: Scroll
       </div>
     </div>

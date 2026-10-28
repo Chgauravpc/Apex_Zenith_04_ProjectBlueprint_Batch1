@@ -5,9 +5,9 @@ import LoadState from '../common/LoadState';
 import { MapPinIcon, SearchIcon } from '../common/Icons';
 
 const STATUS = {
-  critical: { label: 'Critical Risk', color: 'bg-red-950/80 text-red-300 border-red-500/60' },
-  at_risk: { label: 'Moderate Risk', color: 'bg-amber-950/80 text-amber-300 border-amber-500/60' },
-  ok: { label: 'Safe', color: 'bg-emerald-950/80 text-emerald-300 border-emerald-500/60' },
+  critical: { label: 'Critical Risk', color: 'bg-rose-50 text-rose-950 border-rose-200 hover:border-rose-300' },
+  at_risk: { label: 'Moderate Risk', color: 'bg-amber-50 text-amber-950 border-amber-200 hover:border-amber-300' },
+  ok: { label: 'Safe', color: 'bg-emerald-50 text-emerald-950 border-emerald-200 hover:border-emerald-300' },
 };
 
 const partName = (cell) => cell.name.split(' · ').slice(1).join(' · ') || cell.name;
@@ -47,34 +47,34 @@ export default function RiskHeatmap({ onSelectCell }) {
   };
 
   return (
-    <div className="bg-slate-800/90 border border-slate-700/80 rounded-2xl p-6 shadow-xl space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-700/60 pb-4">
+    <div className="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-sm space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 pb-4">
         <div>
-          <span className="text-[10px] uppercase font-bold text-cyan-400 tracking-wider">
+          <span className="text-[10px] uppercase font-bold text-maroon-700 tracking-wider">
             Shop-Floor Knowledge Risk Matrix
           </span>
-          <h2 className="text-lg font-bold text-white flex items-center space-x-2 mt-0.5">
-            <MapPinIcon className="w-5 h-5 text-cyan-400" />
+          <h2 className="text-lg font-bold text-slate-900 flex items-center space-x-2 mt-0.5">
+            <MapPinIcon className="w-5 h-5 text-maroon-700" />
             <span>Bus Factor Heatmap (Machines × Components)</span>
           </h2>
-          <p className="text-slate-400 text-xs mt-1">
+          <p className="text-slate-600 text-xs mt-1">
             Bus factor = people who know the part and are still here after planned exits. Red cells lose
             their know-how when the expert leaves.
           </p>
         </div>
 
         <div className="flex items-center space-x-3 text-[11px]">
-          <span className="flex items-center space-x-1">
-            <span className="w-2.5 h-2.5 rounded-full bg-red-500" />
-            <span className="text-slate-300">BF = 0 (Critical)</span>
+          <span className="flex items-center space-x-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-rose-500" />
+            <span className="text-slate-700 font-medium">BF = 0 (Critical)</span>
           </span>
-          <span className="flex items-center space-x-1">
+          <span className="flex items-center space-x-1.5">
             <span className="w-2.5 h-2.5 rounded-full bg-amber-500" />
-            <span className="text-slate-300">BF = 1 (Medium)</span>
+            <span className="text-slate-700 font-medium">BF = 1 (Medium)</span>
           </span>
-          <span className="flex items-center space-x-1">
+          <span className="flex items-center space-x-1.5">
             <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
-            <span className="text-slate-300">BF ≥ 2 (Safe)</span>
+            <span className="text-slate-700 font-medium">BF ≥ 2 (Safe)</span>
           </span>
         </div>
       </div>
@@ -86,10 +86,10 @@ export default function RiskHeatmap({ onSelectCell }) {
         {heatmapData.map((row) => (
           <div key={row.machine} className="space-y-2">
             <div className="flex items-center space-x-2">
-              <span className="font-bold text-white text-xs bg-slate-900 border border-slate-700 px-2 py-0.5 rounded">
+              <span className="font-bold text-slate-900 text-xs bg-slate-100 border border-slate-200/80 px-2.5 py-0.5 rounded-md">
                 Machine: {row.machine}
               </span>
-              <span className="text-[11px] text-slate-400">
+              <span className="text-[11px] text-slate-500">
                 {row.summary.coverage}% of parts covered • {row.summary.cards} verified cards
               </span>
             </div>
@@ -100,23 +100,23 @@ export default function RiskHeatmap({ onSelectCell }) {
                   key={c.component_id}
                   type="button"
                   onClick={() => handleCellClick(c, row.machine)}
-                  className={`text-left p-3.5 rounded-xl border transition shadow-sm hover:scale-[1.02] flex flex-col justify-between space-y-2 ${c.color}`}
+                  className={`text-left p-3.5 rounded-xl border transition shadow-xs hover:shadow-sm hover:scale-[1.01] flex flex-col justify-between space-y-2 ${c.color}`}
                 >
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold text-xs truncate text-slate-100">
+                  <div className="flex items-center justify-between gap-1">
+                    <span className="font-bold text-xs truncate text-slate-900">
                       {c.part}
                     </span>
-                    <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-black/40">
+                    <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-white/80 border border-slate-200/60 font-semibold text-slate-800 shrink-0">
                       BF: {c.bus}
                     </span>
                   </div>
 
-                  <div className="text-[11px] text-slate-300">
+                  <div className="text-[11px] text-slate-600">
                     <div>
-                      <strong>{c.cards}</strong> {c.cards === 1 ? 'card' : 'cards'} • {c.holders}{' '}
+                      <strong className="text-slate-900">{c.cards}</strong> {c.cards === 1 ? 'card' : 'cards'} • {c.holders}{' '}
                       {c.holders === 1 ? 'person' : 'people'}
                     </div>
-                    <div className="text-[10px] text-slate-400 truncate">
+                    <div className="text-[10px] text-slate-500 truncate">
                       Expert: {c.expert || 'nobody yet'}
                     </div>
                   </div>
@@ -129,11 +129,11 @@ export default function RiskHeatmap({ onSelectCell }) {
 
       {/* Selected Cell Modal/Drawer */}
       {selectedCell && (
-        <div className="bg-slate-900/90 border border-cyan-500/40 rounded-xl p-4 space-y-3 pt-3">
-          <div className="flex items-center justify-between border-b border-slate-800 pb-2">
-            <div className="flex items-center space-x-2">
-              <SearchIcon className="w-4 h-4 text-cyan-400" />
-              <span className="text-sm font-bold text-white">
+        <div className="bg-slate-50/90 border border-maroon-200 rounded-xl p-4 space-y-3 pt-3 shadow-xs">
+          <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+            <div className="flex items-center space-x-2 flex-wrap gap-1">
+              <SearchIcon className="w-4 h-4 text-maroon-700" />
+              <span className="text-sm font-bold text-slate-900">
                 {selectedCell.machine} • {selectedCell.part}
               </span>
               <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${selectedCell.color}`}>
@@ -144,7 +144,7 @@ export default function RiskHeatmap({ onSelectCell }) {
             <button
               type="button"
               onClick={() => setSelectedCell(null)}
-              className="text-slate-400 hover:text-slate-200 text-xs font-bold"
+              className="text-slate-500 hover:text-slate-800 text-xs font-bold px-2 py-1 rounded hover:bg-slate-200 transition"
             >
               ✕ Close
             </button>
@@ -152,22 +152,22 @@ export default function RiskHeatmap({ onSelectCell }) {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
             <div>
-              <span className="text-slate-400 block font-semibold mb-1">Identified Knowledge Gap:</span>
-              <p className="text-slate-200 bg-slate-950 p-2.5 rounded-lg border border-slate-800 leading-relaxed">
+              <span className="text-slate-600 block font-semibold mb-1">Identified Knowledge Gap:</span>
+              <p className="text-slate-800 bg-white p-2.5 rounded-lg border border-slate-200 leading-relaxed shadow-xs">
                 {gapText(selectedCell)}
               </p>
             </div>
 
             <div className="space-y-1">
-              <span className="text-slate-400 block font-semibold mb-1">Knowledge Custody:</span>
-              <p className="text-slate-200">
-                Primary Expert: <strong className="text-cyan-300">{selectedCell.expert || 'nobody yet'}</strong>
+              <span className="text-slate-600 block font-semibold mb-1">Knowledge Custody:</span>
+              <p className="text-slate-700">
+                Primary Expert: <strong className="text-maroon-800">{selectedCell.expert || 'nobody yet'}</strong>
                 {selectedCell.expert_leaving_on && ` (leaves ${selectedCell.expert_leaving_on})`}
               </p>
-              <p className="text-slate-300">
-                Verified Cards in Index: <strong>{selectedCell.cards}</strong>
+              <p className="text-slate-700">
+                Verified Cards in Index: <strong className="text-slate-900">{selectedCell.cards}</strong>
               </p>
-              <p className="text-slate-400 text-[11px] pt-1">
+              <p className="text-slate-500 text-[11px] pt-1">
                 Recommendation: Trigger targeted AI interview questions to close this gap before exit.
               </p>
             </div>

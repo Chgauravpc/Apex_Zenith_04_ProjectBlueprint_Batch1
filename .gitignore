@@ -10,3 +10,7 @@ frontend/dist/
 !backend/storage/.gitkeep
 *.db-wal
 *.db-shm
+
+# Teamwork / agent execution artifacts
+.agents/
+.agents/teamwork/

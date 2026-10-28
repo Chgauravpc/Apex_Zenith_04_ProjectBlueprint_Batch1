@@ -202,38 +202,38 @@ export default function MachineMap() {
       )}
 
       {/* Top Header Bar */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-5">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-5">
         <div>
           <div className="flex items-center space-x-3">
-            <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight flex items-center space-x-2">
-              <CogIcon className="w-6 h-6 text-cyan-400" />
+            <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight flex items-center space-x-2">
+              <CogIcon className="w-6 h-6 text-maroon-700 dark:text-rose-400" />
               <span>{t('navMap', language)}</span>
             </h1>
-            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-cyan-500/15 text-cyan-300 border border-cyan-500/30">
+            <span className="px-3 py-1 rounded-full text-xs font-bold bg-maroon-50 dark:bg-maroon-950/60 text-maroon-800 dark:text-maroon-200 border border-maroon-200 dark:border-maroon-800">
               VMC-3 (Vertical Machining Centre)
             </span>
           </div>
-          <p className="text-slate-400 text-sm mt-1 max-w-2xl">
+          <p className="text-slate-600 dark:text-slate-400 text-sm mt-1 max-w-2xl">
             Interactive 3D model with independently clickable machine components,
             real-time hover highlighting, verified old-employee advice, and component failure logs.
           </p>
         </div>
 
         {/* Machine Telemetry Badge */}
-        <div className="flex items-center space-x-3 bg-slate-800/80 border border-slate-700/80 px-4 py-2 rounded-xl text-xs">
+        <div className="flex items-center space-x-3 bg-white dark:bg-slate-800/90 border border-[#DADCE0] dark:border-slate-700/80 px-4 py-2.5 rounded-xl text-xs shadow-xs">
           <div>
-            <div className="text-slate-400">Location</div>
-            <div className="font-bold text-white">Bay A • Cell 2</div>
+            <div className="text-slate-500 dark:text-slate-400">Location</div>
+            <div className="font-bold text-slate-900 dark:text-white">Bay A • Cell 2</div>
           </div>
-          <div className="w-px h-7 bg-slate-700" />
+          <div className="w-px h-7 bg-slate-200 dark:bg-slate-700" />
           <div>
-            <div className="text-slate-400">Max Spindle Speed</div>
-            <div className="font-mono font-bold text-cyan-400">12,000 RPM</div>
+            <div className="text-slate-500 dark:text-slate-400">Max Spindle Speed</div>
+            <div className="font-mono font-bold text-maroon-700 dark:text-maroon-300">12,000 RPM</div>
           </div>
-          <div className="w-px h-7 bg-slate-700" />
+          <div className="w-px h-7 bg-slate-200 dark:bg-slate-700" />
           <div>
-            <div className="text-slate-400">Mentor Pairing</div>
-            <div className="font-bold text-emerald-400">Ramesh (Old) → Priya (New)</div>
+            <div className="text-slate-500 dark:text-slate-400">Mentor Pairing</div>
+            <div className="font-bold text-emerald-700 dark:text-emerald-400">Ramesh (Old) → Priya (New)</div>
           </div>
         </div>
       </div>
@@ -260,8 +260,8 @@ export default function MachineMap() {
           />
 
           {/* Quick Select Component Filter Pills Bar with Reset option */}
-          <div className="bg-slate-900/90 border border-slate-800 p-3 rounded-xl flex items-center gap-2 overflow-x-auto">
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap pl-1">
+          <div className="bg-white border border-slate-200/90 p-2.5 rounded-xl shadow-xs flex items-center gap-2 overflow-x-auto">
+            <span className="shrink-0 text-xs font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap pl-1">
               Components:
             </span>
 
@@ -270,7 +270,7 @@ export default function MachineMap() {
               <button
                 type="button"
                 onClick={handleResetSelection}
-                className="btn-touch px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-400/50 shadow-sm transition flex items-center space-x-1"
+                className="btn-touch shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap bg-rose-50 hover:bg-rose-100 dark:bg-maroon-900/80 dark:hover:bg-maroon-800 text-maroon-800 dark:text-rose-200 border border-maroon-200 dark:border-maroon-600/70 shadow-xs transition flex items-center space-x-1"
                 title="Reset Selection"
               >
                 <span>↺</span>
@@ -285,24 +285,24 @@ export default function MachineMap() {
                   key={c.mesh_name}
                   type="button"
                   onClick={() => handleSelectComponent(c.mesh_name)}
-                  className={`btn-touch px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition flex items-center space-x-1.5 ${
+                  className={`btn-touch shrink-0 px-3.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all flex items-center space-x-2 ${
                     isSelected
-                      ? 'bg-cyan-500 text-slate-950 font-bold shadow-md ring-2 ring-cyan-300'
-                      : 'bg-slate-800/90 hover:bg-slate-700 text-slate-300 border border-slate-700/70'
+                      ? 'bg-maroon-700 text-white font-bold shadow-sm ring-2 ring-maroon-400/60'
+                      : 'bg-white dark:bg-slate-800/90 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200/90 dark:border-slate-700/70 shadow-xs'
                   }`}
                 >
                   {c.risk === 'high' && (
-                    <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-ping" />
+                    <span className="shrink-0 w-2 h-2 rounded-full bg-red-500 animate-ping" />
                   )}
                   {c.risk === 'medium' && (
-                    <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+                    <span className="shrink-0 w-2 h-2 rounded-full bg-amber-500" />
                   )}
-                  <span>{c.display_name}</span>
+                  <span className="shrink-0">{c.display_name}</span>
                   <span
-                    className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${
+                    className={`shrink-0 text-[10px] px-1.5 py-0.5 rounded-full font-mono font-bold ${
                       isSelected
-                        ? 'bg-slate-950/30 text-slate-950 font-bold'
-                        : 'bg-slate-900 text-cyan-400 border border-slate-700/60'
+                        ? 'bg-maroon-950/60 text-white'
+                        : 'bg-slate-100 dark:bg-slate-900 text-maroon-700 dark:text-rose-300 border border-slate-200 dark:border-slate-700/60'
                     }`}
                   >
                     {(c.expert_tips || c.expert_notes || []).length +

@@ -84,32 +84,32 @@ export default function ChatWindow() {
   return (
     <div className="space-y-6">
       {/* Query Input Box */}
-      <div className="bg-slate-800/90 border border-slate-700/80 rounded-2xl p-5 shadow-xl space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-700/60 pb-3">
+      <div className="bg-white border border-slate-200/90 shadow-sm rounded-2xl p-5 space-y-4 focus-within:ring-2 focus-within:ring-maroon-500/20">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 pb-3">
           <div className="flex items-center space-x-2">
             <span className="text-xl" aria-hidden="true">💬</span>
-            <span className="font-bold text-white text-base">Ask Shop-Floor Experience</span>
+            <span className="font-bold text-slate-900 text-base">Ask Shop-Floor Experience</span>
           </div>
 
           <div className="flex items-center space-x-3 text-xs">
-            <label className="text-slate-300 flex items-center space-x-1">
+            <label className="text-slate-600 flex items-center space-x-1">
               <span>Machine:</span>
               <select
                 value={machineId}
                 onChange={(e) => setMachineId(Number(e.target.value))}
-                className="bg-slate-900 border border-slate-700 text-slate-200 py-1 px-2 rounded-lg"
+                className="bg-white border border-slate-200 text-slate-800 py-1 px-2.5 rounded-lg focus:border-maroon-700 outline-none"
               >
                 <option value={1}>VMC-3</option>
                 <option value={2}>Lathe-2</option>
               </select>
             </label>
 
-            <label className="text-slate-300 flex items-center space-x-1">
+            <label className="text-slate-600 flex items-center space-x-1">
               <span>Lang:</span>
               <select
                 value={language}
                 onChange={(e) => setLanguage(e.target.value)}
-                className="bg-slate-900 border border-slate-700 text-slate-200 py-1 px-2 rounded-lg"
+                className="bg-white border border-slate-200 text-slate-800 py-1 px-2.5 rounded-lg focus:border-maroon-700 outline-none"
               >
                 <option value="hi">हिन्दी</option>
                 <option value="mr">मराठी</option>
@@ -133,14 +133,14 @@ export default function ChatWindow() {
                 }
               }}
               placeholder="Ask anything about machine symptoms, tools, or procedures in Hindi/Marathi/English..."
-              className="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-100 focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 placeholder-slate-500"
+              className="flex-1 bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-900 focus:border-maroon-700 focus:ring-1 focus:ring-maroon-700 placeholder-slate-400 outline-none shadow-xs"
             />
 
             <button
               type="button"
               disabled={isLoading || !query.trim()}
               onClick={() => handleAsk()}
-              className="btn-touch px-5 py-2.5 bg-cyan-500 hover:bg-cyan-400 disabled:opacity-50 text-slate-950 font-bold rounded-xl text-sm transition"
+              className="btn-touch px-6 py-2.5 bg-maroon-700 hover:bg-maroon-800 disabled:opacity-50 text-white font-semibold rounded-xl text-sm shadow-xs transition"
             >
               Ask
             </button>
@@ -153,7 +153,7 @@ export default function ChatWindow() {
                 <button
                   type="button"
                   onClick={startRecording}
-                  className="btn-touch px-3 py-1.5 bg-slate-900 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-lg flex items-center space-x-1.5 transition"
+                  className="btn-touch px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-slate-900 border border-slate-200 rounded-lg flex items-center space-x-1.5 transition shadow-xs"
                 >
                   <span className="w-2.5 h-2.5 rounded-full bg-red-500" />
                   <span>Ask by Voice</span>
@@ -162,7 +162,7 @@ export default function ChatWindow() {
                 <button
                   type="button"
                   onClick={stopRecording}
-                  className="btn-touch px-3 py-1.5 bg-amber-500 text-slate-950 font-bold rounded-lg flex items-center space-x-1.5"
+                  className="btn-touch px-3 py-1.5 bg-rose-600 text-white font-bold rounded-lg flex items-center space-x-1.5 animate-pulse"
                 >
                   <span>⏹️ Stop ({duration}s)</span>
                 </button>
@@ -170,19 +170,19 @@ export default function ChatWindow() {
 
               {audioBlob && !isRecording && (
                 <div className="flex items-center space-x-2">
-                  <span className="text-emerald-400 font-semibold">Audio Ready ({duration}s)</span>
+                  <span className="text-emerald-700 font-semibold">Audio Ready ({duration}s)</span>
                   <button
                     type="button"
                     onClick={handleVoiceSubmit}
                     disabled={isLoading}
-                    className="btn-touch px-3 py-1 bg-cyan-500 text-slate-950 font-bold rounded-lg"
+                    className="btn-touch px-3.5 py-1.5 bg-maroon-700 hover:bg-maroon-800 text-white font-semibold rounded-lg text-xs shadow-xs"
                   >
                     Send Voice Question
                   </button>
                   <button
                     type="button"
                     onClick={resetRecording}
-                    className="text-slate-400 hover:text-slate-200 text-xs"
+                    className="text-slate-500 hover:text-slate-800 text-xs"
                   >
                     Discard
                   </button>
@@ -190,7 +190,7 @@ export default function ChatWindow() {
               )}
             </div>
 
-            <span className="text-slate-500 hidden sm:inline">
+            <span className="text-slate-400 hidden sm:inline">
               Enter sends • Cites verified cards
             </span>
           </div>
@@ -198,7 +198,7 @@ export default function ChatWindow() {
 
         {/* Quick Suggested Queries */}
         <div className="pt-2">
-          <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block mb-2">
+          <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block mb-2">
             Suggested Shop-Floor Questions:
           </span>
           <div className="flex flex-wrap gap-2">
@@ -210,7 +210,7 @@ export default function ChatWindow() {
                   setQuery(sq);
                   handleAsk(sq);
                 }}
-                className="text-xs bg-slate-900 hover:bg-slate-700 text-slate-300 border border-slate-800 rounded-lg px-2.5 py-1 text-left transition"
+                className="text-xs bg-slate-50 hover:bg-maroon-50 border border-slate-200 hover:border-maroon-200 text-slate-700 hover:text-maroon-800 rounded-lg px-2.5 py-1 text-left transition shadow-xs"
               >
                 {sq}
               </button>
@@ -220,15 +220,15 @@ export default function ChatWindow() {
       </div>
 
       {error && (
-        <div className="p-3 bg-red-950/80 border border-red-500/50 rounded-xl text-red-200 text-xs">
+        <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-xl text-rose-800 text-xs font-medium">
           {error}
         </div>
       )}
 
       {/* Loading Indicator */}
       {isLoading && (
-        <div className="bg-slate-800/80 border border-cyan-500/30 rounded-2xl p-6 flex items-center justify-center space-x-3 text-slate-300 text-sm">
-          <div className="w-6 h-6 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin" />
+        <div className="bg-white border border-slate-200 rounded-2xl p-6 flex items-center justify-center space-x-3 text-slate-600 text-sm shadow-xs">
+          <div className="w-6 h-6 border-2 border-maroon-700 border-t-transparent rounded-full animate-spin" />
           <span>Searching shop-floor memory and synthesizing grounded answer...</span>
         </div>
       )}
@@ -239,8 +239,8 @@ export default function ChatWindow() {
           <div key={idx}>
             {item.role === 'user' ? (
               <div className="flex justify-end">
-                <div className="bg-cyan-500/15 border border-cyan-500/30 text-cyan-100 rounded-2xl px-4 py-3 max-w-xl text-sm shadow">
-                  <div className="text-[10px] text-cyan-400/80 mb-1 font-semibold">
+                <div className="bg-maroon-50 border border-maroon-200 text-maroon-950 rounded-2xl px-4 py-3 max-w-xl text-sm shadow-xs">
+                  <div className="text-[10px] text-maroon-700 mb-1 font-semibold">
                     You ({currentUser.name}) • {item.ts}
                   </div>
                   <p>{item.text}</p>

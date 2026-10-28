@@ -271,7 +271,7 @@ describe('Tier 1: Feature Coverage (Opaque-Box E2E Suite)', () => {
           <Home />
         </MemoryRouter>
       );
-      const banner = document.querySelector('.shadow-xl, .shadow-md, .shadow-lg');
+      const banner = document.querySelector('.shadow-xl, .shadow-md, .shadow-lg, .shadow-sm, .shadow-xs');
       expect(banner).not.toBeNull();
     });
 
@@ -922,7 +922,8 @@ describe('Tier 1: Feature Coverage (Opaque-Box E2E Suite)', () => {
     it('13.4: verifies segmented tab pattern with active pill highlighting', () => {
       render(<Dashboard />);
       const activeTab = screen.getByRole('button', { name: /Knowledge Risk Heatmap/i });
-      expect(activeTab.className).toContain('bg-slate-800');
+      expect(activeTab.className).toMatch(/bg-white|bg-slate-800/);
+      expect(activeTab.className).toContain('text-maroon-800');
     });
 
     it('13.5: renders status badges with semantic border and text color tokens', () => {

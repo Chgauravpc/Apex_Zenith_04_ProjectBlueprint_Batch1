@@ -561,7 +561,8 @@ describe('Tier 2: Boundary & Corner Cases (Opaque-Box E2E Suite)', () => {
       fireEvent.click(timelineBtn);
       fireEvent.click(heatmapBtn);
 
-      expect(heatmapBtn.closest('button').className).toContain('bg-slate-800');
+      expect(heatmapBtn.closest('button').className).toMatch(/bg-white|bg-slate-800/);
+      expect(heatmapBtn.closest('button').className).toContain('text-maroon-800');
     });
   });
 

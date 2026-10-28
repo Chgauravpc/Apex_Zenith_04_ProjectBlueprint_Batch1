@@ -69,61 +69,67 @@ export default function VmcMachine({
         metalness: 0.35,
         wireframe,
       }),
-      // Sheet metal enclosure (industrial dark slate / charcoal)
+      // Sheet metal enclosure (industrial dark graphite / aerospace charcoal)
       sheetMetalDark: new THREE.MeshStandardMaterial({
-        color: '#283141',
-        roughness: 0.55,
+        color: '#1e293b',
+        roughness: 0.5,
         metalness: 0.45,
         wireframe,
       }),
-      // Enclosure accent panels (clean industrial light gray)
+      // Enclosure clean white panels (Google White & Maroon industrial pearl)
       sheetMetalLight: new THREE.MeshStandardMaterial({
-        color: '#94a3b8',
-        roughness: 0.4,
-        metalness: 0.5,
+        color: '#f1f5f9',
+        roughness: 0.35,
+        metalness: 0.3,
         wireframe,
       }),
-      // Blueprint Cyan accent trim
+      // Signature Industrial Maroon Accent Trim (#721026)
       accentCyan: new THREE.MeshStandardMaterial({
-        color: '#0284c7',
-        roughness: 0.3,
-        metalness: 0.7,
+        color: '#721026',
+        roughness: 0.28,
+        metalness: 0.65,
+        wireframe,
+      }),
+      accentMaroon: new THREE.MeshStandardMaterial({
+        color: '#721026',
+        roughness: 0.28,
+        metalness: 0.65,
         wireframe,
       }),
       // Stainless steel internal splash guards & way covers
       stainless: new THREE.MeshStandardMaterial({
         color: '#cbd5e1',
-        roughness: 0.3,
-        metalness: 0.85,
+        roughness: 0.25,
+        metalness: 0.88,
         wireframe,
       }),
       // Precision ground steel (table surface, spindle cartridge, vise ways)
       groundSteel: new THREE.MeshStandardMaterial({
-        color: '#f1f5f9',
-        roughness: 0.18,
-        metalness: 0.9,
+        color: '#f8fafc',
+        roughness: 0.15,
+        metalness: 0.95,
         wireframe,
       }),
       // Dark anodized steel / vise body
       anodizedSteel: new THREE.MeshStandardMaterial({
         color: '#334155',
-        roughness: 0.4,
-        metalness: 0.6,
+        roughness: 0.35,
+        metalness: 0.65,
         wireframe,
       }),
       // Safety tinted polycarbonate window glass
       safetyGlass: new THREE.MeshPhysicalMaterial({
         color: '#64748b',
-        roughness: 0.1,
-        metalness: 0.15,
-        transmission: 0.85,
-        opacity: 0.45,
+        roughness: 0.08,
+        metalness: 0.1,
+        transmission: 0.88,
+        opacity: 0.4,
         transparent: true,
         wireframe,
       }),
-      // Spindle drive motor (dark blue)
+      // Spindle drive motor (precision dark graphite)
       motorBlue: new THREE.MeshStandardMaterial({
-        color: '#1e3a8a',
+        color: '#1e293b',
         roughness: 0.45,
         metalness: 0.5,
         wireframe,
@@ -275,15 +281,25 @@ export default function VmcMachine({
           <boxGeometry args={[2.3, 0.1, 1.88]} />
         </mesh>
 
-        {/* Cyan Accent Stripe on Roof Brow */}
+        {/* Signature Maroon Accent Stripe on Roof Brow */}
         <mesh position={[0, 2.36, 1.05]} material={materials.accentCyan}>
           <boxGeometry args={[2.28, 0.04, 0.04]} />
         </mesh>
 
-        {/* Machine Model Brand Plate (VMC-3) */}
-        <mesh position={[-0.8, 2.15, 1.05]} material={materials.accentCyan}>
-          <boxGeometry args={[0.42, 0.12, 0.02]} />
+        {/* Lower Front Base Accent Chamfer Stripe */}
+        <mesh position={[0, 0.06, 1.04]} material={materials.accentCyan}>
+          <boxGeometry args={[2.28, 0.03, 0.03]} />
         </mesh>
+
+        {/* Machine Model Brand Plate (VMC-3) with Dual-Tone Precision Framing */}
+        <group position={[-0.8, 2.15, 1.05]}>
+          <mesh material={materials.accentCyan}>
+            <boxGeometry args={[0.42, 0.12, 0.02]} />
+          </mesh>
+          <mesh position={[0, 0, 0.012]} material={materials.groundSteel}>
+            <boxGeometry args={[0.36, 0.07, 0.005]} />
+          </mesh>
+        </group>
 
         {/* Chamber Stainless Steel Splash Guards / Inner Walls */}
         <mesh position={[-1.07, 1.25, 0.12]} material={materials.stainless}>
@@ -687,6 +703,10 @@ export default function VmcMachine({
           <mesh material={materials.sheetMetalDark} castShadow>
             <boxGeometry args={[0.74, 1.72, 0.035]} />
           </mesh>
+          {/* Lower Door Maroon Livery Stripe */}
+          <mesh position={[0, -0.74, 0.02]} material={materials.accentCyan}>
+            <boxGeometry args={[0.72, 0.035, 0.008]} />
+          </mesh>
           {/* Large Observation Safety Polycarbonate Window - bypasses raycast so internal parts are clickable through glass */}
           <mesh position={[0, 0.06, 0]} material={materials.safetyGlass} raycast={() => null}>
             <boxGeometry args={[0.58, 1.36, 0.015]} />
@@ -702,6 +722,10 @@ export default function VmcMachine({
           {/* Door Metal Frame */}
           <mesh material={materials.sheetMetalDark} castShadow>
             <boxGeometry args={[0.74, 1.72, 0.035]} />
+          </mesh>
+          {/* Lower Door Maroon Livery Stripe */}
+          <mesh position={[0, -0.74, 0.02]} material={materials.accentCyan}>
+            <boxGeometry args={[0.72, 0.035, 0.008]} />
           </mesh>
           {/* Large Observation Safety Polycarbonate Window - bypasses raycast so internal parts are clickable through glass */}
           <mesh position={[0, 0.06, 0]} material={materials.safetyGlass} raycast={() => null}>

@@ -31,11 +31,11 @@ export default function AnswerCard({ answer, onAskExpert }) {
   };
 
   return (
-    <div className="bg-slate-800/90 border border-slate-700/80 rounded-2xl p-6 shadow-xl space-y-5">
+    <div className="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-sm space-y-5 text-slate-800">
       {/* Not Enough Data / Routing Banner */}
       {answer.not_enough_data ? (
-        <div className="bg-amber-950/80 border border-amber-500/60 rounded-xl p-4 text-amber-200 text-xs space-y-3">
-          <div className="flex items-center space-x-2 font-bold text-amber-300 text-sm">
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-amber-950 text-xs space-y-3">
+          <div className="flex items-center space-x-2 font-bold text-amber-900 text-sm">
             <span>❓</span>
             <span>Not Enough Verified Data on Shop Floor</span>
           </div>
@@ -47,7 +47,7 @@ export default function AnswerCard({ answer, onAskExpert }) {
             <button
               type="button"
               onClick={() => onAskExpert(answer)}
-              className="btn-touch px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-xs transition"
+              className="btn-touch px-4 py-2 bg-maroon-700 hover:bg-maroon-800 text-white font-medium rounded-xl text-xs transition shadow-xs"
             >
               Ask {answer.suggested_expert || 'Ramesh'} via Voice/Message →
             </button>
@@ -56,13 +56,13 @@ export default function AnswerCard({ answer, onAskExpert }) {
       ) : (
         <>
           {/* Header with Read Aloud & Confidence */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-700/60 pb-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200/90 pb-3">
             <div className="flex items-center space-x-2">
               <span className="text-xl" aria-hidden="true">💡</span>
-              <span className="text-sm font-bold uppercase tracking-wider text-cyan-300">
+              <span className="text-sm font-bold uppercase tracking-wider text-slate-900">
                 Grounded Machine Advice
               </span>
-              <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">
+              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-maroon-50 text-maroon-800 border border-maroon-200">
                 Confidence {Math.round((answer.confidence || 0.88) * 100)}%
               </span>
             </div>
@@ -70,10 +70,10 @@ export default function AnswerCard({ answer, onAskExpert }) {
             <button
               type="button"
               onClick={handleSpeak}
-              className={`btn-touch px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center space-x-1.5 transition ${
+              className={`btn-touch px-3 py-1.5 rounded-lg text-xs font-medium flex items-center space-x-1.5 transition ${
                 isPlaying
-                  ? 'bg-amber-500 text-slate-950 font-bold'
-                  : 'bg-slate-700 hover:bg-slate-600 text-slate-200'
+                  ? 'bg-amber-500 text-slate-950 font-bold shadow-xs'
+                  : 'bg-white hover:bg-slate-50 text-slate-700 border border-slate-200/90 shadow-xs'
               }`}
             >
               <span>{isPlaying ? '⏹️ Stop Voice' : '🔊 Read Aloud (Edge-TTS)'}</span>
@@ -81,20 +81,20 @@ export default function AnswerCard({ answer, onAskExpert }) {
           </div>
 
           {/* Main Answer Text */}
-          <div className="text-sm text-slate-100 leading-relaxed font-medium">
+          <div className="text-sm text-slate-800 leading-relaxed font-normal">
             {answer.answer}
           </div>
 
           {/* Action Steps */}
           {answer.steps && answer.steps.length > 0 && (
-            <div className="bg-slate-900/60 p-4 rounded-xl border border-slate-800 space-y-2">
-              <span className="text-xs font-bold text-slate-300 uppercase tracking-wider block">
+            <div className="bg-slate-50 p-4 rounded-xl border border-slate-200/80 space-y-2">
+              <span className="text-xs font-bold text-slate-700 uppercase tracking-wider block">
                 Recommended Action Steps:
               </span>
-              <ol className="list-decimal list-inside space-y-1.5 text-xs text-slate-200">
+              <ol className="list-decimal list-inside space-y-1.5 text-xs text-slate-700">
                 {answer.steps.map((st, idx) => (
                   <li key={idx} className="leading-snug">
-                    <span className="font-semibold text-cyan-300">Step {idx + 1}: </span>
+                    <span className="font-semibold text-maroon-800">Step {idx + 1}: </span>
                     {st}
                   </li>
                 ))}
@@ -104,10 +104,10 @@ export default function AnswerCard({ answer, onAskExpert }) {
 
           {/* Watch Out Warning */}
           {answer.watch_out && (
-            <div className="bg-amber-950/60 border border-amber-500/40 rounded-xl p-3.5 text-amber-200 text-xs flex items-start space-x-2">
+            <div className="bg-amber-50 border border-amber-200 rounded-xl p-3.5 text-amber-950 text-xs flex items-start space-x-2">
               <span className="text-base select-none" aria-hidden="true">⚠️</span>
               <div>
-                <strong className="font-bold text-amber-300">Watch Out: </strong>
+                <strong className="font-bold text-amber-900">Watch Out: </strong>
                 <span>{answer.watch_out}</span>
               </div>
             </div>
@@ -115,8 +115,8 @@ export default function AnswerCard({ answer, onAskExpert }) {
 
           {/* Cited Sources List */}
           {answer.sources && answer.sources.length > 0 && (
-            <div className="space-y-2.5 pt-3 border-t border-slate-700/60">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-400 block">
+            <div className="space-y-2.5 pt-3 border-t border-slate-200/90">
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-500 block">
                 Citing {answer.sources.length} Verified Source{answer.sources.length > 1 ? 's' : ''}:
               </span>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -128,17 +128,17 @@ export default function AnswerCard({ answer, onAskExpert }) {
           )}
 
           {/* Feedback Section */}
-          <div className="flex items-center justify-between pt-3 border-t border-slate-700/60 text-xs text-slate-400">
+          <div className="flex items-center justify-between pt-3 border-t border-slate-200/90 text-xs text-slate-500">
             <span>Was this advice helpful on the shop floor?</span>
             <div className="flex items-center space-x-2">
               <button
                 type="button"
                 disabled={feedbackGiven !== null}
                 onClick={() => handleFeedback(true)}
-                className={`px-3 py-1 rounded-lg border text-xs transition ${
+                className={`px-3 py-1 rounded-lg border text-xs font-medium transition ${
                   feedbackGiven === true
-                    ? 'bg-emerald-600 text-white border-emerald-500'
-                    : 'bg-slate-900 hover:bg-slate-700 text-slate-300 border-slate-700'
+                    ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs'
+                    : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-200/90 shadow-xs'
                 }`}
               >
                 👍 Helpful
@@ -147,10 +147,10 @@ export default function AnswerCard({ answer, onAskExpert }) {
                 type="button"
                 disabled={feedbackGiven !== null}
                 onClick={() => handleFeedback(false)}
-                className={`px-3 py-1 rounded-lg border text-xs transition ${
+                className={`px-3 py-1 rounded-lg border text-xs font-medium transition ${
                   feedbackGiven === false
-                    ? 'bg-red-600 text-white border-red-500'
-                    : 'bg-slate-900 hover:bg-slate-700 text-slate-300 border-slate-700'
+                    ? 'bg-rose-600 text-white border-rose-600 shadow-xs'
+                    : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-200/90 shadow-xs'
                 }`}
               >
                 👎 Unhelpful

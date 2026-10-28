@@ -261,15 +261,17 @@ div[class*="bg-slate-900/90"][class*="rounded-xl"] {
 
 /* Deep Wells, Nested Cards, Elevated Modules */
 .bg-slate-900,
+.bg-slate-900\/95,
 .bg-slate-900\/90,
 .bg-slate-900\/80,
 .bg-slate-900\/70,
 .bg-slate-900\/60,
 .bg-slate-900\/40,
 .bg-slate-950,
-.bg-slate-950\/70,
-.bg-slate-950\/80,
+.bg-slate-950\/95,
 .bg-slate-950\/90,
+.bg-slate-950\/80,
+.bg-slate-950\/70,
 .card-elevated {
   background-color: var(--bg-elevated) !important;
   border-color: var(--border-default) !important;

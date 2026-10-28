@@ -100,20 +100,19 @@ export default function Home() {
   return (
     <div className="space-y-6">
       {/* Header Banner */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-slate-800/90 via-slate-850 to-slate-900 border border-slate-700/80 rounded-2xl p-6 sm:p-7 shadow-xl shadow-black/20">
-        <div className="absolute top-0 right-0 w-80 h-40 bg-cyan-500/5 rounded-full blur-3xl pointer-events-none" />
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-5">
+      <div className="relative overflow-hidden bg-white border border-slate-200/90 shadow-sm rounded-2xl p-6 sm:p-8">
+        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div>
-            <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-cyan-500/10 text-cyan-300 text-xs font-semibold mb-3 border border-cyan-500/30 font-mono shadow-sm">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" aria-hidden="true" />
+            <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-slate-50 text-slate-700 text-xs font-semibold mb-3 border border-slate-200/80 font-mono shadow-xs">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" aria-hidden="true" />
               <span>Active Shift</span>
-              <span className="text-cyan-600">•</span>
+              <span className="text-slate-400">•</span>
               <span>Machine: {currentUser.machine}</span>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
               Welcome back, {currentUser.name}
             </h1>
-            <p className="text-slate-400 text-sm mt-1.5 font-medium">
+            <p className="text-slate-600 text-sm mt-1.5 font-medium">
               {currentUser.roleLabel} • {currentUser.experience} on shop floor
             </p>
           </div>
@@ -121,16 +120,16 @@ export default function Home() {
           <div className="flex flex-wrap items-center gap-3">
             <Link
               to="/capture"
-              className="btn-touch px-5 py-2.5 bg-gradient-to-r from-cyan-400 to-cyan-500 hover:from-cyan-300 hover:to-cyan-400 text-slate-950 font-extrabold rounded-xl shadow-lg shadow-cyan-500/20 hover:shadow-cyan-400/30 transition-all flex items-center space-x-2 text-sm active:scale-[0.98]"
+              className="btn-touch px-5 py-2.5 bg-maroon-700 hover:bg-maroon-800 text-white font-semibold rounded-xl shadow-xs transition-all flex items-center space-x-2 text-sm active:scale-[0.98]"
             >
-              <MicIcon className="w-4 h-4 text-slate-950" />
+              <MicIcon className="w-4 h-4 text-white" />
               <span>Record Know-How</span>
             </Link>
             <Link
               to="/ask"
-              className="btn-touch px-5 py-2.5 bg-slate-900/80 hover:bg-slate-800 border border-slate-700 hover:border-slate-600 text-slate-200 hover:text-white font-semibold rounded-xl transition-all flex items-center space-x-2 text-sm active:scale-[0.98]"
+              className="btn-touch px-5 py-2.5 bg-white hover:bg-slate-50 border border-slate-200/90 hover:border-slate-300 text-slate-800 hover:text-maroon-800 font-semibold rounded-xl shadow-xs transition-all flex items-center space-x-2 text-sm active:scale-[0.98]"
             >
-              <LightbulbIcon className="w-4 h-4 text-cyan-400" />
+              <LightbulbIcon className="w-4 h-4 text-maroon-700" />
               <span>Ask Experience</span>
             </Link>
           </div>
@@ -141,53 +140,53 @@ export default function Home() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
         {currentUser.role === 'new_employee' && (
           <>
-            <div className="group bg-slate-800/90 hover:bg-slate-800 border border-slate-700/80 hover:border-slate-600 rounded-2xl p-6 shadow-md transition-all flex flex-col justify-between">
+            <div className="group bg-white hover:bg-slate-50/50 border border-slate-200/80 hover:border-maroon-200 rounded-2xl p-6 shadow-xs hover:shadow-md transition-all flex flex-col justify-between">
               <div>
-                <div className="w-10 h-10 rounded-xl bg-slate-900/80 border border-slate-700/70 flex items-center justify-center text-xl mb-3 group-hover:scale-105 transition-transform">
-                  <ClipboardIcon className="w-5 h-5 text-cyan-400" />
+                <div className="w-10 h-10 rounded-xl bg-maroon-50 border border-maroon-100 flex items-center justify-center text-xl mb-3 group-hover:scale-105 transition-transform">
+                  <ClipboardIcon className="w-5 h-5 text-maroon-700" />
                 </div>
-                <h2 className="text-base font-bold text-white group-hover:text-cyan-300 transition-colors">Daily Briefing</h2>
-                <p className="text-slate-400 text-xs sm:text-sm mt-1.5 leading-relaxed">
+                <h2 className="text-base font-bold text-slate-900 group-hover:text-maroon-800 transition-colors">Daily Briefing</h2>
+                <p className="text-slate-600 text-xs sm:text-sm mt-1.5 leading-relaxed">
                   {briefingText}
                 </p>
               </div>
               <Link
                 to="/guide"
-                className="inline-flex items-center mt-5 text-xs font-semibold text-cyan-400 hover:text-cyan-300 group-hover:translate-x-1 transition-transform"
+                className="inline-flex items-center mt-5 text-xs font-semibold text-maroon-700 hover:text-maroon-800 group-hover:translate-x-1 transition-transform"
               >
                 Start Guided Job →
               </Link>
             </div>
-            <div className="group bg-slate-800/90 hover:bg-slate-800 border border-slate-700/80 hover:border-slate-600 rounded-2xl p-6 shadow-md transition-all flex flex-col justify-between">
+            <div className="group bg-white hover:bg-slate-50/50 border border-slate-200/80 hover:border-maroon-200 rounded-2xl p-6 shadow-xs hover:shadow-md transition-all flex flex-col justify-between">
               <div>
-                <div className="w-10 h-10 rounded-xl bg-slate-900/80 border border-slate-700/70 flex items-center justify-center text-xl mb-3 group-hover:scale-105 transition-transform">
-                  <ShieldIcon className="w-5 h-5 text-emerald-400" />
+                <div className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-xl mb-3 group-hover:scale-105 transition-transform">
+                  <ShieldIcon className="w-5 h-5 text-emerald-700" />
                 </div>
-                <h2 className="text-base font-bold text-white group-hover:text-cyan-300 transition-colors">Active Guardrails</h2>
-                <p className="text-slate-400 text-xs sm:text-sm mt-1.5 leading-relaxed">
+                <h2 className="text-base font-bold text-slate-900 group-hover:text-maroon-800 transition-colors">Active Guardrails</h2>
+                <p className="text-slate-600 text-xs sm:text-sm mt-1.5 leading-relaxed">
                   {guardText}
                 </p>
               </div>
               <Link
                 to="/capture"
-                className="inline-flex items-center mt-5 text-xs font-semibold text-cyan-400 hover:text-cyan-300 group-hover:translate-x-1 transition-transform"
+                className="inline-flex items-center mt-5 text-xs font-semibold text-maroon-700 hover:text-maroon-800 group-hover:translate-x-1 transition-transform"
               >
                 Log Shift Note →
               </Link>
             </div>
-            <div className="group bg-slate-800/90 hover:bg-slate-800 border border-slate-700/80 hover:border-slate-600 rounded-2xl p-6 shadow-md transition-all flex flex-col justify-between">
+            <div className="group bg-white hover:bg-slate-50/50 border border-slate-200/80 hover:border-maroon-200 rounded-2xl p-6 shadow-xs hover:shadow-md transition-all flex flex-col justify-between">
               <div>
-                <div className="w-10 h-10 rounded-xl bg-slate-900/80 border border-slate-700/70 flex items-center justify-center text-xl mb-3 group-hover:scale-105 transition-transform">
-                  <SearchIcon className="w-5 h-5 text-amber-400" />
+                <div className="w-10 h-10 rounded-xl bg-amber-50 border border-amber-100 flex items-center justify-center text-xl mb-3 group-hover:scale-105 transition-transform">
+                  <SearchIcon className="w-5 h-5 text-amber-700" />
                 </div>
-                <h2 className="text-base font-bold text-white group-hover:text-cyan-300 transition-colors">Chatter & Chips</h2>
-                <p className="text-slate-400 text-xs sm:text-sm mt-1.5 leading-relaxed">
+                <h2 className="text-base font-bold text-slate-900 group-hover:text-maroon-800 transition-colors">Chatter & Chips</h2>
+                <p className="text-slate-600 text-xs sm:text-sm mt-1.5 leading-relaxed">
                   Record sound or photo to find stable RPM sweet spots or chip overheat.
                 </p>
               </div>
               <Link
                 to="/ask"
-                className="inline-flex items-center mt-5 text-xs font-semibold text-cyan-400 hover:text-cyan-300 group-hover:translate-x-1 transition-transform"
+                className="inline-flex items-center mt-5 text-xs font-semibold text-maroon-700 hover:text-maroon-800 group-hover:translate-x-1 transition-transform"
               >
                 Diagnose Issue →
               </Link>
@@ -197,53 +196,53 @@ export default function Home() {
 
         {currentUser.role === 'old_employee' && (
           <>
-            <div className="group bg-slate-800/90 hover:bg-slate-800 border border-slate-700/80 hover:border-slate-600 rounded-2xl p-6 shadow-md transition-all flex flex-col justify-between">
+            <div className="group bg-white hover:bg-slate-50/50 border border-slate-200/80 hover:border-maroon-200 rounded-2xl p-6 shadow-xs hover:shadow-md transition-all flex flex-col justify-between">
               <div>
-                <div className="w-10 h-10 rounded-xl bg-slate-900/80 border border-slate-700/70 flex items-center justify-center text-xl mb-3 group-hover:scale-105 transition-transform">
-                  <UsersIcon className="w-5 h-5 text-cyan-400" />
+                <div className="w-10 h-10 rounded-xl bg-maroon-50 border border-maroon-100 flex items-center justify-center text-xl mb-3 group-hover:scale-105 transition-transform">
+                  <UsersIcon className="w-5 h-5 text-maroon-700" />
                 </div>
-                <h2 className="text-base font-bold text-white group-hover:text-cyan-300 transition-colors">Handover Plan</h2>
-                <p className="text-slate-400 text-xs sm:text-sm mt-1.5 leading-relaxed">
+                <h2 className="text-base font-bold text-slate-900 group-hover:text-maroon-800 transition-colors">Handover Plan</h2>
+                <p className="text-slate-600 text-xs sm:text-sm mt-1.5 leading-relaxed">
                   {planText}
                 </p>
               </div>
               <Link
                 to="/handover"
-                className="inline-flex items-center mt-5 text-xs font-semibold text-cyan-400 hover:text-cyan-300 group-hover:translate-x-1 transition-transform"
+                className="inline-flex items-center mt-5 text-xs font-semibold text-maroon-700 hover:text-maroon-800 group-hover:translate-x-1 transition-transform"
               >
                 View Handover Plan →
               </Link>
             </div>
-            <div className="group bg-slate-800/90 hover:bg-slate-800 border border-slate-700/80 hover:border-slate-600 rounded-2xl p-6 shadow-md transition-all flex flex-col justify-between">
+            <div className="group bg-white hover:bg-slate-50/50 border border-slate-200/80 hover:border-maroon-200 rounded-2xl p-6 shadow-xs hover:shadow-md transition-all flex flex-col justify-between">
               <div>
-                <div className="w-10 h-10 rounded-xl bg-slate-900/80 border border-slate-700/70 flex items-center justify-center text-xl mb-3 group-hover:scale-105 transition-transform">
-                  <CheckCircleIcon className="w-5 h-5 text-emerald-400" />
+                <div className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-xl mb-3 group-hover:scale-105 transition-transform">
+                  <CheckCircleIcon className="w-5 h-5 text-emerald-700" />
                 </div>
-                <h2 className="text-base font-bold text-white group-hover:text-cyan-300 transition-colors">Verification Queue</h2>
-                <p className="text-slate-400 text-xs sm:text-sm mt-1.5 leading-relaxed">
+                <h2 className="text-base font-bold text-slate-900 group-hover:text-maroon-800 transition-colors">Verification Queue</h2>
+                <p className="text-slate-600 text-xs sm:text-sm mt-1.5 leading-relaxed">
                   {reviewText}
                 </p>
               </div>
               <Link
                 to="/review"
-                className="inline-flex items-center mt-5 text-xs font-semibold text-cyan-400 hover:text-cyan-300 group-hover:translate-x-1 transition-transform"
+                className="inline-flex items-center mt-5 text-xs font-semibold text-maroon-700 hover:text-maroon-800 group-hover:translate-x-1 transition-transform"
               >
                 Open Review Queue →
               </Link>
             </div>
-            <div className="group bg-slate-800/90 hover:bg-slate-800 border border-slate-700/80 hover:border-slate-600 rounded-2xl p-6 shadow-md transition-all flex flex-col justify-between">
+            <div className="group bg-white hover:bg-slate-50/50 border border-slate-200/80 hover:border-maroon-200 rounded-2xl p-6 shadow-xs hover:shadow-md transition-all flex flex-col justify-between">
               <div>
-                <div className="w-10 h-10 rounded-xl bg-slate-900/80 border border-slate-700/70 flex items-center justify-center text-xl mb-3 group-hover:scale-105 transition-transform">
-                  <HelpCircleIcon className="w-5 h-5 text-purple-400" />
+                <div className="w-10 h-10 rounded-xl bg-purple-50 border border-purple-100 flex items-center justify-center text-xl mb-3 group-hover:scale-105 transition-transform">
+                  <HelpCircleIcon className="w-5 h-5 text-purple-700" />
                 </div>
-                <h2 className="text-base font-bold text-white group-hover:text-cyan-300 transition-colors">Questions for You</h2>
-                <p className="text-slate-400 text-xs sm:text-sm mt-1.5 leading-relaxed">
+                <h2 className="text-base font-bold text-slate-900 group-hover:text-maroon-800 transition-colors">Questions for You</h2>
+                <p className="text-slate-600 text-xs sm:text-sm mt-1.5 leading-relaxed">
                   {routedText}
                 </p>
               </div>
               <Link
                 to="/handover"
-                className="inline-flex items-center mt-5 text-xs font-semibold text-cyan-400 hover:text-cyan-300 group-hover:translate-x-1 transition-transform"
+                className="inline-flex items-center mt-5 text-xs font-semibold text-maroon-700 hover:text-maroon-800 group-hover:translate-x-1 transition-transform"
               >
                 Answer by Voice →
               </Link>
@@ -253,53 +252,53 @@ export default function Home() {
 
         {currentUser.role === 'supervisor' && (
           <>
-            <div className="group bg-slate-800/90 hover:bg-slate-800 border border-slate-700/80 hover:border-slate-600 rounded-2xl p-6 shadow-md transition-all flex flex-col justify-between">
+            <div className="group bg-white hover:bg-slate-50/50 border border-slate-200/80 hover:border-maroon-200 rounded-2xl p-6 shadow-xs hover:shadow-md transition-all flex flex-col justify-between">
               <div>
-                <div className="w-10 h-10 rounded-xl bg-slate-900/80 border border-slate-700/70 flex items-center justify-center text-xl mb-3 group-hover:scale-105 transition-transform">
-                  <BarChartIcon className="w-5 h-5 text-rose-400" />
+                <div className="w-10 h-10 rounded-xl bg-rose-50 border border-rose-100 flex items-center justify-center text-xl mb-3 group-hover:scale-105 transition-transform">
+                  <BarChartIcon className="w-5 h-5 text-rose-700" />
                 </div>
-                <h2 className="text-base font-bold text-white group-hover:text-cyan-300 transition-colors">Knowledge-at-Risk</h2>
-                <p className="text-slate-400 text-xs sm:text-sm mt-1.5 leading-relaxed">
+                <h2 className="text-base font-bold text-slate-900 group-hover:text-maroon-800 transition-colors">Knowledge-at-Risk</h2>
+                <p className="text-slate-600 text-xs sm:text-sm mt-1.5 leading-relaxed">
                   {riskText}
                 </p>
               </div>
               <Link
                 to="/dashboard"
-                className="inline-flex items-center mt-5 text-xs font-semibold text-cyan-400 hover:text-cyan-300 group-hover:translate-x-1 transition-transform"
+                className="inline-flex items-center mt-5 text-xs font-semibold text-maroon-700 hover:text-maroon-800 group-hover:translate-x-1 transition-transform"
               >
                 View Risk Heatmap →
               </Link>
             </div>
-            <div className="group bg-slate-800/90 hover:bg-slate-800 border border-slate-700/80 hover:border-slate-600 rounded-2xl p-6 shadow-md transition-all flex flex-col justify-between">
+            <div className="group bg-white hover:bg-slate-50/50 border border-slate-200/80 hover:border-maroon-200 rounded-2xl p-6 shadow-xs hover:shadow-md transition-all flex flex-col justify-between">
               <div>
-                <div className="w-10 h-10 rounded-xl bg-slate-900/80 border border-slate-700/70 flex items-center justify-center text-xl mb-3 group-hover:scale-105 transition-transform">
-                  <CogIcon className="w-5 h-5 text-cyan-400" />
+                <div className="w-10 h-10 rounded-xl bg-maroon-50 border border-maroon-100 flex items-center justify-center text-xl mb-3 group-hover:scale-105 transition-transform">
+                  <CogIcon className="w-5 h-5 text-maroon-700" />
                 </div>
-                <h2 className="text-base font-bold text-white group-hover:text-cyan-300 transition-colors">Machine Health Map</h2>
-                <p className="text-slate-400 text-xs sm:text-sm mt-1.5 leading-relaxed">
+                <h2 className="text-base font-bold text-slate-900 group-hover:text-maroon-800 transition-colors">Machine Health Map</h2>
+                <p className="text-slate-600 text-xs sm:text-sm mt-1.5 leading-relaxed">
                   Interactive 3D model with incident heatmaps and pinned tips.
                 </p>
               </div>
               <Link
                 to="/map"
-                className="inline-flex items-center mt-5 text-xs font-semibold text-cyan-400 hover:text-cyan-300 group-hover:translate-x-1 transition-transform"
+                className="inline-flex items-center mt-5 text-xs font-semibold text-maroon-700 hover:text-maroon-800 group-hover:translate-x-1 transition-transform"
               >
                 Explore 3D Map →
               </Link>
             </div>
-            <div className="group bg-slate-800/90 hover:bg-slate-800 border border-slate-700/80 hover:border-slate-600 rounded-2xl p-6 shadow-md transition-all flex flex-col justify-between">
+            <div className="group bg-white hover:bg-slate-50/50 border border-slate-200/80 hover:border-maroon-200 rounded-2xl p-6 shadow-xs hover:shadow-md transition-all flex flex-col justify-between">
               <div>
-                <div className="w-10 h-10 rounded-xl bg-slate-900/80 border border-slate-700/70 flex items-center justify-center text-xl mb-3 group-hover:scale-105 transition-transform">
-                  <TrendingUpIcon className="w-5 h-5 text-emerald-400" />
+                <div className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-xl mb-3 group-hover:scale-105 transition-transform">
+                  <TrendingUpIcon className="w-5 h-5 text-emerald-700" />
                 </div>
-                <h2 className="text-base font-bold text-white group-hover:text-cyan-300 transition-colors">Transfer Metrics</h2>
-                <p className="text-slate-400 text-xs sm:text-sm mt-1.5 leading-relaxed">
+                <h2 className="text-base font-bold text-slate-900 group-hover:text-maroon-800 transition-colors">Transfer Metrics</h2>
+                <p className="text-slate-600 text-xs sm:text-sm mt-1.5 leading-relaxed">
                   {metricsText}
                 </p>
               </div>
               <Link
                 to="/dashboard"
-                className="inline-flex items-center mt-5 text-xs font-semibold text-cyan-400 hover:text-cyan-300 group-hover:translate-x-1 transition-transform"
+                className="inline-flex items-center mt-5 text-xs font-semibold text-maroon-700 hover:text-maroon-800 group-hover:translate-x-1 transition-transform"
               >
                 See Metrics →
               </Link>

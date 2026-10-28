@@ -45,17 +45,17 @@ export default function TransferMetrics() {
   const m = metrics.data;
 
   return (
-    <div className="bg-slate-800/90 border border-slate-700/80 rounded-2xl p-6 shadow-xl space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-700/60 pb-4">
+    <div className="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-sm space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 pb-4">
         <div>
-          <span className="text-[10px] uppercase font-bold text-cyan-400 tracking-wider">
+          <span className="text-[10px] uppercase font-bold text-maroon-700 tracking-wider">
             Executive Transfer ROI
           </span>
-          <h2 className="text-lg font-bold text-white flex items-center space-x-2 mt-0.5">
-            <TrendingUpIcon className="w-5 h-5 text-cyan-400" />
+          <h2 className="text-lg font-bold text-slate-900 flex items-center space-x-2 mt-0.5">
+            <TrendingUpIcon className="w-5 h-5 text-maroon-700" />
             <span>Knowledge Transfer & Quality Impact Metrics</span>
           </h2>
-          <p className="text-slate-400 text-xs mt-1">
+          <p className="text-slate-600 text-xs mt-1">
             How much of the old employees&apos; know-how is captured, checked and reaching new employees.
           </p>
         </div>
@@ -69,28 +69,28 @@ export default function TransferMetrics() {
             {buildMetrics(m).map((tile) => (
               <div
                 key={tile.label}
-                className="group bg-slate-900/90 hover:bg-slate-900 border border-slate-800 hover:border-slate-700/80 rounded-2xl p-5 space-y-3 shadow-md transition-all flex flex-col justify-between"
+                className="group bg-white hover:bg-slate-50/50 border border-slate-200/80 hover:border-maroon-200 rounded-2xl p-5 space-y-3 shadow-xs hover:shadow-sm transition-all flex flex-col justify-between"
               >
                 <div>
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block font-mono">
+                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block font-mono">
                     {tile.label}
                   </span>
-                  <div className="text-3xl font-extrabold text-white mt-1 font-mono tracking-tight group-hover:text-cyan-300 transition-colors">
+                  <div className="text-3xl font-extrabold text-slate-900 mt-1 font-mono tracking-tight group-hover:text-maroon-700 transition-colors">
                     {tile.value}
                   </div>
                   <span
                     className={`inline-block mt-2 px-2.5 py-0.5 rounded-lg text-[10px] font-bold font-mono border ${
                       tile.isGood
-                        ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30'
-                        : 'bg-amber-500/15 text-amber-300 border-amber-500/30'
+                        ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                        : 'bg-amber-50 text-amber-800 border-amber-200'
                     }`}
                   >
                     {tile.delta}
                   </span>
                 </div>
 
-                <div className="pt-3 border-t border-slate-800/80 text-[11px] text-slate-400 leading-snug">
-                  <span className="font-semibold text-slate-300 block">{tile.baseline}</span>
+                <div className="pt-3 border-t border-slate-200/80 text-[11px] text-slate-600 leading-snug">
+                  <span className="font-semibold text-slate-800 block">{tile.baseline}</span>
                   <span className="text-slate-500 leading-normal block mt-1">{tile.desc}</span>
                 </div>
               </div>
@@ -98,32 +98,34 @@ export default function TransferMetrics() {
           </div>
 
           {m.new_employees.length > 0 && (
-            <div className="space-y-2">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-300 block">
+            <div className="space-y-3 pt-2">
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-700 block">
                 New Employees on the Way to Independence
               </span>
-              <table className="w-full text-xs text-left">
-                <thead className="text-slate-400">
-                  <tr>
-                    <th className="py-1.5 font-semibold">Employee</th>
-                    <th className="py-1.5 font-semibold">Days on job</th>
-                    <th className="py-1.5 font-semibold">Operations trained</th>
-                    <th className="py-1.5 font-semibold">Independent</th>
-                    <th className="py-1.5 font-semibold">Clean guided runs</th>
-                  </tr>
-                </thead>
-                <tbody className="text-slate-200">
-                  {m.new_employees.map((e) => (
-                    <tr key={e.employee_id} className="border-t border-slate-800">
-                      <td className="py-1.5">{e.employee}</td>
-                      <td className="py-1.5 font-mono">{e.days_on_job ?? '—'}</td>
-                      <td className="py-1.5 font-mono">{e.trained_ops}</td>
-                      <td className="py-1.5 font-mono">{e.independent_ops}</td>
-                      <td className="py-1.5 font-mono">{e.clean_runs}</td>
+              <div className="overflow-x-auto rounded-xl border border-slate-200 shadow-xs">
+                <table className="w-full text-xs text-left bg-white">
+                  <thead className="bg-slate-50 text-slate-600 border-b border-slate-200">
+                    <tr>
+                      <th className="py-2.5 px-3 font-semibold">Employee</th>
+                      <th className="py-2.5 px-3 font-semibold">Days on job</th>
+                      <th className="py-2.5 px-3 font-semibold">Operations trained</th>
+                      <th className="py-2.5 px-3 font-semibold">Independent</th>
+                      <th className="py-2.5 px-3 font-semibold">Clean guided runs</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="text-slate-800 divide-y divide-slate-200">
+                    {m.new_employees.map((e) => (
+                      <tr key={e.employee_id} className="hover:bg-slate-50/60 transition">
+                        <td className="py-2 px-3 font-medium text-slate-900">{e.employee}</td>
+                        <td className="py-2 px-3 font-mono text-slate-600">{e.days_on_job ?? '—'}</td>
+                        <td className="py-2 px-3 font-mono text-slate-600">{e.trained_ops}</td>
+                        <td className="py-2 px-3 font-mono text-slate-600">{e.independent_ops}</td>
+                        <td className="py-2 px-3 font-mono text-slate-600">{e.clean_runs}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
         </>
