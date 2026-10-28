@@ -1,0 +1,16 @@
+# Keeps the free Render backend awake and Supabase from pausing during the demo period.
+# Set the repository variable KEEPALIVE_URL (Settings > Secrets and variables > Actions >
+# Variables) to the API address, e.g. https://blueprint-api.onrender.com. Unset = no pings.
+name: keep-alive
+on:
+  schedule:
+    - cron: "*/14 * * * *"
+  workflow_dispatch:
+jobs:
+  ping:
+    if: vars.KEEPALIVE_URL != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      # /api/machines reads the database, so Supabase sees activity too.
+      - run: curl --fail --silent --show-error --max-time 90 "${{ vars.KEEPALIVE_URL }}/api/machines" > /dev/null
