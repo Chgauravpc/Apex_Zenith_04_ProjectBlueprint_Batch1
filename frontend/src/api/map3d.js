@@ -78,16 +78,20 @@ export const createPin = async (componentId, pinData) => {
     const res = await client.post(`/components/${componentId}/pins`, pinData);
     return res.data;
   } catch (_err) {
-    // Offline simulation returning a compliant card
+    // Offline simulation returning a compliant card with stable component ID
     return {
       id: Date.now(),
       component_id: Number(componentId),
+      mesh_name: pinData.mesh_name,
       title: pinData.title || 'Pinned Knowledge Note',
-      text: pinData.text || '',
+      type: pinData.type || pinData.knowledge_type || 'tip',
+      knowledge_type: pinData.knowledge_type || pinData.type || 'tip',
+      description: pinData.description || pinData.text || '',
+      text: pinData.text || pinData.description || '',
       severity: pinData.severity || 'watch',
       author: pinData.author || 'Priya (New Employee)',
-      date: new Date().toISOString().split('T')[0],
-      verified: false,
+      date: pinData.date || new Date().toISOString().split('T')[0],
+      verified: Boolean(pinData.verified),
     };
   }
 };
