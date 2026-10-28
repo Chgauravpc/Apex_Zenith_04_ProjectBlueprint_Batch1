@@ -32,6 +32,7 @@ FTS_MAX_LIMIT = 100
 PG_RECYCLE_SECONDS = 60
 PG_POOL_SIZE = 3
 PG_MAX_OVERFLOW = 5  # 8 connections at most per process
+PG_IDLE_TX_MS = 5 * 60 * 1000
 # Characters that have meaning in FTS5 query syntax; user text is split on them.
 _FTS_SPLIT = re.compile(r"[\s\"'(){}\[\]*^:+\-.,;!?/\\|<>=&%$#@~`]+")
 
@@ -95,7 +96,7 @@ def make_engine(url: str) -> Engine:
         # Hosted Postgres sits behind a pooler and NAT that silently drop idle TCP connections.
         # Keepalives detect a dead socket in seconds instead of a hung query, connections are
         # replaced after a minute idle, and a small pool stays inside the free connection limit.
-        return create_engine(
+        pg = create_engine(
             url,
             pool_pre_ping=True,
             pool_recycle=PG_RECYCLE_SECONDS,
@@ -109,6 +110,16 @@ def make_engine(url: str) -> Engine:
                 "keepalives_count": 3,
             },
         )
+
+        @event.listens_for(pg, "connect")
+        def _pg_session(dbapi_conn, _record) -> None:  # noqa: ANN001
+            # A worker that dies mid-transaction must not hold row locks for long: the server
+            # ends such a session after PG_IDLE_TX_MS (longer than any pause inside a job).
+            cur = dbapi_conn.cursor()
+            cur.execute(f"SET idle_in_transaction_session_timeout = {PG_IDLE_TX_MS}")
+            cur.close()
+
+        return pg
     kwargs = {"connect_args": {"check_same_thread": False}}
     # In-memory DB: one shared connection, else each session would see an empty DB.
     if url in ("sqlite://", "sqlite:///:memory:"):

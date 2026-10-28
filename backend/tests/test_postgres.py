@@ -115,3 +115,8 @@ def test_every_table_has_row_level_security(pgdb: Session) -> None:
     assert (
         pgdb.execute(text("SELECT count(*) FROM machines")).scalar_one() == 0
     )  # owner still reads
+
+
+def test_orphaned_transactions_are_ended_by_the_server(pgdb: Session) -> None:
+    value = pgdb.execute(text("SHOW idle_in_transaction_session_timeout")).scalar_one()
+    assert value == "5min"
