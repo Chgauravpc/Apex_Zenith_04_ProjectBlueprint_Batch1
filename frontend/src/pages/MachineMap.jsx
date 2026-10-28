@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import MachineViewer from '../components/map3d/MachineViewer';
 import ComponentPanel from '../components/map3d/ComponentPanel';
 import PinForm from '../components/map3d/PinForm';
+import GuardianDemoBanner from '../components/map3d/GuardianDemoBanner';
 import { useMachineStore } from '../store/useMachineStore';
 import { useAuthStore } from '../store/useAuthStore';
 import { getComponents, createPin, VMC_COMPONENTS_DATA } from '../api/map3d';
@@ -21,6 +22,7 @@ export default function MachineMap() {
     selectedComponentId,
     highlightedComponentId,
     setSelectedComponentId,
+    setHighlightedComponentId,
   } = useMachineStore();
 
   const [components, setComponents] = useState(VMC_COMPONENTS_DATA);
@@ -31,6 +33,8 @@ export default function MachineMap() {
   const [pinFormOpen, setPinFormOpen] = useState(false);
   const [pinTargetComponent, setPinTargetComponent] = useState(null);
   const [toastMessage, setToastMessage] = useState(null);
+  const [demoIncidentActive, setDemoIncidentActive] = useState(false);
+  const [activeDemoIncident, setActiveDemoIncident] = useState(null);
 
   // Load components from API with fallback
   useEffect(() => {
@@ -69,7 +73,31 @@ export default function MachineMap() {
   const handleResetSelection = useCallback(() => {
     setSelectedMesh(null);
     setSelectedComponentId(null);
-  }, [setSelectedComponentId]);
+    setHighlightedComponentId(null);
+    setDemoIncidentActive(false);
+    setActiveDemoIncident(null);
+  }, [setSelectedComponentId, setHighlightedComponentId]);
+
+  const handleSelectDemoIncident = useCallback(
+    (incident) => {
+      setDemoIncidentActive(true);
+      setActiveDemoIncident(incident);
+      setSelectedMesh('spindle');
+      setSelectedComponentId('spindle');
+      setHighlightedComponentId('spindle');
+      setToastMessage(
+        'Note Guardian Alert [DEMO]: Abnormal 427 Hz chatter detected on Spindle!'
+      );
+      setTimeout(() => setToastMessage(null), 5000);
+    },
+    [setSelectedComponentId, setHighlightedComponentId]
+  );
+
+  const handleDismissDemoIncident = useCallback(() => {
+    setDemoIncidentActive(false);
+    setActiveDemoIncident(null);
+    setHighlightedComponentId(null);
+  }, [setHighlightedComponentId]);
 
   const handleToggleDoors = useCallback(() => {
     setDoorsOpen((prev) => !prev);
@@ -170,6 +198,13 @@ export default function MachineMap() {
         </div>
       </div>
 
+      {/* Note Guardian Warning Demonstration Banner */}
+      <GuardianDemoBanner
+        isActive={demoIncidentActive}
+        onSelectIncident={handleSelectDemoIncident}
+        onDismissIncident={handleDismissDemoIncident}
+      />
+
       {/* Main 3D Stage & Detail Split View */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* Left Column: 3D Canvas Viewport (8 Cols) */}
@@ -244,6 +279,7 @@ export default function MachineMap() {
         <div className="lg:col-span-4">
           <ComponentPanel
             component={selectedComponentData}
+            activeDemoIncident={activeDemoIncident}
             onClose={handleResetSelection}
             onResetSelection={handleResetSelection}
             onOpenPinForm={handleOpenPinForm}
