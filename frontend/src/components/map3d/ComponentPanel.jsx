@@ -14,6 +14,7 @@ import { getKnowledgeCounts } from '../../api/map3d';
  */
 export default function ComponentPanel({
   component,
+  activeDemoIncident,
   onClose,
   onResetSelection,
   onOpenPinForm,
@@ -150,6 +151,98 @@ export default function ComponentPanel({
           <div className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Incidents</div>
         </div>
       </div>
+
+      {/* Active Note Guardian Warning Demonstration Alert */}
+      {activeDemoIncident && activeDemoIncident.component_id === component.mesh_name && (
+        <div
+          role="alert"
+          aria-live="assertive"
+          className="bg-gradient-to-br from-red-950/95 via-slate-900 to-slate-950 border-2 border-red-500 rounded-xl p-4 shadow-2xl space-y-3"
+        >
+          <div className="flex items-start space-x-2.5">
+            <span className="text-2xl select-none shrink-0 animate-bounce">⛔</span>
+            <div className="flex-1">
+              <div className="flex items-center space-x-2 flex-wrap gap-y-1">
+                <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded tracking-wider bg-red-900 text-red-200 border border-red-500">
+                  {activeDemoIncident.label}
+                </span>
+                <span className="text-xs font-black text-red-400">
+                  {activeDemoIncident.severity_label}
+                </span>
+              </div>
+              <h4 className="text-sm font-bold text-white mt-1">
+                {activeDemoIncident.title}
+              </h4>
+              <p className="text-xs text-red-200/90 mt-0.5 leading-relaxed">
+                {activeDemoIncident.symptom}
+              </p>
+            </div>
+          </div>
+
+          {/* Telemetry metrics */}
+          <div className="bg-slate-950/80 border border-red-500/30 rounded-lg p-2.5 text-xs space-y-1">
+            <div className="flex justify-between text-[11px]">
+              <span className="text-slate-400">Peak Chatter:</span>
+              <span className="font-mono font-bold text-red-400">
+                {activeDemoIncident.details.acoustic_peak}
+              </span>
+            </div>
+            <div className="flex justify-between text-[11px]">
+              <span className="text-slate-400">Vibration Velocity:</span>
+              <span className="font-mono font-bold text-amber-400">
+                {activeDemoIncident.details.vibration_velocity}
+              </span>
+            </div>
+            <div className="text-[11px] text-red-300 pt-1 border-t border-red-500/20">
+              <span className="font-bold">Risk:</span> {activeDemoIncident.details.risk_assessment}
+            </div>
+          </div>
+
+          {/* Historical Evidence */}
+          <div className="space-y-1.5">
+            <div className="text-[11px] font-bold text-slate-300 uppercase tracking-wider">
+              Cited Historical Evidence:
+            </div>
+            {activeDemoIncident.historical_evidence?.map((ev) => (
+              <div
+                key={ev.id}
+                className="bg-slate-950/70 border border-slate-800 rounded p-2 text-[11px]"
+              >
+                <div className="flex justify-between font-mono text-cyan-300 font-bold">
+                  <span>{ev.id} ({ev.date})</span>
+                  <span className="text-emerald-400 text-[10px]">{ev.similarity}</span>
+                </div>
+                <div className="text-slate-200 font-medium">{ev.type}</div>
+                <div className="text-slate-400 text-[10px]">{ev.summary}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Ramesh Expert Guidance */}
+          <div className="bg-cyan-950/40 border border-cyan-500/40 rounded-lg p-3 space-y-2">
+            <div className="flex justify-between items-center text-xs font-bold text-cyan-300">
+              <span>💡 Expert Guidance ({activeDemoIncident.expert_guidance.author})</span>
+              <span className="text-[10px] text-cyan-400 font-normal">Verified Standard</span>
+            </div>
+            <ul className="space-y-1 text-xs text-slate-200">
+              {activeDemoIncident.expert_guidance.immediate_actions?.map((act, i) => (
+                <li key={i} className="flex items-start space-x-1.5">
+                  <span className="text-cyan-400 font-bold">›</span>
+                  <span>{act}</span>
+                </li>
+              ))}
+            </ul>
+            <div className="text-[11px] text-cyan-200 italic pt-1 border-t border-cyan-500/30">
+              {activeDemoIncident.expert_guidance.ramesh_golden_rule}
+            </div>
+          </div>
+
+          {/* Demo Disclaimer */}
+          <div className="text-[10px] text-amber-400/90 bg-amber-950/20 border border-amber-500/30 p-2 rounded text-center">
+            ⚠️ {activeDemoIncident.disclaimer}
+          </div>
+        </div>
+      )}
 
       {/* Component Short Description */}
       <div className="bg-slate-950/70 border border-slate-800/80 rounded-xl p-3.5">
