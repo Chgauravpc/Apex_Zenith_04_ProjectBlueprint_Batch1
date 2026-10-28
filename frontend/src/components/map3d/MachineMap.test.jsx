@@ -9,8 +9,8 @@ describe('3D Machine Knowledge Map Components (T21)', () => {
   const spindleComponent = VMC_COMPONENTS_DATA.find((c) => c.mesh_name === 'spindle');
   const viseComponent = VMC_COMPONENTS_DATA.find((c) => c.mesh_name === 'vise');
 
-  it('renders ComponentPanel with spindle know-how, parameters and past incidents', () => {
-    const handleClose = vi.fn();
+  it('renders ComponentPanel with component name, short description, and expert knowledge placeholder', () => {
+    const handleReset = vi.fn();
     const handleOpenPinForm = vi.fn();
     const handleFocus = vi.fn();
 
@@ -18,7 +18,8 @@ describe('3D Machine Knowledge Map Components (T21)', () => {
       <BrowserRouter>
         <ComponentPanel
           component={spindleComponent}
-          onClose={handleClose}
+          onClose={handleReset}
+          onResetSelection={handleReset}
           onOpenPinForm={handleOpenPinForm}
           onFocusComponent={handleFocus}
         />
@@ -28,6 +29,14 @@ describe('3D Machine Knowledge Map Components (T21)', () => {
     // Component name and risk badge
     expect(screen.getByText('Spindle Assembly')).toBeDefined();
     expect(screen.getByText(/High Risk/i)).toBeDefined();
+
+    // Short description
+    expect(screen.getByText(/Component Description/i)).toBeDefined();
+    expect(screen.getByText(/High-speed precision cartridge spindle/i)).toBeDefined();
+
+    // Placeholder for expert knowledge
+    expect(screen.getByText(/Expert Knowledge & Tacit Know-How/i)).toBeDefined();
+    expect(screen.getByText(/Unwritten machinist tips/i)).toBeDefined();
 
     // Engineering parameters
     expect(screen.getByText(/Engineering Parameters/i)).toBeDefined();
@@ -42,25 +51,39 @@ describe('3D Machine Knowledge Map Components (T21)', () => {
     expect(screen.getByText('INC-881')).toBeDefined();
     expect(screen.getByText(/Severe 427 Hz chatter spike/i)).toBeDefined();
 
-    // Action buttons
-    const pinBtn = screen.getByRole('button', { name: /Pin Know-How/i });
+    // Action buttons & Reset Selection
+    const pinBtn = screen.getByRole('button', { name: /Pin New Know-How Card/i });
     fireEvent.click(pinBtn);
     expect(handleOpenPinForm).toHaveBeenCalledWith(spindleComponent);
 
     const focusBtn = screen.getByRole('button', { name: /Focus View/i });
     fireEvent.click(focusBtn);
     expect(handleFocus).toHaveBeenCalledWith('spindle');
+
+    // Reset selection option
+    const resetBtns = screen.getAllByRole('button', { name: /Reset/i });
+    expect(resetBtns.length).toBeGreaterThanOrEqual(1);
+    fireEvent.click(resetBtns[0]);
+    expect(handleReset).toHaveBeenCalled();
   });
 
-  it('renders empty prompt when no component is selected', () => {
+  it('renders empty prompt when no component is selected, with assembly shortcuts', () => {
+    const handleSelect = vi.fn();
+
     render(
       <BrowserRouter>
-        <ComponentPanel component={null} />
+        <ComponentPanel component={null} onSelectComponent={handleSelect} />
       </BrowserRouter>
     );
 
-    expect(screen.getByText(/Select a 3D Component/i)).toBeDefined();
+    expect(screen.getByText(/3D Machine Knowledge Explorer/i)).toBeDefined();
     expect(screen.getByText(/Click on any part of the 3D VMC model/i)).toBeDefined();
+
+    // Assembly buttons
+    const viseShortcut = screen.getByRole('button', { name: /Precision Vise/i });
+    expect(viseShortcut).toBeDefined();
+    fireEvent.click(viseShortcut);
+    expect(handleSelect).toHaveBeenCalledWith('vise');
   });
 
   it('renders PinForm modal and submits a new pinned knowledge card', async () => {

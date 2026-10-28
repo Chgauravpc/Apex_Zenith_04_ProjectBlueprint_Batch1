@@ -53,7 +53,7 @@ export default function MachineMap() {
 
   // Sync selected mesh from store if changed externally (e.g. Note Guardian warning)
   useEffect(() => {
-    if (selectedComponentId) {
+    if (selectedComponentId !== undefined) {
       setSelectedMesh(selectedComponentId);
     }
   }, [selectedComponentId]);
@@ -65,6 +65,11 @@ export default function MachineMap() {
     },
     [setSelectedComponentId]
   );
+
+  const handleResetSelection = useCallback(() => {
+    setSelectedMesh(null);
+    setSelectedComponentId(null);
+  }, [setSelectedComponentId]);
 
   const handleToggleDoors = useCallback(() => {
     setDoorsOpen((prev) => !prev);
@@ -113,10 +118,9 @@ export default function MachineMap() {
     }
   };
 
-  const selectedComponentData =
-    components.find((c) => c.mesh_name === selectedMesh) ||
-    components.find((c) => c.mesh_name === 'spindle') ||
-    components[0];
+  const selectedComponentData = selectedMesh
+    ? components.find((c) => c.mesh_name === selectedMesh) || null
+    : null;
 
   return (
     <div className="space-y-6 animate-fade-in pb-12">
@@ -141,8 +145,8 @@ export default function MachineMap() {
             </span>
           </div>
           <p className="text-slate-400 text-sm mt-1 max-w-2xl">
-            Interactive 3D model serving as the visual index of machine know-how,
-            failure history, and verified tips from old employees.
+            Interactive 3D model with independently clickable machine components,
+            real-time hover highlighting, verified old-employee advice, and component failure logs.
           </p>
         </div>
 
@@ -173,16 +177,31 @@ export default function MachineMap() {
             selectedComponent={selectedMesh}
             highlightedComponent={highlightedComponentId}
             onSelectComponent={handleSelectComponent}
+            onResetSelection={handleResetSelection}
             doorsOpen={doorsOpen}
             onToggleDoors={handleToggleDoors}
             components={components}
           />
 
-          {/* Quick Select Component Filter Pills Bar */}
+          {/* Quick Select Component Filter Pills Bar with Reset option */}
           <div className="bg-slate-900/90 border border-slate-800 p-3 rounded-xl flex items-center gap-2 overflow-x-auto">
             <span className="text-xs font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap pl-1">
-              Parts:
+              Components:
             </span>
+
+            {/* Reset Selection Button in Pill Bar */}
+            {selectedMesh && (
+              <button
+                type="button"
+                onClick={handleResetSelection}
+                className="btn-touch px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-400/50 shadow-sm transition flex items-center space-x-1"
+                title="Reset Selection"
+              >
+                <span>↺</span>
+                <span>Reset Selection</span>
+              </button>
+            )}
+
             {components.map((c) => {
               const isSelected = selectedMesh === c.mesh_name;
               return (
@@ -192,7 +211,7 @@ export default function MachineMap() {
                   onClick={() => handleSelectComponent(c.mesh_name)}
                   className={`btn-touch px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition flex items-center space-x-1.5 ${
                     isSelected
-                      ? 'bg-cyan-500 text-slate-950 font-bold shadow-md'
+                      ? 'bg-cyan-500 text-slate-950 font-bold shadow-md ring-2 ring-cyan-300'
                       : 'bg-slate-800/90 hover:bg-slate-700 text-slate-300 border border-slate-700/70'
                   }`}
                 >
@@ -213,9 +232,11 @@ export default function MachineMap() {
         <div className="lg:col-span-4">
           <ComponentPanel
             component={selectedComponentData}
-            onClose={() => setSelectedMesh(null)}
+            onClose={handleResetSelection}
+            onResetSelection={handleResetSelection}
             onOpenPinForm={handleOpenPinForm}
             onFocusComponent={handleSelectComponent}
+            onSelectComponent={handleSelectComponent}
           />
         </div>
       </div>

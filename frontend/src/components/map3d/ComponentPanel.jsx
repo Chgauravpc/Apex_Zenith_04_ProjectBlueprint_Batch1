@@ -3,25 +3,59 @@ import { NavLink } from 'react-router-dom';
 
 /**
  * Slide-out / Side Panel displaying detailed know-how, verified old employee notes,
- * specs, and past failure incidents for the selected machine component.
+ * short description, expert knowledge placeholder, specs, and past failure incidents.
  * Reference: PRD.md §9.4 and TASKS.md T21.
  */
 export default function ComponentPanel({
   component,
   onClose,
+  onResetSelection,
   onOpenPinForm,
   onFocusComponent,
+  onSelectComponent,
 }) {
+  // Empty / Reset state when no component is selected
   if (!component) {
     return (
-      <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 text-center text-slate-400">
-        <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center text-2xl text-cyan-400">
+      <div className="bg-slate-900/95 border border-slate-800 rounded-2xl p-6 text-center text-slate-400 shadow-2xl space-y-4">
+        <div className="w-14 h-14 mx-auto rounded-2xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-3xl text-cyan-400 shadow-inner">
           ⚙️
         </div>
-        <h3 className="text-sm font-semibold text-white">Select a 3D Component</h3>
-        <p className="text-xs text-slate-400 mt-1 max-w-xs mx-auto">
-          Click on any part of the 3D VMC model (spindle, vise, worktable, tool holder, control panel, or doors) to inspect verified notes, past failures, and operating parameters.
-        </p>
+        <div>
+          <h3 className="text-base font-bold text-white tracking-tight">
+            3D Machine Knowledge Explorer
+          </h3>
+          <p className="text-xs text-slate-400 mt-1.5 max-w-xs mx-auto leading-relaxed">
+            Click on any part of the 3D VMC model to inspect its engineering specifications, historical failure incidents, and expert tacit know-how.
+          </p>
+        </div>
+
+        {/* Quick Component Selection Shortcuts */}
+        <div className="pt-2 border-t border-slate-800/80">
+          <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2.5">
+            Clickable Machine Assemblies:
+          </div>
+          <div className="grid grid-cols-2 gap-2 text-left">
+            {[
+              { id: 'spindle', label: 'Spindle Assembly', icon: '⚙️', risk: 'high' },
+              { id: 'tool_holder', label: 'Tool Holder & ATC', icon: '🔧', risk: 'medium' },
+              { id: 'worktable', label: 'T-Slot Worktable', icon: '📐', risk: 'low' },
+              { id: 'vise', label: 'Precision Vise', icon: '🗜️', risk: 'low' },
+              { id: 'control_panel', label: 'Control Pendant', icon: '🖥️', risk: 'low' },
+              { id: 'doors', label: 'Enclosure Doors', icon: '🚪', risk: 'low' },
+            ].map((part) => (
+              <button
+                key={part.id}
+                type="button"
+                onClick={() => onSelectComponent && onSelectComponent(part.id)}
+                className="px-2.5 py-2 rounded-lg bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700/80 text-xs font-semibold text-slate-200 hover:text-white transition flex items-center space-x-1.5"
+              >
+                <span>{part.icon}</span>
+                <span className="truncate">{part.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
     );
   }
@@ -52,13 +86,15 @@ export default function ComponentPanel({
     }
   };
 
+  const handleReset = onResetSelection || onClose;
+
   return (
-    <div className="bg-slate-900/95 border border-slate-800 rounded-2xl p-5 shadow-2xl flex flex-col space-y-5">
+    <div className="bg-slate-900/95 border border-slate-800 rounded-2xl p-5 shadow-2xl flex flex-col space-y-4">
       {/* Panel Header */}
-      <div className="flex items-start justify-between border-b border-slate-800 pb-4">
+      <div className="flex items-start justify-between border-b border-slate-800 pb-3">
         <div>
-          <div className="flex items-center space-x-2">
-            <h2 className="text-lg font-bold text-white tracking-tight">
+          <div className="flex items-center space-x-2 flex-wrap gap-y-1">
+            <h2 className="text-xl font-bold text-white tracking-tight">
               {component.display_name}
             </h2>
             {getRiskBadge(component.risk)}
@@ -68,32 +104,68 @@ export default function ComponentPanel({
           </p>
         </div>
 
+        {/* Reset Selection Button */}
         <button
           type="button"
-          onClick={onClose}
-          className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition"
-          title="Close Panel"
+          onClick={handleReset}
+          className="btn-touch px-2.5 py-1 text-xs font-medium text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-lg border border-slate-700 transition flex items-center space-x-1"
+          title="Reset Selection"
         >
-          ✕
+          <span>↺</span>
+          <span className="hidden sm:inline">Reset</span>
         </button>
+      </div>
+
+      {/* Component Short Description */}
+      <div className="bg-slate-950/70 border border-slate-800/80 rounded-xl p-3.5">
+        <h3 className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+          Component Description
+        </h3>
+        <p className="text-xs text-slate-200 leading-relaxed">
+          {component.description || 'Precision CNC machining sub-assembly.'}
+        </p>
+      </div>
+
+      {/* Placeholder for Expert Knowledge */}
+      <div className="bg-gradient-to-br from-indigo-950/40 via-slate-900 to-slate-950 border border-indigo-500/30 rounded-xl p-4 shadow-sm">
+        <div className="flex items-start space-x-3">
+          <div className="w-8 h-8 rounded-lg bg-indigo-500/20 border border-indigo-500/40 flex items-center justify-center text-lg text-indigo-300 shrink-0">
+            💡
+          </div>
+          <div className="flex-1">
+            <h3 className="text-xs font-bold text-indigo-200 uppercase tracking-wider">
+              Expert Knowledge & Tacit Know-How
+            </h3>
+            <p className="text-xs text-slate-300 mt-1 leading-relaxed">
+              Unwritten machinist tips, vibration audio cues, and setup secrets captured from senior machinists (Ramesh & Suresh).
+            </p>
+            <button
+              type="button"
+              onClick={() => onOpenPinForm(component)}
+              className="mt-2.5 text-xs font-semibold px-3 py-1.5 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 transition flex items-center space-x-1.5 shadow"
+            >
+              <span>📌 Pin New Know-How Card</span>
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* Action Toolbar */}
       <div className="grid grid-cols-2 gap-2">
         <button
           type="button"
-          onClick={() => onOpenPinForm(component)}
-          className="btn-touch px-3 py-2 text-xs font-semibold rounded-lg bg-cyan-600 hover:bg-cyan-500 text-slate-950 transition flex items-center justify-center space-x-1.5 shadow"
-        >
-          <span>📌 Pin Know-How</span>
-        </button>
-
-        <button
-          type="button"
           onClick={() => onFocusComponent(component.mesh_name)}
           className="btn-touch px-3 py-2 text-xs font-semibold rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition flex items-center justify-center space-x-1.5"
         >
           <span>🎯 Focus View</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={handleReset}
+          className="btn-touch px-3 py-2 text-xs font-semibold rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-300 border border-slate-700 transition flex items-center justify-center space-x-1.5"
+        >
+          <span>↺ Reset Selection</span>
         </button>
 
         <NavLink
@@ -113,11 +185,11 @@ export default function ComponentPanel({
 
       {/* Specifications Grid */}
       {component.specs && Object.keys(component.specs).length > 0 && (
-        <div className="bg-slate-950/60 rounded-xl p-3.5 border border-slate-800/80">
+        <div className="bg-slate-950/60 rounded-xl p-3 border border-slate-800/80">
           <h3 className="text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
             Engineering Parameters
           </h3>
-          <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-2 text-xs">
+          <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-1.5 text-xs">
             {Object.entries(component.specs).map(([key, val]) => (
               <div key={key} className="flex justify-between border-b border-slate-800/50 pb-1">
                 <dt className="text-slate-400">{key}:</dt>
@@ -130,9 +202,9 @@ export default function ComponentPanel({
 
       {/* Old Employee Verified Know-How Section */}
       <div>
-        <div className="flex items-center justify-between mb-2.5">
+        <div className="flex items-center justify-between mb-2">
           <h3 className="text-xs font-semibold text-slate-200 uppercase tracking-wider flex items-center space-x-1.5">
-            <span>Verified Know-How</span>
+            <span>Verified Knowledge Cards</span>
             <span className="px-1.5 py-0.2 rounded text-[10px] bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
               Old Employee Advice
             </span>
@@ -142,7 +214,7 @@ export default function ComponentPanel({
           </span>
         </div>
 
-        <div className="space-y-3 max-h-56 overflow-y-auto pr-1">
+        <div className="space-y-2.5 max-h-52 overflow-y-auto pr-1">
           {component.expert_notes && component.expert_notes.length > 0 ? (
             component.expert_notes.map((note) => (
               <div
@@ -179,7 +251,7 @@ export default function ComponentPanel({
             ))
           ) : (
             <div className="text-center py-4 bg-slate-950/40 rounded-xl border border-dashed border-slate-800 text-xs text-slate-500">
-              No verified cards pinned yet. Be the first to record advice!
+              No verified cards pinned yet. Click &quot;Pin New Know-How Card&quot; to add one.
             </div>
           )}
         </div>
