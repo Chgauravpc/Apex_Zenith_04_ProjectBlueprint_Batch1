@@ -236,4 +236,89 @@ describe('3D Machine Knowledge Map Components (T21)', () => {
       );
     });
   });
+
+  it('attaches knowledge with procedure type and stable component ID', async () => {
+    const handleClose = vi.fn();
+    const handleSubmit = vi.fn().mockResolvedValue();
+
+    render(
+      <PinForm
+        component={spindleComponent}
+        isOpen={true}
+        onClose={handleClose}
+        onSubmit={handleSubmit}
+      />
+    );
+
+    // Select procedure type
+    const procedureTypeBtn = screen.getByRole('button', { name: /Procedure/i });
+    fireEvent.click(procedureTypeBtn);
+
+    const titleInput = screen.getByPlaceholderText(/e\.g\. Flange vibration/i);
+    fireEvent.change(titleInput, { target: { value: 'Spindle Chiller Flush SOP' } });
+
+    const textArea = screen.getByPlaceholderText(/Explain the symptom/i);
+    fireEvent.change(textArea, {
+      target: {
+        value: 'Step 1: Shut off chiller pump. Step 2: Flush lines with solvent. Step 3: Refill with Mobil Velocite No. 6.',
+      },
+    });
+
+    const submitBtn = screen.getByRole('button', { name: /Attach & Pin to 3D Model/i });
+    fireEvent.click(submitBtn);
+
+    await waitFor(() => {
+      expect(handleSubmit).toHaveBeenCalledWith(
+        expect.objectContaining({
+          component_id: 1, // Stable component ID for spindle
+          mesh_name: 'spindle',
+          title: 'Spindle Chiller Flush SOP',
+          knowledge_type: 'procedure',
+          type: 'procedure',
+          description: 'Step 1: Shut off chiller pump. Step 2: Flush lines with solvent. Step 3: Refill with Mobil Velocite No. 6.',
+        })
+      );
+    });
+  });
+
+  it('renders attached operating procedures when present on a component', () => {
+    const componentWithProcedures = {
+      ...spindleComponent,
+      procedures: [
+        {
+          id: 'SOP-101',
+          title: 'Pre-Shift Ceramic Bearing Spindle Warmup',
+          description: 'Run spindle at 3,000 RPM for 3 mins, then 6,000 RPM for 3 mins before cutting.',
+          author: 'Ramesh (Old Employee)',
+          date: '28-Oct-2024',
+        },
+      ],
+    };
+
+    render(
+      <BrowserRouter>
+        <ComponentPanel component={componentWithProcedures} />
+      </BrowserRouter>
+    );
+
+    expect(screen.getByText(/Operating Procedures \(SOPs\)/i)).toBeDefined();
+    expect(screen.getByText(/Pre-Shift Ceramic Bearing Spindle Warmup/i)).toBeDefined();
+    expect(screen.getByText(/Run spindle at 3,000 RPM for 3 mins/i)).toBeDefined();
+  });
+
+  it('verifies stable component IDs for all machine assemblies', () => {
+    const expectedIds = {
+      spindle: 1,
+      tool_holder: 2,
+      worktable: 3,
+      vise: 4,
+      control_panel: 5,
+      doors: 6,
+      machine_body: 7,
+    };
+
+    VMC_COMPONENTS_DATA.forEach((comp) => {
+      expect(comp.id).toBe(expectedIds[comp.mesh_name]);
+    });
+  });
 });
