@@ -22,6 +22,7 @@ export const captureVoice = (formData, signal) =>
   client
     .post('/capture/voice', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: 90000, // speech-to-text, AI and Guardian in one request
       signal,
     })
     .then((r) => r.data);
@@ -64,10 +65,10 @@ export const getJob = (jobId, signal) =>
  * Helper to poll a background job with exponential backoff until completion.
  * @param {string} jobId
  * @param {Function} [onProgress]
- * @param {number} [maxAttempts=30]
+ * @param {number} [maxAttempts=90]  about 7 minutes at the 5 s cap (long videos, slow hosts)
  * @param {number} [baseDelay=1000]
  */
-export async function pollJob(jobId, onProgress, maxAttempts = 30, baseDelay = 1000) {
+export async function pollJob(jobId, onProgress, maxAttempts = 90, baseDelay = 1000) {
   let attempts = 0;
   let delay = baseDelay;
 

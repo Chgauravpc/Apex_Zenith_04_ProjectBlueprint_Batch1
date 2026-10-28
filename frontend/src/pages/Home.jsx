@@ -82,12 +82,18 @@ export default function Home() {
       : 'No questions waiting for you.');
 
   const critical = (d.risk || []).filter((c) => c.component_id !== null && c.status === 'critical');
-  const experts = [...new Set(critical.map((c) => c.expert).filter(Boolean))];
+  const leaving = critical.filter((c) => c.cards > 0);
+  const unrecorded = critical.length - leaving.length;
+  const experts = [...new Set(leaving.map((c) => c.expert).filter(Boolean))];
+  const riskParts = [
+    leaving.length && `${plural(leaving.length, 'machine part')} known only by people leaving (${experts.join(', ')})`,
+    unrecorded && `${plural(unrecorded, 'part')} with nothing recorded`,
+  ].filter(Boolean);
   const riskText =
     loadingText ||
     (d.risk
-      ? critical.length
-        ? `${plural(critical.length, 'machine part')} depend on ${experts.join(', ')} alone.`
+      ? riskParts.length
+        ? `At risk: ${riskParts.join('; ')}.`
         : 'No machine part depends on one leaving person.'
       : 'Risk data not available right now.');
   const metricsText =

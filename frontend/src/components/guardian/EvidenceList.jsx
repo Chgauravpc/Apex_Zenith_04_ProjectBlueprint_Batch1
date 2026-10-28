@@ -37,7 +37,7 @@ export default function EvidenceList({ evidence = [], expertFix, authorName = 'O
           </div>
           <ul className="space-y-1.5">
             {evidence.map((item, idx) => {
-              const itemId = item.id || idx;
+              const itemId = `${item.type || 'record'}-${item.id ?? idx}`;
               const isExpanded = expandedId === itemId;
               return (
                 <li

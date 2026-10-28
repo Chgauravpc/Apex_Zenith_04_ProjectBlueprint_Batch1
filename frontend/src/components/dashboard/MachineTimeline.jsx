@@ -36,7 +36,7 @@ const KINDS = {
   maintenance: { label: 'Maintenance', badge: 'bg-emerald-50 text-emerald-800 border-emerald-200', icon: <WrenchIcon className="w-3 h-3 text-emerald-700" /> },
   meeting: { label: 'Team Meeting', badge: 'bg-purple-50 text-purple-800 border-purple-200', icon: <UsersIcon className="w-3 h-3 text-purple-700" /> },
   run: { label: 'Guided Run', badge: 'bg-blue-50 text-blue-800 border-blue-200', icon: <PlayIcon className="w-3 h-3 text-blue-700" /> },
-  chatter: { label: 'Chatter Check', badge: 'bg-amber-50 text-amber-800 border-amber-200', icon: <VolumeIcon className="w-3 h-3 text-amber-700" /> },
+  chatter_check: { label: 'Chatter Check', badge: 'bg-amber-50 text-amber-800 border-amber-200', icon: <VolumeIcon className="w-3 h-3 text-amber-700" /> },
 };
 const OTHER = { label: 'Event', badge: 'bg-slate-100 text-slate-800 border-slate-200', icon: <FileTextIcon className="w-3 h-3 text-slate-700" /> };
 

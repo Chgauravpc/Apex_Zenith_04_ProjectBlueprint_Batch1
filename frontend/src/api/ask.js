@@ -22,6 +22,7 @@ export const askVoice = (formData, signal) =>
   client
     .post('/ask/voice', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: 90000, // speech-to-text, AI and Guardian in one request
       signal,
     })
     .then((r) => r.data);
