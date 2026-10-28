@@ -1,12 +1,12 @@
 import React from 'react';
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent, act, cleanup } from '@testing-library/react';
-import { MemoryRouter, BrowserRouter } from 'react-router-dom';
+import { render, screen, fireEvent, cleanup } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import App from '../App';
 import NavBar from '../components/layout/NavBar';
 import RoleSwitcher from '../components/layout/RoleSwitcher';
 import { useAuthStore, DEMO_USERS } from '../store/useAuthStore';
-import { t, LANGUAGES } from '../utils/i18n';
+import { t } from '../utils/i18n';
 
 describe('Empirical Challenger M2 Stress Suite — Navigation and Global Shell', () => {
   beforeEach(() => {
@@ -198,7 +198,7 @@ describe('Empirical Challenger M2 Stress Suite — Navigation and Global Shell',
         'navDashboard',
       ];
 
-      for (const key of navKeys) {
+      navKeys.forEach(() => {
         const hamburger = screen.getByLabelText(/Toggle navigation menu/i);
         // Open drawer
         fireEvent.click(hamburger);
@@ -214,7 +214,7 @@ describe('Empirical Challenger M2 Stress Suite — Navigation and Global Shell',
         // Verify drawer auto-closed
         expect(hamburger.getAttribute('aria-expanded')).toBe('false');
         expect(screen.queryByLabelText('Mobile Navigation')).toBeNull();
-      }
+      });
 
       unmount();
     });

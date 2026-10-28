@@ -5,12 +5,16 @@
 The complete, opaque-box E2E test suite for the **Apex Zenith** frontend (`Apex_Zenith_04_ProjectBlueprint_Batch1/frontend`) has been implemented, validated, and verified following the 4-tier testing methodology defined in `TEST_INFRA.md`.
 
 - **Test Framework**: Vitest v2.1.9 with `@testing-library/react` and `@testing-library/jest-dom`
-- **Total Test Files**: 15 (4 new comprehensive E2E spec files + 1 helper module + 10 unit test files)
-- **Total Tests Passing**: **247 / 247 passed** (0 failing, 0 flaky)
-  - **New E2E Tests**: **159 / 159 passed** (100% pass rate)
-  - **Pre-existing Unit & Component Tests**: **88 / 88 passed** (100% pass rate)
+- **Total Test Files**: 19 test files (all passing)
+- **Total Tests Passing**: **346 / 346 passed (100% pass rate)** (0 failing, 0 flaky)
+  - **Tier 1 (Feature Coverage)**: **70 / 70 passed**
+  - **Tier 2 (Boundary Conditions & Edge Cases)**: **70 / 70 passed**
+  - **Tier 3 (Cross-Feature Interactions & Pairwise Workflows)**: **14 / 14 passed**
+  - **Tier 4 (Operational Scenarios)**: **5 / 5 passed**
+  - **Tier 5 (Adversarial Hardening & WCAG AAA Stress)**: **32 / 32 passed**
+  - **Challenger & Component Stress Suites**: **155 / 155 passed**
 - **Linter Status**: **0 errors, 0 warnings** (`npm run lint`)
-- **Production Build Status**: **Clean build succeeded** (`npm run build`)
+- **Production Build Status**: **Clean build succeeded in 11.30s** (`npm run build`)
 
 ---
 
@@ -36,6 +40,9 @@ npm --prefix Apex_Zenith_04_ProjectBlueprint_Batch1/frontend test -- src/e2e/tie
 
 # Tier 4: Real-World Application Operational Scenarios (5 tests)
 npm --prefix Apex_Zenith_04_ProjectBlueprint_Batch1/frontend test -- src/e2e/tier4-scenarios.spec.jsx
+
+# Tier 5: Adversarial Hardening & WCAG AAA Stress (32 tests)
+npm --prefix Apex_Zenith_04_ProjectBlueprint_Batch1/frontend test -- src/e2e/tier5-adversarial.spec.jsx
 ```
 
 ### Run Linter & Production Build:

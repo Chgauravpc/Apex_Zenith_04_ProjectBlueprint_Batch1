@@ -64,8 +64,8 @@ export default function VmcMachine({
     return {
       // Cast iron structural base
       castIron: new THREE.MeshStandardMaterial({
-        color: '#1a1f2c',
-        roughness: 0.75,
+        color: '#1e293b',
+        roughness: 0.7,
         metalness: 0.35,
         wireframe,
       }),
@@ -78,36 +78,36 @@ export default function VmcMachine({
       }),
       // Enclosure clean white panels (Google White & Maroon industrial pearl)
       sheetMetalLight: new THREE.MeshStandardMaterial({
-        color: '#f1f5f9',
-        roughness: 0.35,
-        metalness: 0.3,
+        color: '#f8fafc',
+        roughness: 0.28,
+        metalness: 0.22,
         wireframe,
       }),
       // Signature Industrial Maroon Accent Trim (#721026)
       accentCyan: new THREE.MeshStandardMaterial({
         color: '#721026',
-        roughness: 0.28,
+        roughness: 0.25,
         metalness: 0.65,
         wireframe,
       }),
       accentMaroon: new THREE.MeshStandardMaterial({
         color: '#721026',
-        roughness: 0.28,
+        roughness: 0.25,
         metalness: 0.65,
         wireframe,
       }),
       // Stainless steel internal splash guards & way covers
       stainless: new THREE.MeshStandardMaterial({
-        color: '#cbd5e1',
-        roughness: 0.25,
+        color: '#e2e8f0',
+        roughness: 0.2,
         metalness: 0.88,
         wireframe,
       }),
       // Precision ground steel (table surface, spindle cartridge, vise ways)
       groundSteel: new THREE.MeshStandardMaterial({
-        color: '#f8fafc',
-        roughness: 0.15,
-        metalness: 0.95,
+        color: '#ffffff',
+        roughness: 0.12,
+        metalness: 0.96,
         wireframe,
       }),
       // Dark anodized steel / vise body
@@ -119,11 +119,11 @@ export default function VmcMachine({
       }),
       // Safety tinted polycarbonate window glass
       safetyGlass: new THREE.MeshPhysicalMaterial({
-        color: '#64748b',
-        roughness: 0.08,
+        color: '#94a3b8',
+        roughness: 0.05,
         metalness: 0.1,
-        transmission: 0.88,
-        opacity: 0.4,
+        transmission: 0.92,
+        opacity: 0.32,
         transparent: true,
         wireframe,
       }),
@@ -262,12 +262,12 @@ export default function VmcMachine({
         </mesh>
 
         {/* Enclosure Left Wall */}
-        <mesh position={[-1.12, 1.35, 0.12]} material={materials.sheetMetalDark} castShadow>
+        <mesh position={[-1.12, 1.35, 0.12]} material={materials.sheetMetalLight} castShadow>
           <boxGeometry args={[0.06, 1.82, 1.84]} />
         </mesh>
 
         {/* Enclosure Right Wall */}
-        <mesh position={[1.12, 1.35, 0.12]} material={materials.sheetMetalDark} castShadow>
+        <mesh position={[1.12, 1.35, 0.12]} material={materials.sheetMetalLight} castShadow>
           <boxGeometry args={[0.06, 1.82, 1.84]} />
         </mesh>
 
@@ -609,12 +609,12 @@ export default function VmcMachine({
           </mesh>
 
           {/* Pendant Console Enclosure Box */}
-          <mesh position={[0, 0, 0]} material={materials.sheetMetalDark} castShadow>
+          <mesh position={[0, 0, 0]} material={materials.sheetMetalLight} castShadow>
             <boxGeometry args={[0.48, 0.64, 0.18]} />
           </mesh>
 
-          {/* Cyan Trim Frame around Console */}
-          <mesh position={[0, 0, 0.091]} material={materials.accentCyan}>
+          {/* Maroon Trim Frame around Console */}
+          <mesh position={[0, 0, 0.091]} material={materials.accentMaroon}>
             <boxGeometry args={[0.46, 0.62, 0.005]} />
           </mesh>
 
@@ -700,11 +700,11 @@ export default function VmcMachine({
         {/* Left Sliding Door */}
         <group ref={leftDoorRef} position={[-0.37, 1.34, 1.04]}>
           {/* Door Metal Frame */}
-          <mesh material={materials.sheetMetalDark} castShadow>
+          <mesh material={materials.sheetMetalLight} castShadow>
             <boxGeometry args={[0.74, 1.72, 0.035]} />
           </mesh>
           {/* Lower Door Maroon Livery Stripe */}
-          <mesh position={[0, -0.74, 0.02]} material={materials.accentCyan}>
+          <mesh position={[0, -0.74, 0.02]} material={materials.accentMaroon}>
             <boxGeometry args={[0.72, 0.035, 0.008]} />
           </mesh>
           {/* Large Observation Safety Polycarbonate Window - bypasses raycast so internal parts are clickable through glass */}
@@ -720,11 +720,11 @@ export default function VmcMachine({
         {/* Right Sliding Door */}
         <group ref={rightDoorRef} position={[0.37, 1.34, 1.04]}>
           {/* Door Metal Frame */}
-          <mesh material={materials.sheetMetalDark} castShadow>
+          <mesh material={materials.sheetMetalLight} castShadow>
             <boxGeometry args={[0.74, 1.72, 0.035]} />
           </mesh>
           {/* Lower Door Maroon Livery Stripe */}
-          <mesh position={[0, -0.74, 0.02]} material={materials.accentCyan}>
+          <mesh position={[0, -0.74, 0.02]} material={materials.accentMaroon}>
             <boxGeometry args={[0.72, 0.035, 0.008]} />
           </mesh>
           {/* Large Observation Safety Polycarbonate Window - bypasses raycast so internal parts are clickable through glass */}
