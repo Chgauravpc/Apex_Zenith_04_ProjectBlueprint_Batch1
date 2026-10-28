@@ -295,3 +295,30 @@ def test_only_the_answer_is_checked_not_the_question(client, db, story, fake_llm
     )
     assert guardian["severity"] != "stop"
     assert all(w["rule"] != "precursor" for w in guardian["warnings"])
+
+
+def test_settings_typed_in_their_own_fields_are_checked(client, db, story, fake_llm) -> None:
+    from app.models.ops import Event
+
+    priya, vmc = story["people"]["Priya"], story["machines"]["VMC-3"]
+    body = client.post(
+        "/api/capture/text",
+        json={
+            "text": "Finishing the flange on SS304",  # no numbers in the text itself
+            "author_id": priya.id,
+            "machine_id": vmc.id,
+            "params": {"feed": 0.3, "speed": 9000},
+        },
+    ).json()
+    assert body["guardian"]["severity"] == "stop"
+    assert any(w["rule"] == "param_limit" for w in body["guardian"]["warnings"])
+    event = db.execute(
+        select(Event).filter_by(kind="note", ref_id=body["document_id"])
+    ).scalar_one()  # the live note is on the machine timeline
+    assert event.machine_id == vmc.id and "Finishing the flange" in event.summary
+
+    bad = client.post(
+        "/api/capture/text",
+        json={"text": "x", "author_id": priya.id, "params": {"rpm": 9000}},
+    )
+    assert bad.status_code == 422 and "speed" in bad.json()["detail"]

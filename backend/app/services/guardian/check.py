@@ -215,8 +215,13 @@ def save_and_check(db: Session, note: NoteIn) -> GuardianResult:
     return run_checks(db, doc, note.params, note.symptoms)
 
 
-def note_saved_hook(db: Session, doc: Document) -> Optional[dict]:
-    """Capture hook: run Guardian on every typed/voice note (registered in main.create_app)."""
+def note_saved_hook(
+    db: Session, doc: Document, params: Optional[Dict[str, float]] = None
+) -> Optional[dict]:
+    """Capture hook: run Guardian on every saved note (registered in main.create_app).
+
+    `params` are settings typed in their own fields; they are checked with the text's values.
+    """
     if not doc.text:
         return None
-    return run_checks(db, doc).model_dump(mode="json")
+    return run_checks(db, doc, extra_params=params).model_dump(mode="json")

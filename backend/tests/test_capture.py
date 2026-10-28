@@ -458,10 +458,10 @@ def test_text_note_live_and_hook_result(api, shop, fake_llm, monkeypatch) -> Non
     )
     seen = []
 
-    def failing_hook(db, doc):
+    def failing_hook(db, doc, params):
         raise RuntimeError("boom")
 
-    def guardian_hook(db, doc):
+    def guardian_hook(db, doc, params):
         seen.append(doc.id)
         return {"severity": "info", "warnings": []}
 

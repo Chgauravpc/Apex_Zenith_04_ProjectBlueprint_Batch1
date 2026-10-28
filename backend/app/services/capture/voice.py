@@ -13,19 +13,23 @@ from sqlalchemy.orm import Session
 from app.errors import NotFound, ProviderUnavailable, ValidationFailed
 from app.models.erp import Employee, Machine
 from app.models.knowledge import Document
+from app.models.ops import Event
 from app.schemas.capture import CardOut, ExtractedCard, TextNoteIn, TranscriptOut, VoiceNoteOut
 from app.services import stt
 from app.services.capture.extractor import extract_cards, save_cards
+from app.utils import lexicon
 from app.utils.files import save_upload
 
 logger = logging.getLogger(__name__)
 
-NoteHook = Callable[[Session, Document], Optional[Dict[str, Any]]]
+NoteHook = Callable[[Session, Document, Dict[str, float]], Optional[Dict[str, Any]]]
 # Called after every saved note, in order. Note Guardian appends its check here (T09).
 NOTE_SAVED_HOOKS: List[NoteHook] = []
 
 
-def on_note_saved(db: Session, doc: Document) -> Optional[Dict[str, Any]]:
+def on_note_saved(
+    db: Session, doc: Document, params: Optional[Dict[str, float]] = None
+) -> Optional[Dict[str, Any]]:
     """Run every registered hook; return the last non-empty result (the Guardian result).
 
     A failing hook is logged and skipped so that saving a note never fails because of it.
@@ -33,7 +37,7 @@ def on_note_saved(db: Session, doc: Document) -> Optional[Dict[str, Any]]:
     result: Optional[Dict[str, Any]] = None
     for hook in NOTE_SAVED_HOOKS:
         try:
-            out = hook(db, doc)
+            out = hook(db, doc, params or {})
         except Exception:  # noqa: BLE001  a check must never lose the employee's note
             logger.exception("note hook %s failed for doc %s", hook.__name__, doc.id)
             db.rollback()
@@ -51,10 +55,33 @@ def check_refs(db: Session, author_id: int, machine_id: Optional[int]) -> None:
         raise NotFound(f"machine {machine_id} not found")
 
 
+def add_note_event(db: Session, doc: Document, machine_id: Optional[int], label: str) -> None:
+    """Put a captured note on its machine's timeline (no machine, no text: nothing to show)."""
+    if machine_id is None or not doc.text:
+        return
+    text = " ".join(doc.text.split())
+    db.add(
+        Event(
+            machine_id=machine_id,
+            kind="note",
+            ref_type="document",
+            ref_id=doc.id,
+            summary=f"{label}: {text[:160]}",
+        )
+    )
+    db.commit()
+
+
 def _finish(
-    db: Session, doc: Document, cards: List[ExtractedCard], transcript: Optional[str]
+    db: Session,
+    doc: Document,
+    cards: List[ExtractedCard],
+    transcript: Optional[str],
+    params: Optional[Dict[str, float]] = None,
 ) -> VoiceNoteOut:
     rows = save_cards(db, cards, doc.id) if cards else []
+    machine = doc.machine_id or next((r.machine_id for r in rows if r.machine_id), None)
+    add_note_event(db, doc, machine, "Voice note" if transcript else "Note")
     mode = "offline" if any(c.mode == "offline" for c in cards) else "live"
     return VoiceNoteOut(
         document_id=doc.id,
@@ -63,7 +90,7 @@ def _finish(
         cards=[CardOut.model_validate(r) for r in rows],
         mode=mode,
         message=None if rows else "Saved. No know-how was found in this note.",
-        guardian=on_note_saved(db, doc),
+        guardian=on_note_saved(db, doc, params),
     )
 
 
@@ -73,6 +100,9 @@ def capture_text(db: Session, note: TextNoteIn) -> VoiceNoteOut:
     text = note.text.strip()
     if not text:
         raise ValidationFailed("note is empty")
+    unknown = sorted(set(note.params) - set(lexicon.PARAMS))
+    if unknown:
+        raise ValidationFailed(f"unknown setting(s) {unknown}; use {sorted(lexicon.PARAMS)}")
     doc = Document(
         type="text",
         text=text,
@@ -83,7 +113,7 @@ def capture_text(db: Session, note: TextNoteIn) -> VoiceNoteOut:
     db.add(doc)
     db.commit()  # the note is kept even if extraction fails later
     cards = extract_cards(text, note.author_id, note.machine_id)
-    return _finish(db, doc, cards, transcript=None)
+    return _finish(db, doc, cards, transcript=None, params=note.params)
 
 
 def capture_voice(

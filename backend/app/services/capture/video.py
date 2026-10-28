@@ -28,7 +28,7 @@ from app.prompts.video import VIDEO_PROMPT
 from app.schemas.capture import DraftStep, VideoProcedureDraft
 from app.services import jobs, llm, storage, stt
 from app.services.ask.search import media_url
-from app.services.capture.voice import check_refs, on_note_saved
+from app.services.capture.voice import add_note_event, check_refs, on_note_saved
 from app.utils.audit import audit
 from app.utils.files import save_upload
 
@@ -280,6 +280,8 @@ def start_video_job(
         ).scalars()
         # The narration is checked like any note (parameters, known failure signs).
         doc = job_db.get(Document, proc.source_doc_id)
+        if doc is not None:
+            add_note_event(job_db, doc, proc.machine_id, f"Setup video ({proc.title})")
         return {
             "procedure_id": proc.id,
             "title": proc.title,

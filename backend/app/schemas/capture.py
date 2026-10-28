@@ -51,6 +51,9 @@ class TextNoteIn(BaseModel):
     author_id: int
     machine_id: Optional[int] = None
     language: Optional[Literal["hi", "mr", "en"]] = None
+    # Settings typed in their own boxes, checked by Note Guardian like values in the text.
+    # Keys: feed, speed, depth, spindle_temp (utils/lexicon.PARAMS).
+    params: Dict[str, float] = Field(default_factory=dict)
 
 
 class CardOut(BaseModel):
