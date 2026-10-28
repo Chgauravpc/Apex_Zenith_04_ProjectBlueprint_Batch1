@@ -81,33 +81,37 @@ export default function Review() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-700/60 pb-5">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 pb-5">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight flex items-center space-x-2.5">
-            <CheckCircleIcon className="w-6 h-6 text-emerald-400" />
-            <span>{t('navReview', language)}</span>
-          </h1>
-          <p className="text-slate-400 text-xs sm:text-sm mt-1.5 font-medium leading-relaxed">
+          <div className="flex items-center space-x-2.5">
+            <span className="w-9 h-9 rounded-xl bg-maroon-50 text-maroon-700 flex items-center justify-center border border-maroon-100 shadow-xs">
+              <CheckCircleIcon className="w-5 h-5 text-maroon-700" />
+            </span>
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+              {t('navReview', language)}
+            </h1>
+          </div>
+          <p className="text-slate-500 text-xs sm:text-sm mt-1.5 font-medium leading-relaxed">
             Sign-off queue for experienced employees. Verify, correct, or reject AI-extracted know-how before it reaches operators.
           </p>
         </div>
 
-        <span className="text-xs bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 px-3.5 py-1.5 rounded-xl font-semibold font-mono shadow-sm flex items-center space-x-2 self-start sm:self-auto">
-          <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" aria-hidden="true" />
+        <span className="text-xs bg-maroon-50 border border-maroon-200 text-maroon-800 px-3.5 py-1.5 rounded-xl font-semibold font-mono shadow-xs flex items-center space-x-2 self-start sm:self-auto">
+          <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" aria-hidden="true" />
           <span>{pendingTotal} Cards Pending Verification</span>
         </span>
       </div>
 
       {!canReview && (
-        <div className="p-3 bg-slate-800 border border-slate-700 rounded-xl text-slate-300 text-xs">
+        <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-amber-900 text-xs font-medium">
           Only an old employee or a supervisor can verify know-how. Switch role to review these cards.
         </div>
       )}
 
       {errorMsg && (
-        <div role="alert" className="p-3 bg-red-950/80 border border-red-500/50 rounded-xl text-red-200 text-xs font-semibold flex items-center justify-between">
+        <div role="alert" className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-800 text-xs font-semibold flex items-center justify-between shadow-xs">
           <span>{errorMsg}</span>
-          <button type="button" onClick={() => setErrorMsg(null)} className="text-red-400 font-bold">
+          <button type="button" onClick={() => setErrorMsg(null)} className="text-rose-700 font-bold hover:text-rose-900">
             ✕
           </button>
         </div>
@@ -116,12 +120,12 @@ export default function Review() {
       <LoadState loading={queue.loading} error={queue.error} onRetry={queue.reload} label="Loading review queue…" />
 
       {feedbackMsg && (
-        <div className="p-3.5 bg-emerald-950/80 border border-emerald-500/50 rounded-xl text-emerald-200 text-xs font-semibold flex items-center justify-between shadow-lg">
+        <div className="p-3.5 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-800 text-xs font-semibold flex items-center justify-between shadow-xs">
           <span className="flex items-center space-x-2">
-            <span className="text-emerald-400 font-bold">✓</span>
+            <span className="text-emerald-700 font-bold">✓</span>
             <span>{feedbackMsg}</span>
           </span>
-          <button type="button" onClick={() => setFeedbackMsg(null)} className="text-emerald-400 font-bold hover:text-emerald-300 px-2 py-1">
+          <button type="button" onClick={() => setFeedbackMsg(null)} className="text-emerald-700 font-bold hover:text-emerald-900 px-2 py-1">
             ✕
           </button>
         </div>
@@ -130,8 +134,8 @@ export default function Review() {
       {/* Pending Review List */}
       <div className="space-y-4">
         {queue.loading || queue.error ? null : pendingCards.length === 0 ? (
-          <div className="bg-slate-800/60 border border-slate-800 rounded-2xl p-8 text-center text-slate-400 text-sm">
-            <SparklesIcon className="w-8 h-8 mx-auto mb-2 text-cyan-400" />
+          <div className="bg-white border border-[#DADCE0] rounded-2xl p-8 text-center text-slate-500 text-sm shadow-card">
+            <SparklesIcon className="w-8 h-8 mx-auto mb-2 text-maroon-600" />
             <span>All know-how cards in the review queue have been verified!</span>
           </div>
         ) : (
@@ -141,57 +145,57 @@ export default function Review() {
             return (
               <div
                 key={card.id}
-                className="bg-slate-800/90 border border-slate-700/80 rounded-2xl p-5 shadow-lg space-y-4"
+                className="bg-white border border-[#DADCE0] rounded-2xl p-6 shadow-card hover:border-slate-300 transition-all space-y-4"
               >
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-700/60 pb-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
                   <div className="flex items-center space-x-2">
-                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30 uppercase">
+                    <span className="px-2.5 py-0.5 rounded-md text-[10px] font-bold bg-amber-50 text-amber-900 border border-amber-200 uppercase tracking-wider">
                       Pending Sign-off
                     </span>
-                    <span className="text-xs font-bold text-white">
+                    <span className="text-xs font-bold text-slate-900">
                       #{card.id} • {card.machine || 'Machine not set'}
                       {card.component ? ` (${card.component})` : ''}
                     </span>
                   </div>
 
-                  <span className="text-slate-400 text-[11px]">
-                    Captured by: <strong className="text-slate-300">{card.author || 'Unknown'}</strong>
+                  <span className="text-slate-500 text-[11px]">
+                    Captured by: <strong className="text-slate-700">{card.author || 'Unknown'}</strong>
                     {' '}• confidence {Math.round(card.confidence * 100)}%
                   </span>
                 </div>
 
                 <div className="space-y-2">
-                  <div className="text-xs font-bold text-cyan-300 flex items-center space-x-1.5">
+                  <div className="text-xs font-bold text-maroon-800 flex items-center space-x-1.5">
                     <span>Symptom / Scenario:</span>
-                    <span className="text-slate-200 font-normal">
+                    <span className="text-slate-800 font-normal">
                       {card.title}
                       {card.symptom ? ` (${symptomLabel(card.symptom)})` : ''}
                     </span>
                   </div>
 
                   {isEditing ? (
-                    <div className="space-y-3 bg-slate-900/80 p-4 rounded-xl border border-slate-700">
+                    <div className="space-y-3 bg-slate-50/70 p-5 rounded-xl border border-slate-200/90">
                       <div>
-                        <label className="block text-[11px] font-bold text-slate-300 mb-1">
+                        <label className="block text-[11px] font-bold text-slate-700 mb-1">
                           Correct Action:
                         </label>
                         <textarea
                           rows={2}
                           value={editText}
                           onChange={(e) => setEditText(e.target.value)}
-                          className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-xs text-slate-100 focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400"
+                          className="w-full bg-white border border-slate-300 rounded-xl p-3 text-xs text-slate-800 focus:border-maroon-600 focus:ring-2 focus:ring-maroon-500/20 shadow-xs"
                         />
                       </div>
 
                       <div>
-                        <label className="block text-[11px] font-bold text-slate-300 mb-1">
+                        <label className="block text-[11px] font-bold text-slate-700 mb-1">
                           Why / Technical Explanation:
                         </label>
                         <textarea
                           rows={2}
                           value={editWhy}
                           onChange={(e) => setEditWhy(e.target.value)}
-                          className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-xs text-slate-100 focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400"
+                          className="w-full bg-white border border-slate-300 rounded-xl p-3 text-xs text-slate-800 focus:border-maroon-600 focus:ring-2 focus:ring-maroon-500/20 shadow-xs"
                         />
                       </div>
 
@@ -199,7 +203,7 @@ export default function Review() {
                         <button
                           type="button"
                           onClick={() => setEditingCardId(null)}
-                          className="btn-touch px-3 py-1 bg-slate-800 text-slate-300 rounded-lg text-xs"
+                          className="btn-touch px-4 py-2 bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 rounded-xl text-xs font-semibold shadow-xs transition"
                         >
                           Cancel
                         </button>
@@ -207,7 +211,7 @@ export default function Review() {
                           type="button"
                           disabled={isSubmitting || !editText.trim()}
                           onClick={() => handleApprove(card, true)}
-                          className="btn-touch px-4 py-1 bg-emerald-500 text-slate-950 font-bold rounded-lg text-xs shadow"
+                          className="btn-touch px-5 py-2 bg-maroon-700 hover:bg-maroon-800 active:scale-[0.98] disabled:opacity-50 text-white font-semibold rounded-xl text-xs shadow-xs transition"
                         >
                           Save Changes & Approve
                         </button>
@@ -215,13 +219,13 @@ export default function Review() {
                     </div>
                   ) : (
                     <div className="space-y-1.5 text-xs">
-                      <div className="text-slate-200">
-                        <strong className="text-slate-400 font-normal">Recommended Action: </strong>
+                      <div className="text-slate-800">
+                        <strong className="text-slate-500 font-normal">Recommended Action: </strong>
                         {card.action}
                       </div>
                       {card.why && (
-                        <div className="text-slate-300">
-                          <strong className="text-slate-400 font-normal">Why: </strong>
+                        <div className="text-slate-700">
+                          <strong className="text-slate-500 font-normal">Why: </strong>
                           {card.why}
                         </div>
                       )}
@@ -230,12 +234,12 @@ export default function Review() {
                 </div>
 
                 {!isEditing && (
-                  <div className="flex items-center justify-between pt-3 border-t border-slate-700/60">
+                  <div className="flex items-center justify-between pt-3 border-t border-slate-100">
                     <button
                       type="button"
                       disabled={!canReview || isSubmitting}
                       onClick={() => handleReject(card)}
-                      className="btn-touch px-3 py-1.5 text-red-400 hover:text-red-300 text-xs font-semibold rounded-lg hover:bg-red-950/40 border border-transparent hover:border-red-500/30 transition disabled:opacity-40"
+                      className="btn-touch bg-white hover:bg-rose-50 text-rose-700 border border-rose-200 rounded-xl px-4 py-2 text-xs font-semibold shadow-xs active:scale-[0.98] transition disabled:opacity-40 disabled:hover:bg-white"
                     >
                       Discard / Reject
                     </button>
@@ -245,7 +249,7 @@ export default function Review() {
                         type="button"
                         disabled={!canReview}
                         onClick={() => startEdit(card)}
-                        className="btn-touch px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 active:scale-[0.98] text-slate-200 text-xs font-semibold rounded-xl border border-slate-700 transition"
+                        className="btn-touch bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 rounded-xl px-4 py-2 text-xs font-semibold shadow-xs active:scale-[0.98] transition disabled:opacity-40 disabled:hover:bg-white"
                       >
                         Edit Details
                       </button>
@@ -254,7 +258,7 @@ export default function Review() {
                         type="button"
                         disabled={!canReview || isSubmitting}
                         onClick={() => handleApprove(card, false)}
-                        className="btn-touch px-5 py-1.5 bg-emerald-500 hover:bg-emerald-400 active:scale-[0.98] disabled:opacity-50 text-slate-950 font-extrabold text-xs rounded-xl shadow-lg shadow-emerald-500/20 transition"
+                        className="btn-touch bg-maroon-700 hover:bg-maroon-800 text-white font-semibold rounded-xl px-5 py-2.5 text-xs shadow-sm active:scale-[0.98] transition disabled:opacity-40 disabled:hover:bg-maroon-700"
                       >
                         Approve & Verify
                       </button>
@@ -269,25 +273,25 @@ export default function Review() {
 
       {/* Verified History Section */}
       {approvedCards.length > 0 && (
-        <div className="space-y-3 pt-6 border-t border-slate-800">
-          <span className="text-xs font-bold uppercase tracking-wider text-slate-400 block">
+        <div className="space-y-3 pt-6 border-t border-slate-200">
+          <span className="text-xs font-bold uppercase tracking-wider text-slate-500 block">
             Recently Verified Cards ({approvedCards.length}):
           </span>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {approvedCards.map((c) => (
               <div
                 key={c.id}
-                className="bg-slate-900 border border-slate-800 rounded-xl p-3.5 space-y-1.5 text-xs opacity-90"
+                className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 space-y-1.5 text-xs shadow-xs"
               >
                 <div className="flex items-center justify-between">
-                  <span className="font-bold text-slate-200 truncate">
+                  <span className="font-bold text-slate-900 truncate">
                     #{c.id} • {c.title}
                   </span>
-                  <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400">
+                  <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
                     Verified
                   </span>
                 </div>
-                <p className="text-slate-300 leading-snug">{c.action}</p>
+                <p className="text-slate-700 leading-snug">{c.action}</p>
                 <span className="text-[10px] text-slate-500 block">
                   Verified by: {c.verified_by || currentUser.name}
                 </span>

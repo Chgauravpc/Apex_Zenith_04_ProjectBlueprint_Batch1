@@ -29,31 +29,31 @@ export default function HandoverPlan({ plan, riskCells = [], onStartTask }) {
   const doneCount = plan.tasks.filter((task) => task.status === 'done').length;
 
   return (
-    <div className="bg-slate-800/90 border border-slate-700/80 rounded-2xl p-6 shadow-xl space-y-6">
+    <div className="bg-white border border-[#DADCE0] rounded-2xl p-6 shadow-card hover:border-slate-300 transition-all space-y-6">
       {/* Top Banner: Employee Countdown & Handover Progress */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-700/60 pb-5">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-5">
         <div>
-          <span className="text-[10px] uppercase font-bold text-cyan-400 tracking-wider">
+          <span className="text-[10px] uppercase font-bold text-maroon-700 tracking-wider">
             Active Handover Plan
           </span>
-          <h2 className="text-xl font-bold text-white mt-0.5">
+          <h2 className="text-xl font-bold text-slate-900 mt-0.5">
             {plan.employee} • Retirement Countdown
           </h2>
-          <p className="text-slate-400 text-xs mt-1">
-            Scheduled Exit: <strong className="text-slate-200">{formatDate(plan.exit_date)}</strong> (
+          <p className="text-slate-500 text-xs mt-1">
+            Scheduled Exit: <strong className="text-slate-700">{formatDate(plan.exit_date)}</strong> (
             {plan.days_left} days left)
           </p>
         </div>
 
-        <div className="flex items-center space-x-4 bg-slate-900/80 px-4 py-2.5 rounded-xl border border-slate-800">
+        <div className="flex items-center space-x-4 bg-slate-50 px-4 py-2.5 rounded-xl border border-slate-200">
           <div>
-            <div className="text-[10px] text-slate-400 font-bold uppercase">Progress</div>
-            <div className="text-xl font-extrabold text-cyan-300 font-mono">{plan.progress}%</div>
+            <div className="text-[10px] text-slate-500 font-bold uppercase">Progress</div>
+            <div className="text-xl font-extrabold text-maroon-700 font-mono">{plan.progress}%</div>
           </div>
-          <div className="h-7 w-px bg-slate-800" />
+          <div className="h-7 w-px bg-slate-200" />
           <div>
-            <div className="text-[10px] text-slate-400 font-bold uppercase">Target</div>
-            <div className="text-xl font-extrabold text-emerald-400 font-mono">100%</div>
+            <div className="text-[10px] text-slate-500 font-bold uppercase">Target</div>
+            <div className="text-xl font-extrabold text-emerald-600 font-mono">100%</div>
           </div>
         </div>
       </div>
@@ -61,45 +61,45 @@ export default function HandoverPlan({ plan, riskCells = [], onStartTask }) {
       {/* Bus Factor = 1 Critical Components */}
       <div className="space-y-3">
         <div className="flex items-center space-x-2">
-          <span className="text-red-400 font-bold">⚠️</span>
-          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-300">
+          <span className="text-amber-500 font-bold">⚠️</span>
+          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700">
             Bus-Factor-1 Machine Knowledge (Sole Expert: {firstName})
           </h3>
         </div>
 
         {plan.sole_holder_machines.length > 0 && (
-          <p className="text-[11px] text-slate-400">
-            Only {firstName} knows: <strong className="text-slate-200">{plan.sole_holder_machines.join(', ')}</strong>
+          <p className="text-[11px] text-slate-500">
+            Only {firstName} knows: <strong className="text-slate-800">{plan.sole_holder_machines.join(', ')}</strong>
           </p>
         )}
 
         {soleParts.length === 0 ? (
-          <p className="text-xs text-slate-400">No machine part depends on {firstName} alone.</p>
+          <p className="text-xs text-slate-500">No machine part depends on {firstName} alone.</p>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             {soleParts.map((comp) => (
               <div
                 key={`${comp.machine_id}-${comp.component_id}`}
-                className="bg-slate-900 border border-slate-800 rounded-xl p-3.5 space-y-1.5"
+                className="bg-white border border-slate-200/90 rounded-xl p-4 space-y-2 shadow-xs hover:border-slate-300 transition"
               >
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-slate-200 truncate">{comp.name}</span>
+                  <span className="text-xs font-bold text-slate-900 truncate">{comp.name}</span>
                   <span
-                    className={`px-1.5 py-0.5 rounded text-[10px] font-bold uppercase ${
+                    className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
                       comp.status === 'critical'
-                        ? 'bg-red-500/20 text-red-400 border border-red-500/40'
-                        : 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
+                        ? 'bg-rose-50 text-rose-950 border border-rose-200'
+                        : 'bg-amber-50 text-amber-950 border border-amber-200'
                     }`}
                   >
                     {comp.status === 'critical' ? 'Critical' : 'High'}
                   </span>
                 </div>
-                <p className="text-[11px] text-slate-400 leading-snug">
+                <p className="text-[11px] text-slate-600 leading-snug">
                   {comp.holders === 1
                     ? `Only ${firstName} has recorded know-how on this part.`
                     : `${comp.holders} people know it, but most are leaving.`}
                 </p>
-                <div className="text-[10px] text-cyan-400 font-semibold pt-1">
+                <div className="text-[10px] text-maroon-700 font-semibold pt-1">
                   {comp.cards} know-how {comp.cards === 1 ? 'card' : 'cards'} captured
                 </div>
               </div>
@@ -108,8 +108,8 @@ export default function HandoverPlan({ plan, riskCells = [], onStartTask }) {
         )}
 
         {plan.gaps.length > 0 && (
-          <div className="text-[11px] text-slate-300 space-y-1">
-            <span className="font-semibold text-slate-400">Questions nobody could answer yet:</span>
+          <div className="text-[11px] text-slate-600 space-y-1">
+            <span className="font-semibold text-slate-700">Questions nobody could answer yet:</span>
             <ul className="list-disc ml-5">
               {plan.gaps.map((g) => (
                 <li key={g}>{g}</li>
@@ -120,17 +120,17 @@ export default function HandoverPlan({ plan, riskCells = [], onStartTask }) {
       </div>
 
       {/* Handover Tasks Checklist */}
-      <div className="space-y-3 pt-2 border-t border-slate-700/60">
+      <div className="space-y-3 pt-2 border-t border-slate-100">
         <div className="flex items-center justify-between">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-300">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700">
             Transfer Milestone Tasks ({doneCount}/{plan.tasks.length} Complete)
           </h3>
-          <span className="text-xs font-mono font-semibold text-cyan-400">{plan.progress}% Complete</span>
+          <span className="text-xs font-mono font-semibold text-maroon-700">{plan.progress}% Complete</span>
         </div>
 
-        <div className="w-full bg-slate-900 rounded-full h-2 overflow-hidden border border-slate-800">
+        <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden border border-slate-200/80">
           <div
-            className="bg-cyan-500 h-2 rounded-full transition-all duration-300"
+            className="bg-maroon-700 h-2 rounded-full transition-all duration-300"
             style={{ width: `${plan.progress}%` }}
           />
         </div>
@@ -141,12 +141,12 @@ export default function HandoverPlan({ plan, riskCells = [], onStartTask }) {
             return (
               <div
                 key={task.id}
-                className="flex items-center justify-between p-3 rounded-xl bg-slate-900/60 border border-slate-800 transition hover:bg-slate-900"
+                className="flex items-center justify-between p-3.5 rounded-xl bg-white border border-slate-200/90 shadow-xs transition hover:border-slate-300"
               >
                 <div className="flex items-center space-x-3">
                   <span
                     className={`w-5 h-5 rounded-md flex items-center justify-center text-xs font-bold border ${
-                      isDone ? 'bg-emerald-600 text-white border-emerald-500' : 'border-slate-600'
+                      isDone ? 'bg-emerald-600 text-white border-emerald-500' : 'bg-white border-slate-300 text-transparent'
                     }`}
                     aria-label={isDone ? 'Done' : 'To do'}
                   >
@@ -154,8 +154,8 @@ export default function HandoverPlan({ plan, riskCells = [], onStartTask }) {
                   </span>
 
                   <span
-                    className={`text-xs font-medium ${
-                      isDone ? 'line-through text-slate-500' : 'text-slate-200'
+                    className={`text-xs ${
+                      isDone ? 'line-through text-slate-400 font-normal' : 'text-slate-800 font-medium'
                     }`}
                   >
                     {task.title}
@@ -163,14 +163,14 @@ export default function HandoverPlan({ plan, riskCells = [], onStartTask }) {
                 </div>
 
                 <div className="flex items-center space-x-2">
-                  <span className="text-[10px] text-slate-400 bg-slate-800 px-2 py-0.5 rounded font-mono">
+                  <span className="text-[10px] text-slate-600 bg-slate-100 px-2.5 py-0.5 rounded-md font-mono border border-slate-200/60 font-medium">
                     {CATEGORY_LABELS[task.category] || task.category}
                   </span>
                   {onStartTask && !isDone && (
                     <button
                       type="button"
                       onClick={() => onStartTask(task)}
-                      className="text-[11px] text-cyan-400 hover:underline font-semibold"
+                      className="text-xs text-maroon-700 hover:text-maroon-800 hover:underline font-semibold"
                     >
                       Start →
                     </button>

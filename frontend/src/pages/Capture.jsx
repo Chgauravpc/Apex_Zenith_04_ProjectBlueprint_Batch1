@@ -21,21 +21,23 @@ export default function Capture() {
   return (
     <div className="space-y-6">
       {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-700/60 pb-5">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 pb-5">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight flex items-center space-x-2.5">
-            <MicIcon className="w-6 h-6 text-cyan-400" />
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight flex items-center space-x-2.5">
+            <span className="w-9 h-9 rounded-xl bg-maroon-50 text-maroon-700 flex items-center justify-center border border-maroon-100 shadow-xs">
+              <MicIcon className="w-5 h-5 text-maroon-700" />
+            </span>
             <span>{t('navCapture', language)}</span>
           </h1>
-          <p className="text-slate-400 text-xs sm:text-sm mt-1.5 font-medium leading-relaxed">
+          <p className="text-slate-500 text-xs sm:text-sm mt-1.5 font-medium leading-relaxed">
             Frictionless knowledge capture for CNC/VMC machinists. Speak, type, photograph, or record video.
           </p>
         </div>
       </div>
 
-      {/* Mode Navigation Tabs (Industrial Segmented Control) */}
+      {/* Mode Navigation Tabs (Google-inspired Segmented Pill Control) */}
       <div className="flex overflow-x-auto pb-1">
-        <div className="inline-flex p-1 bg-slate-950/80 border border-slate-700/80 rounded-xl gap-1 shadow-inner">
+        <div className="inline-flex p-1 bg-[#F1F3F4] border border-[#DADCE0] rounded-xl gap-1 shadow-xs">
           {tabs.map((tab) => (
             <button
               key={tab.id}
@@ -43,11 +45,11 @@ export default function Capture() {
               onClick={() => setActiveTab(tab.id)}
               className={`btn-touch px-3.5 py-2 rounded-lg text-xs font-semibold transition-all flex items-center space-x-2 whitespace-nowrap ${
                 activeTab === tab.id
-                  ? 'bg-slate-800 text-cyan-300 border border-slate-700 shadow-sm'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50 border border-transparent'
+                  ? 'bg-white text-maroon-800 shadow-xs border border-slate-200/60 font-semibold'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50 border border-transparent'
               }`}
             >
-              <span>{tab.icon}</span>
+              <span className={activeTab === tab.id ? 'text-maroon-700' : 'text-slate-400'}>{tab.icon}</span>
               <span>{tab.label}</span>
             </button>
           ))}

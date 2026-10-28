@@ -30,6 +30,7 @@ export default function MachineMap() {
     selectedComponentId || 'spindle'
   );
   const [doorsOpen, setDoorsOpen] = useState(false);
+  const [hoveredMesh, setHoveredMesh] = useState(null);
   const [pinFormOpen, setPinFormOpen] = useState(false);
   const [pinTargetComponent, setPinTargetComponent] = useState(null);
   const [toastMessage, setToastMessage] = useState(null);
@@ -252,6 +253,7 @@ export default function MachineMap() {
           <MachineViewer
             selectedComponent={selectedMesh}
             highlightedComponent={highlightedComponentId}
+            hoveredComponent={hoveredMesh}
             onSelectComponent={handleSelectComponent}
             onResetSelection={handleResetSelection}
             doorsOpen={doorsOpen}
@@ -285,6 +287,8 @@ export default function MachineMap() {
                   key={c.mesh_name}
                   type="button"
                   onClick={() => handleSelectComponent(c.mesh_name)}
+                  onMouseEnter={() => setHoveredMesh(c.mesh_name)}
+                  onMouseLeave={() => setHoveredMesh(null)}
                   className={`btn-touch shrink-0 px-3.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all flex items-center space-x-2 ${
                     isSelected
                       ? 'bg-maroon-700 text-white font-bold shadow-sm ring-2 ring-maroon-400/60'

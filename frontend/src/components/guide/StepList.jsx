@@ -8,8 +8,8 @@ export default function StepList({
   isChecklistMode = false,
 }) {
   return (
-    <div className="bg-slate-900 border border-slate-800 rounded-xl p-3.5 space-y-2">
-      <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
+    <div className="bg-white border border-[#DADCE0] rounded-xl p-3.5 space-y-2 shadow-card">
+      <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-slate-500 mb-2 border-b border-slate-100 pb-2">
         <span>{isChecklistMode ? 'Expert Checklist (L3)' : 'Procedure Steps'}</span>
         <span>
           {completedStepIndices.length} / {steps.length} Done
@@ -28,20 +28,20 @@ export default function StepList({
               onClick={() => onSelectStep && onSelectStep(idx)}
               className={`w-full text-left p-2.5 rounded-lg text-xs font-medium transition flex items-center justify-between ${
                 isCurrent
-                  ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shadow-sm'
+                  ? 'bg-maroon-50 text-maroon-900 border border-maroon-200 shadow-xs font-semibold'
                   : isDone
-                    ? 'bg-slate-800/80 text-emerald-400 hover:bg-slate-800'
-                    : 'bg-slate-950/60 text-slate-400 hover:bg-slate-800/60'
+                    ? 'bg-[#F8F9FA] text-emerald-800 hover:bg-slate-100/80 border border-slate-200/60 font-medium'
+                    : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200/40'
               }`}
             >
               <div className="flex items-center space-x-2 truncate">
                 <span
                   className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${
                     isDone
-                      ? 'bg-emerald-500 text-slate-950'
+                      ? 'bg-emerald-600 text-white'
                       : isCurrent
-                        ? 'bg-cyan-400 text-slate-950'
-                        : 'bg-slate-800 text-slate-400'
+                        ? 'bg-maroon-700 text-white shadow-xs'
+                        : 'bg-slate-100 text-slate-500 border border-slate-200'
                   }`}
                 >
                   {isDone ? '✓' : idx + 1}
@@ -50,7 +50,7 @@ export default function StepList({
               </div>
 
               {step.param_name && (
-                <span className="text-[10px] text-slate-500 font-mono ml-2">
+                <span className="text-[10px] text-slate-500 font-mono ml-2 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200">
                   ±{step.tolerance || 'tol'}
                 </span>
               )}

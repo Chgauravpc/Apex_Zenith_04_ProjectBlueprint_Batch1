@@ -131,19 +131,21 @@ export default function GuidedJob() {
   return (
     <div className="space-y-6">
       {/* Header with Skill Badge & Toggles */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-700/60 pb-5">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-5">
         <div>
           <div className="flex flex-wrap items-center gap-2 mb-1.5">
-            <ClipboardIcon className="w-6 h-6 text-cyan-400" />
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">{t('navGuide', language)}</h1>
+            <span className="w-9 h-9 rounded-xl bg-maroon-50 text-maroon-700 flex items-center justify-center border border-maroon-100 shadow-xs">
+              <ClipboardIcon className="w-5 h-5 text-maroon-700" />
+            </span>
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">{t('navGuide', language)}</h1>
             {run && (
               <>
-                <span className="text-slate-500">•</span>
+                <span className="text-slate-300">•</span>
                 <SkillBadge level={run.skill_level} showDetails />
               </>
             )}
           </div>
-          <p className="text-slate-400 text-xs sm:text-sm">
+          <p className="text-slate-500 text-xs sm:text-sm">
             {procedure
               ? `${procedure.title} (v${procedure.version}) on ${procedure.machine}`
               : 'Pick an approved procedure and start a guided run.'}
@@ -157,11 +159,11 @@ export default function GuidedJob() {
               onClick={() => setShowShadowTrace(!showShadowTrace)}
               className={`btn-touch px-3.5 py-1.5 rounded-xl text-xs font-semibold border transition-all flex items-center space-x-1.5 active:scale-[0.98] ${
                 showShadowTrace
-                  ? 'bg-slate-800 text-cyan-300 border-slate-600 shadow-sm'
-                  : 'bg-slate-900/90 hover:bg-slate-800 text-slate-300 border-slate-700'
+                  ? 'bg-maroon-50 text-maroon-800 border-maroon-200 shadow-xs'
+                  : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-300 shadow-xs'
               }`}
             >
-              <PlayIcon className="w-4 h-4 text-cyan-300" />
+              <PlayIcon className={`w-4 h-4 ${showShadowTrace ? 'text-maroon-700' : 'text-slate-500'}`} />
               <span>ShadowTrace™</span>
             </button>
 
@@ -170,11 +172,11 @@ export default function GuidedJob() {
               onClick={() => setShowTroubleshoot(!showTroubleshoot)}
               className={`btn-touch px-3.5 py-1.5 rounded-xl text-xs font-semibold border transition-all flex items-center space-x-1.5 active:scale-[0.98] ${
                 showTroubleshoot
-                  ? 'bg-amber-950/40 text-amber-300 border-amber-500/50 shadow-sm'
-                  : 'bg-slate-900/90 hover:bg-slate-800 text-slate-300 border-slate-700'
+                  ? 'bg-amber-50 text-amber-800 border-amber-200 shadow-xs'
+                  : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-300 shadow-xs'
               }`}
             >
-              <BranchIcon className="w-4 h-4 text-amber-300" />
+              <BranchIcon className={`w-4 h-4 ${showTroubleshoot ? 'text-amber-700' : 'text-slate-500'}`} />
               <span>Troubleshoot</span>
             </button>
           </div>
@@ -182,7 +184,7 @@ export default function GuidedJob() {
       </div>
 
       {!run && (
-        <div className="bg-slate-800/90 border border-slate-700/80 rounded-2xl p-6 shadow-xl space-y-4">
+        <div className="bg-white border border-[#DADCE0] rounded-2xl p-6 shadow-card hover:border-slate-300 transition-all space-y-4">
           <LoadState
             loading={procedures.loading}
             error={procedures.error}
@@ -190,20 +192,20 @@ export default function GuidedJob() {
             label="Loading procedures…"
           />
           {procedures.data && procedures.data.length === 0 && (
-            <p className="text-xs text-slate-400">
+            <p className="text-xs text-slate-500">
               No approved procedure for this machine yet. Record a setup video on Capture.
             </p>
           )}
           {procedures.data && procedures.data.length > 0 && (
             <>
-              <label htmlFor="procedure-select" className="block text-xs font-semibold text-slate-300">
+              <label htmlFor="procedure-select" className="block text-xs font-semibold text-slate-700">
                 Procedure:
               </label>
               <select
                 id="procedure-select"
                 value={chosenId || ''}
                 onChange={(e) => setProcedureId(Number(e.target.value))}
-                className="w-full bg-slate-900 border border-slate-700 text-slate-200 py-2 px-3 rounded-xl text-sm"
+                className="w-full bg-white border border-slate-300 text-slate-800 py-2 px-3 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-maroon-500/20 focus:border-maroon-600 shadow-xs"
               >
                 {procedures.data.map((p) => (
                   <option key={p.id} value={p.id}>
@@ -215,14 +217,14 @@ export default function GuidedJob() {
                 type="button"
                 disabled={isStarting || !chosenId}
                 onClick={handleStart}
-                className="btn-touch px-6 py-2.5 bg-cyan-500 hover:bg-cyan-400 disabled:opacity-50 text-slate-950 font-bold rounded-xl text-sm shadow"
+                className="btn-touch px-6 py-2.5 bg-maroon-700 hover:bg-maroon-800 disabled:opacity-50 text-white font-bold rounded-xl text-sm shadow-sm transition-all"
               >
                 {isStarting ? 'Starting…' : 'Start Guided Run →'}
               </button>
             </>
           )}
           {startError && (
-            <div role="alert" className="p-3 bg-red-950/80 border border-red-500/50 rounded-xl text-red-200 text-xs">
+            <div role="alert" className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-800 text-xs font-medium">
               {startError}
             </div>
           )}
@@ -231,12 +233,12 @@ export default function GuidedJob() {
 
       {/* Completion Banner */}
       {run && isFinished && (
-        <div className="bg-slate-800 border border-emerald-500/40 rounded-2xl p-8 text-center space-y-4 shadow-xl">
-          <div className="w-16 h-16 bg-emerald-500/20 text-emerald-400 rounded-full flex items-center justify-center text-3xl mx-auto border border-emerald-500/30">
+        <div className="bg-white border border-emerald-200 rounded-2xl p-8 text-center space-y-4 shadow-card">
+          <div className="w-16 h-16 bg-emerald-50 text-emerald-700 rounded-full flex items-center justify-center text-3xl mx-auto border border-emerald-200 shadow-xs font-bold">
             ✓
           </div>
-          <h2 className="text-2xl font-extrabold text-white">Setup Run Completed Successfully!</h2>
-          <p className="text-slate-300 text-sm max-w-lg mx-auto">
+          <h2 className="text-2xl font-extrabold text-slate-900">Setup Run Completed Successfully!</h2>
+          <p className="text-slate-600 text-sm max-w-lg mx-auto">
             All {steps.length} steps of {procedure.title} are recorded.{' '}
             {warningCount === 0
               ? `Zero Guardian warnings raised. Great run, ${currentUser.name}!`
@@ -246,7 +248,7 @@ export default function GuidedJob() {
             <button
               type="button"
               onClick={handleRestart}
-              className="btn-touch px-6 py-2.5 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold rounded-xl text-sm shadow"
+              className="btn-touch px-6 py-2.5 bg-maroon-700 hover:bg-maroon-800 text-white font-bold rounded-xl text-sm shadow-sm transition-all"
             >
               Start New Run
             </button>

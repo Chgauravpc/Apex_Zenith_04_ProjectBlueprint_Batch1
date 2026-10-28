@@ -56,6 +56,7 @@ function CameraController({ cameraPreset, controlsRef }) {
 export default function MachineViewer({
   selectedComponent = null,
   highlightedComponent = null,
+  hoveredComponent = null,
   onSelectComponent,
   onResetSelection,
   doorsOpen = false,
@@ -68,6 +69,7 @@ export default function MachineViewer({
   const [pinMode, setPinMode] = useState('compact');
   const [cameraPreset, setCameraPreset] = useState('iso');
   const [hoveredName, setHoveredName] = useState(null);
+  const [hoveredComponentId, setHoveredComponentId] = useState(null);
   const controlsRef = useRef();
 
   // Reset camera view to default isometric
@@ -81,7 +83,8 @@ export default function MachineViewer({
     }
   }, []);
 
-  const handleHoverComponent = useCallback((_id, name, isHovered) => {
+  const handleHoverComponent = useCallback((id, name, isHovered) => {
+    setHoveredComponentId(isHovered ? id : null);
     setHoveredName(isHovered ? name : null);
   }, []);
 
@@ -156,6 +159,9 @@ export default function MachineViewer({
           components.map((c) => {
             if (!c.pin_position) return null;
             const topNote = c.expert_notes?.[0] || c.expert_tips?.[0];
+            const isHovered =
+              hoveredComponentId === c.mesh_name ||
+              hoveredComponent === c.mesh_name;
             return (
               <PinMarker
                 key={`pin-${c.id || c.mesh_name}`}
@@ -169,6 +175,7 @@ export default function MachineViewer({
                 incidentCount={c.incident_count || c.past_incidents?.length || 0}
                 isSelected={selectedComponent === c.mesh_name}
                 isHighlighted={highlightedComponent === c.mesh_name}
+                isComponentHovered={isHovered}
                 pinMode={pinMode}
                 onClick={onSelectComponent}
               />

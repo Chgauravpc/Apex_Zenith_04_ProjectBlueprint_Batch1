@@ -33,15 +33,17 @@ export default function PinMarker({
   componentId,
   componentName,
   title,
-  author,
+  _author,
   risk = 'none',
   isSelected = false,
   isHighlighted = false,
+  isComponentHovered = false,
   noteCount = 0,
   pinMode = 'compact',
   onClick,
 }) {
-  const [isHovered, setIsHovered] = useState(false);
+  const [isSelfHovered, setIsSelfHovered] = useState(false);
+  const isHovered = isSelfHovered || isComponentHovered;
 
   const icon = COMPONENT_ICONS[componentId] || '📍';
   const label =
@@ -50,7 +52,8 @@ export default function PinMarker({
     (title && title.length > 15 ? title.slice(0, 15) + '…' : title) ||
     'Component';
 
-  const isExpanded = pinMode === 'expanded' || isHovered || isSelected || isHighlighted;
+  // Badge/Pill only shows after hover or click/selection (or if explicit pinMode === 'all' / 'expanded')
+  const isBadgeVisible = isHovered || isSelected || isHighlighted || pinMode === 'all' || pinMode === 'expanded';
   const isHighRisk = risk === 'high';
   const isMediumRisk = risk === 'medium';
 
@@ -58,30 +61,30 @@ export default function PinMarker({
   const getBadgeColors = () => {
     if (isSelected || isHighlighted) {
       return {
-        pill: 'bg-maroon-900/95 text-white border-rose-400 ring-2 ring-rose-400 shadow-rose-950/60',
+        pill: 'bg-maroon-800 text-white border-rose-300 ring-2 ring-rose-400 shadow-xl',
         stem: 'bg-rose-400',
         dot: 'bg-rose-400 animate-ping',
-        badge: 'bg-rose-500/20 text-rose-200 border-rose-500/40',
+        badge: 'bg-rose-500/30 text-rose-100 border-rose-400/50',
       };
     }
     if (isHighRisk) {
       return {
-        pill: 'bg-slate-900/95 hover:bg-red-950/95 text-red-100 border-red-500/80 shadow-red-950/40',
-        stem: 'bg-red-500',
-        dot: 'bg-red-400 animate-ping',
-        badge: 'bg-red-500/25 text-red-200 border-red-500/40',
+        pill: 'bg-slate-900/95 text-rose-100 border-rose-500/80 shadow-rose-950/40',
+        stem: 'bg-rose-500',
+        dot: 'bg-rose-400 animate-ping',
+        badge: 'bg-rose-500/25 text-rose-200 border-rose-500/40',
       };
     }
     if (isMediumRisk) {
       return {
-        pill: 'bg-slate-900/95 hover:bg-amber-950/95 text-amber-100 border-amber-500/80 shadow-amber-950/40',
+        pill: 'bg-slate-900/95 text-amber-100 border-amber-500/80 shadow-amber-950/40',
         stem: 'bg-amber-400',
         dot: 'bg-amber-400 animate-pulse',
         badge: 'bg-amber-500/25 text-amber-200 border-amber-500/40',
       };
     }
     return {
-      pill: 'bg-slate-900/90 hover:bg-slate-800 text-slate-100 border-slate-700/80 shadow-slate-950/40',
+      pill: 'bg-slate-900/90 text-slate-100 border-slate-700/80 shadow-slate-950/40',
       stem: 'bg-cyan-400',
       dot: 'bg-cyan-300',
       badge: 'bg-slate-800 text-slate-300 border-slate-600',
@@ -94,7 +97,6 @@ export default function PinMarker({
     <group position={position}>
       <Html
         center
-        distanceFactor={6.2}
         zIndexRange={isSelected || isHighlighted ? [250, 180] : isHovered ? [200, 120] : [90, 0]}
         style={{
           pointerEvents: 'none',
@@ -102,91 +104,84 @@ export default function PinMarker({
         }}
       >
         <div
-          onMouseEnter={() => setIsHovered(true)}
-          onMouseLeave={() => setIsHovered(false)}
+          onMouseEnter={() => setIsSelfHovered(true)}
+          onMouseLeave={() => setIsSelfHovered(false)}
           onClick={(e) => {
             e.stopPropagation();
             if (onClick) onClick(componentId);
           }}
           className={`pointer-events-auto cursor-pointer select-none flex flex-col items-center transition-all duration-200 transform ${
             isSelected || isHighlighted
-              ? 'scale-110 z-50'
+              ? 'scale-105 z-50'
               : isHovered
-              ? 'scale-105 z-40'
+              ? 'scale-100 z-40'
               : 'z-10'
           }`}
-          title={`${label}${title ? `: ${title}` : ''}`}
+          title={`${label}${title ? `: ${title}` : ''} (Click to inspect in side panel)`}
         >
-          {/* Expanded Rich Knowledge Tooltip Card */}
-          {isExpanded && (
-            <div
-              className={`mb-2 w-52 sm:w-60 p-3 rounded-xl border backdrop-blur-md shadow-2xl animate-fade-in text-left pointer-events-auto ${
-                isSelected || isHighlighted
-                  ? 'bg-slate-950/95 border-rose-500/80 text-white shadow-rose-950/50'
-                  : 'bg-slate-950/95 border-slate-700 text-slate-100'
-              }`}
-            >
-              <div className="flex items-center justify-between gap-1.5 mb-1.5">
-                <span className="flex items-center space-x-1.5 font-bold text-xs truncate">
-                  <span>{icon}</span>
-                  <span className="truncate">{componentName || label}</span>
+          {/* Active State (Hovered or Selected): Sleek, compact single CAD inspection badge */}
+          {isBadgeVisible ? (
+            <>
+              {/* Single Sleek CAD Callout Pill Badge */}
+              <div
+                className={`flex items-center space-x-1.5 px-2.5 py-1 rounded-full border backdrop-blur-md shadow-lg transition-all duration-150 animate-fade-in ${
+                  colors.pill
+                }`}
+              >
+                {/* Risk / Active Pulsing Dot */}
+                <span className="relative flex h-2 w-2 shrink-0">
+                  <span
+                    className={`absolute inline-flex h-full w-full rounded-full opacity-75 ${colors.dot}`}
+                  />
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-white" />
                 </span>
-                {isHighRisk && (
-                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-red-500/20 text-red-300 border border-red-500/40 shrink-0">
-                    High Risk
-                  </span>
-                )}
-                {isMediumRisk && (
-                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40 shrink-0">
-                    Caution
+
+                {/* Icon + Component Label */}
+                <span className="text-xs font-semibold whitespace-nowrap flex items-center space-x-1 tracking-tight">
+                  <span>{icon}</span>
+                  <span>{label}</span>
+                </span>
+
+                {/* Knowledge Count Tag */}
+                {noteCount > 0 && (
+                  <span
+                    className={`text-[10px] px-1.5 py-0.2 rounded-full border ${colors.badge} font-mono font-bold`}
+                  >
+                    {noteCount}
                   </span>
                 )}
               </div>
 
-              {title && (
-                <p className="text-[11px] text-slate-200 font-medium line-clamp-2 leading-relaxed">
-                  {title}
-                </p>
-              )}
-
-              <div className="mt-2 pt-1.5 border-t border-slate-800/80 flex items-center justify-between text-[10px] text-slate-400">
-                <span className="truncate">{author || 'Old Employee'}</span>
-                <span className="text-rose-400 font-semibold shrink-0">Inspect →</span>
+              {/* Vertical Leader Line Stem connecting to 3D mesh surface */}
+              <div className={`w-0.5 h-3 ${colors.stem} opacity-80 shadow-xs`} />
+              <div className={`w-1.5 h-1.5 rounded-full ${colors.stem} -mt-0.5 shadow-sm`} />
+            </>
+          ) : (
+            /* Idle State: Sleek, microscopic CAD waypoint probe dot (Zero clutter) */
+            <div
+              className="flex flex-col items-center group cursor-pointer"
+              title={`${label} (Hover or click to inspect know-how)`}
+            >
+              <div
+                className={`relative flex items-center justify-center w-3 h-3 rounded-full border backdrop-blur-md shadow-xs transition-transform duration-200 group-hover:scale-150 ${
+                  isHighRisk
+                    ? 'bg-rose-950/80 border-rose-500/80'
+                    : isMediumRisk
+                    ? 'bg-amber-950/80 border-amber-500/80'
+                    : 'bg-slate-900/80 border-slate-600/80'
+                }`}
+              >
+                <span className="relative flex h-1.5 w-1.5">
+                  <span
+                    className={`absolute inline-flex h-full w-full rounded-full opacity-75 ${colors.dot}`}
+                  />
+                  <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-white" />
+                </span>
               </div>
+              <div className={`w-px h-2 ${colors.stem} opacity-70`} />
+              <div className={`w-0.5 h-0.5 rounded-full ${colors.stem} -mt-0.5`} />
             </div>
           )}
-
-          {/* Compact Pill Badge (Default state: sleek, non-overlapping) */}
-          <div
-            className={`flex items-center space-x-1.5 px-2.5 py-1 rounded-full border backdrop-blur-md shadow-lg transition-all duration-200 ${
-              colors.pill
-            }`}
-          >
-            {/* Risk / Active Pulsing Dot */}
-            <span className="relative flex h-2 w-2 shrink-0">
-              <span
-                className={`absolute inline-flex h-full w-full rounded-full opacity-75 ${colors.dot}`}
-              />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-white" />
-            </span>
-
-            {/* Icon + Compact Label */}
-            <span className="text-xs font-semibold whitespace-nowrap flex items-center space-x-1">
-              <span>{icon}</span>
-              <span>{label}</span>
-            </span>
-
-            {/* Knowledge Count Tag (when not expanded) */}
-            {noteCount > 0 && !isExpanded && (
-              <span className={`text-[10px] px-1 py-0.2 rounded-full border ${colors.badge} font-mono font-bold`}>
-                {noteCount}
-              </span>
-            )}
-          </div>
-
-          {/* Vertical Leader Line Stem connecting to 3D mesh surface */}
-          <div className={`w-0.5 h-3.5 ${colors.stem} opacity-80 shadow-xs`} />
-          <div className={`w-1.5 h-1.5 rounded-full ${colors.stem} -mt-0.5 shadow-sm`} />
         </div>
       </Html>
     </group>

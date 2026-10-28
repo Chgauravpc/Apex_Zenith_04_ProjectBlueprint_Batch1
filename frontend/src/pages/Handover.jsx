@@ -46,36 +46,43 @@ export default function Handover() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-700/60 pb-5">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 pb-5">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight flex items-center space-x-2.5">
-            <UsersIcon className="w-6 h-6 text-cyan-400" />
-            <span>{t('navHandover', language)}</span>
-          </h1>
-          <p className="text-slate-400 text-xs sm:text-sm mt-1.5 font-medium leading-relaxed">
+          <div className="flex items-center space-x-2.5">
+            <span className="w-9 h-9 rounded-xl bg-maroon-50 text-maroon-700 flex items-center justify-center border border-maroon-100 shadow-xs">
+              <UsersIcon className="w-5 h-5 text-maroon-700" />
+            </span>
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+              {t('navHandover', language)}
+            </h1>
+          </div>
+          <p className="text-slate-500 text-xs sm:text-sm mt-1.5 font-medium leading-relaxed">
             Structured knowledge preservation before old employee retirement. Close bus-factor-1 gaps.
           </p>
         </div>
       </div>
 
-      {/* Mode Tabs (Industrial Segmented Control) */}
+      {/* Mode Tabs (Google Pill Segmented Control) */}
       <div className="flex overflow-x-auto pb-1">
-        <div className="inline-flex p-1 bg-slate-950/80 border border-slate-700/80 rounded-xl gap-1 shadow-inner">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              type="button"
-              onClick={() => setActiveTab(tab.id)}
-              className={`btn-touch px-3.5 py-2 rounded-lg text-xs font-semibold transition-all flex items-center space-x-2 whitespace-nowrap ${
-                activeTab === tab.id
-                  ? 'bg-slate-800 text-cyan-300 border border-slate-700 shadow-sm'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50 border border-transparent'
-              }`}
-            >
-              <span>{tab.icon}</span>
-              <span>{tab.label}</span>
-            </button>
-          ))}
+        <div className="inline-flex p-1 bg-[#F1F3F4] border border-[#DADCE0] rounded-xl gap-1 shadow-xs">
+          {tabs.map((tab) => {
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setActiveTab(tab.id)}
+                className={`btn-touch px-4 py-2 rounded-lg text-xs transition-all flex items-center space-x-2 whitespace-nowrap active:scale-[0.98] ${
+                  isActive
+                    ? 'bg-white text-maroon-800 shadow-xs border border-slate-200/60 font-semibold'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50 border border-transparent font-medium'
+                }`}
+              >
+                <span>{tab.icon}</span>
+                <span>{tab.label}</span>
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -89,7 +96,7 @@ export default function Handover() {
           />
         )}
         {activeTab !== 'questions' && !risk.loading && !plan.loading && !plan.error && !plan.data && (
-          <div className="p-6 text-center text-slate-400 text-xs bg-slate-800/60 border border-slate-800 rounded-2xl">
+          <div className="p-8 text-center text-slate-500 text-xs bg-white border border-[#DADCE0] rounded-2xl shadow-card">
             Nobody with know-how is leaving soon, so there is no handover plan.
           </div>
         )}

@@ -54,37 +54,37 @@ export default function VoiceRecorder({ onSaved }) {
   };
 
   return (
-    <div className="bg-slate-800/90 border border-slate-700/80 rounded-2xl p-6 shadow-xl space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-700/60 pb-5">
+    <div className="bg-white border border-[#DADCE0] rounded-2xl p-6 shadow-card hover:border-slate-300 transition-all space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-5">
         <div>
-          <h2 className="text-lg font-bold text-white flex items-center space-x-2.5">
-            <span aria-hidden="true">🎙️</span>
+          <h2 className="text-lg font-bold text-slate-900 flex items-center space-x-2.5">
+            <span className="w-8 h-8 rounded-xl bg-maroon-50 text-maroon-700 flex items-center justify-center border border-maroon-100 text-sm">🎙️</span>
             <span>Voice Note Capture</span>
           </h2>
-          <p className="text-slate-400 text-xs mt-1.5 font-medium">
+          <p className="text-slate-500 text-xs mt-1.5 font-medium">
             Speak naturally in Hindi, Marathi, or English. AI transcribes and extracts shop-floor know-how cards.
           </p>
         </div>
 
         <div className="flex items-center space-x-2.5 text-xs">
-          <label className="flex items-center space-x-1.5 text-slate-300">
-            <span className="font-medium text-slate-400">Machine:</span>
+          <label className="flex items-center space-x-1.5 text-slate-600">
+            <span className="font-medium text-slate-500">Machine:</span>
             <select
               value={machineId}
               onChange={(e) => setMachineId(Number(e.target.value))}
-              className="bg-slate-900 border border-slate-700 text-slate-200 py-1 pl-2 pr-6 rounded-lg font-semibold"
+              className="bg-white border border-slate-300 text-slate-800 py-1.5 pl-2.5 pr-7 rounded-lg font-semibold focus:outline-none focus:ring-2 focus:ring-maroon-500/20 focus:border-maroon-600 shadow-xs"
             >
               <option value={1}>VMC-3</option>
               <option value={2}>Lathe-2</option>
             </select>
           </label>
 
-          <label className="flex items-center space-x-1.5 text-slate-300">
-            <span className="font-medium text-slate-400">Lang:</span>
+          <label className="flex items-center space-x-1.5 text-slate-600">
+            <span className="font-medium text-slate-500">Lang:</span>
             <select
               value={selectedLanguage}
               onChange={(e) => setSelectedLanguage(e.target.value)}
-              className="bg-slate-900 border border-slate-700 text-slate-200 py-1 pl-2 pr-6 rounded-lg font-semibold"
+              className="bg-white border border-slate-300 text-slate-800 py-1.5 pl-2.5 pr-7 rounded-lg font-semibold focus:outline-none focus:ring-2 focus:ring-maroon-500/20 focus:border-maroon-600 shadow-xs"
             >
               <option value="hi">हिन्दी (Hindi)</option>
               <option value="mr">मराठी (Marathi)</option>
@@ -95,8 +95,8 @@ export default function VoiceRecorder({ onSaved }) {
       </div>
 
       {/* Recording Controls */}
-      <div className="flex flex-col items-center justify-center py-8 px-4 bg-slate-950/70 rounded-2xl border border-slate-800 shadow-inner relative overflow-hidden">
-        <div className="text-4xl font-mono font-extrabold text-white mb-5 tracking-widest bg-slate-900/90 px-6 py-2 rounded-xl border border-slate-800 shadow-inner">
+      <div className="flex flex-col items-center justify-center py-8 px-4 bg-[#F8F9FA] rounded-2xl border border-[#DADCE0] shadow-xs relative overflow-hidden">
+        <div className="text-4xl font-mono font-extrabold text-slate-900 mb-5 tracking-widest bg-white px-6 py-2 rounded-xl border border-slate-200 shadow-xs">
           {formatSeconds(duration)}
         </div>
 
@@ -105,7 +105,7 @@ export default function VoiceRecorder({ onSaved }) {
             <button
               type="button"
               onClick={startRecording}
-              className="btn-touch px-6 py-3 bg-red-600 hover:bg-red-500 active:scale-[0.98] text-white font-extrabold rounded-xl shadow-lg shadow-red-600/30 transition-all flex items-center space-x-2 text-sm"
+              className="btn-touch px-6 py-3 bg-maroon-700 hover:bg-maroon-800 active:scale-[0.98] text-white font-extrabold rounded-xl shadow-sm transition-all flex items-center space-x-2 text-sm"
             >
               <span className="w-2.5 h-2.5 bg-white rounded-full animate-pulse" />
               <span>{t('record', language)}</span>
@@ -114,9 +114,9 @@ export default function VoiceRecorder({ onSaved }) {
             <button
               type="button"
               onClick={stopRecording}
-              className="btn-touch px-6 py-3 bg-amber-500 hover:bg-amber-400 active:scale-[0.98] text-slate-950 font-extrabold rounded-xl shadow-lg shadow-amber-500/30 transition-all flex items-center space-x-2 text-sm"
+              className="btn-touch px-6 py-3 bg-amber-600 hover:bg-amber-700 active:scale-[0.98] text-white font-extrabold rounded-xl shadow-sm transition-all flex items-center space-x-2 text-sm"
             >
-              <span className="w-2.5 h-2.5 bg-slate-950 rounded-sm" />
+              <span className="w-2.5 h-2.5 bg-white rounded-sm" />
               <span>{t('stopRecord', language)}</span>
             </button>
           )}
@@ -125,7 +125,7 @@ export default function VoiceRecorder({ onSaved }) {
             <button
               type="button"
               onClick={resetRecording}
-              className="btn-touch px-4 py-2.5 bg-slate-800 hover:bg-slate-700 active:scale-[0.98] text-slate-300 hover:text-white font-medium rounded-xl border border-slate-700 transition text-xs"
+              className="btn-touch px-4 py-2.5 bg-white hover:bg-slate-50 active:scale-[0.98] text-slate-700 font-medium rounded-xl border border-slate-300 transition text-xs shadow-xs"
             >
               Reset
             </button>
@@ -133,14 +133,14 @@ export default function VoiceRecorder({ onSaved }) {
         </div>
 
         {isRecording && (
-          <p className="text-red-400 text-xs font-semibold mt-4 flex items-center space-x-2">
-            <span className="animate-ping w-2 h-2 rounded-full bg-red-400" />
+          <p className="text-maroon-700 text-xs font-semibold mt-4 flex items-center space-x-2">
+            <span className="animate-ping w-2 h-2 rounded-full bg-maroon-600" />
             <span>Recording audio... speak into the microphone</span>
           </p>
         )}
 
         {recorderError && (
-          <p className="text-red-400 text-xs mt-3 bg-red-950/60 px-3.5 py-2 rounded-xl border border-red-500/40">
+          <p className="text-rose-700 text-xs mt-3 bg-rose-50 px-3.5 py-2 rounded-xl border border-rose-200">
             {recorderError}
           </p>
         )}
@@ -160,11 +160,11 @@ export default function VoiceRecorder({ onSaved }) {
             type="button"
             disabled={isSubmitting}
             onClick={handleSubmit}
-            className="btn-touch px-6 py-2.5 bg-gradient-to-r from-cyan-400 to-cyan-500 hover:from-cyan-300 hover:to-cyan-400 active:scale-[0.98] disabled:opacity-50 text-slate-950 font-extrabold rounded-xl shadow-lg shadow-cyan-500/20 transition-all text-sm flex items-center space-x-2"
+            className="btn-touch px-6 py-2.5 bg-maroon-700 hover:bg-maroon-800 active:scale-[0.98] disabled:opacity-50 text-white font-bold rounded-xl shadow-sm transition-all text-sm flex items-center space-x-2"
           >
             {isSubmitting ? (
               <>
-                <div className="w-4 h-4 border-2 border-slate-950 border-t-transparent rounded-full animate-spin" />
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                 <span>Transcribing & Extracting...</span>
               </>
             ) : (
@@ -178,14 +178,14 @@ export default function VoiceRecorder({ onSaved }) {
       )}
 
       {submitError && (
-        <div className="p-3 bg-red-950/80 border border-red-500/50 rounded-xl text-red-200 text-xs">
+        <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-800 text-xs font-medium">
           {submitError}
         </div>
       )}
 
       {/* Extracted Output Result */}
       {result && (
-        <div className="space-y-4 pt-4 border-t border-slate-700/60">
+        <div className="space-y-4 pt-4 border-t border-slate-200">
           {/* Guardian Warnings */}
           {result.guardian_result && (
             <WarningBanner result={result.guardian_result} />
@@ -193,11 +193,11 @@ export default function VoiceRecorder({ onSaved }) {
 
           {/* Transcript */}
           {result.transcript && (
-            <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-4">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block mb-1">
+            <div className="bg-[#F8F9FA] border border-slate-200 rounded-xl p-4">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 block mb-1">
                 Transcript ({result.mode === 'offline' ? 'Offline Rule Fallback' : 'Whisper Live'}):
               </span>
-              <p className="text-sm text-slate-200 italic">
+              <p className="text-sm text-slate-800 italic">
                 &ldquo;{result.transcript}&rdquo;
               </p>
             </div>
@@ -205,13 +205,13 @@ export default function VoiceRecorder({ onSaved }) {
 
           {/* Extracted Cards */}
           <div>
-            <h3 className="text-sm font-bold uppercase tracking-wider text-slate-300 mb-3 flex items-center space-x-2">
+            <h3 className="text-sm font-bold uppercase tracking-wider text-slate-800 mb-3 flex items-center space-x-2">
               <span>🗂️</span>
               <span>Extracted Know-How Cards ({result.cards?.length || 0})</span>
             </h3>
 
             {(!result.cards || result.cards.length === 0) ? (
-              <p className="text-slate-400 text-xs italic">
+              <p className="text-slate-500 text-xs italic">
                 No actionable know-how identified in this recording.
               </p>
             ) : (
@@ -219,35 +219,35 @@ export default function VoiceRecorder({ onSaved }) {
                 {result.cards.map((card, idx) => (
                   <div
                     key={card.id || idx}
-                    className="bg-slate-900 border border-slate-700/70 rounded-xl p-4 shadow-sm space-y-2"
+                    className="bg-white border border-slate-200 rounded-xl p-4 shadow-xs space-y-2 hover:border-slate-300 transition-all"
                   >
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-cyan-400">
+                      <span className="text-xs font-bold text-maroon-800">
                         {card.symptom || 'Operational Note'}
                       </span>
-                      <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                      <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
                         Confidence {Math.round((card.confidence || 0.9) * 100)}%
                       </span>
                     </div>
 
-                    <div className="text-xs text-slate-200 font-medium">
-                      <strong className="text-slate-400 font-normal">Action: </strong>
+                    <div className="text-xs text-slate-800 font-medium">
+                      <strong className="text-slate-500 font-normal">Action: </strong>
                       {card.action}
                     </div>
 
                     {card.why && (
-                      <div className="text-xs text-slate-300">
-                        <strong className="text-slate-400 font-normal">Why: </strong>
+                      <div className="text-xs text-slate-600">
+                        <strong className="text-slate-500 font-normal">Why: </strong>
                         {card.why}
                       </div>
                     )}
 
                     {card.params && Object.keys(card.params).length > 0 && (
-                      <div className="pt-2 border-t border-slate-800 flex flex-wrap gap-2 text-[11px]">
+                      <div className="pt-2 border-t border-slate-100 flex flex-wrap gap-2 text-[11px]">
                         {Object.entries(card.params).map(([k, v]) => (
                           <span
                             key={k}
-                            className="bg-slate-800 px-2 py-0.5 rounded text-cyan-300 font-mono"
+                            className="bg-slate-100 px-2 py-0.5 rounded text-slate-800 font-mono border border-slate-200"
                           >
                             {k}: {v}
                           </span>
