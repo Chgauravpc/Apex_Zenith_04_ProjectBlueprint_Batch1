@@ -1,4 +1,4 @@
-/* eslint-disable react/no-unknown-property */
+﻿/* eslint-disable react/no-unknown-property */
 import React, { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
@@ -61,144 +61,173 @@ export default function VmcMachine({
 
   // Reusable materials memoized for performance
   const materials = useMemo(() => {
+    // envMapIntensity: how strongly the IBL (warehouse Environment) reflects.
+    // Higher value = more mirror-like; lower = diffuse/matte.
+    const ENV = wireframe ? 0 : 1.0;
     return {
-      // Cast iron structural base
+      // Cast iron structural base — coarse sand-cast texture, low reflectivity
       castIron: new THREE.MeshStandardMaterial({
-        color: '#1e293b',
-        roughness: 0.7,
-        metalness: 0.35,
+        color: '#1a2336',
+        roughness: 0.75,
+        metalness: 0.40,
+        envMapIntensity: ENV * 0.5,
         wireframe,
       }),
-      // Sheet metal enclosure (industrial dark graphite / aerospace charcoal)
+      // Sheet metal dark panels — brushed industrial epoxy paint
       sheetMetalDark: new THREE.MeshStandardMaterial({
-        color: '#1e293b',
-        roughness: 0.5,
-        metalness: 0.45,
+        color: '#1c2741',
+        roughness: 0.52,
+        metalness: 0.50,
+        envMapIntensity: ENV * 0.7,
         wireframe,
       }),
-      // Enclosure clean white panels (Google White & Maroon industrial pearl)
+      // Enclosure white panels — factory-painted sheet steel, pearl white
       sheetMetalLight: new THREE.MeshStandardMaterial({
-        color: '#f8fafc',
-        roughness: 0.28,
-        metalness: 0.22,
+        color: '#f5f8fc',
+        roughness: 0.22,
+        metalness: 0.28,
+        envMapIntensity: ENV * 0.9,
         wireframe,
       }),
-      // Signature Industrial Maroon Accent Trim (#721026)
+      // Signature Industrial Maroon Accent Trim (#721026) — gloss powder-coat
       accentCyan: new THREE.MeshStandardMaterial({
         color: '#721026',
-        roughness: 0.25,
-        metalness: 0.65,
+        roughness: 0.18,
+        metalness: 0.70,
+        envMapIntensity: ENV * 1.2,
         wireframe,
       }),
       accentMaroon: new THREE.MeshStandardMaterial({
         color: '#721026',
-        roughness: 0.25,
-        metalness: 0.65,
+        roughness: 0.18,
+        metalness: 0.70,
+        envMapIntensity: ENV * 1.2,
         wireframe,
       }),
-      // Stainless steel internal splash guards & way covers
+      // Stainless steel way covers & splash guards — mirror-brushed finish
       stainless: new THREE.MeshStandardMaterial({
-        color: '#e2e8f0',
-        roughness: 0.2,
-        metalness: 0.88,
-        wireframe,
-      }),
-      // Precision ground steel (table surface, spindle cartridge, vise ways)
-      groundSteel: new THREE.MeshStandardMaterial({
-        color: '#ffffff',
-        roughness: 0.12,
-        metalness: 0.96,
-        wireframe,
-      }),
-      // Dark anodized steel / vise body
-      anodizedSteel: new THREE.MeshStandardMaterial({
-        color: '#334155',
-        roughness: 0.35,
-        metalness: 0.65,
-        wireframe,
-      }),
-      // Safety tinted polycarbonate window glass
-      safetyGlass: new THREE.MeshPhysicalMaterial({
-        color: '#94a3b8',
-        roughness: 0.05,
-        metalness: 0.1,
-        transmission: 0.92,
-        opacity: 0.32,
-        transparent: true,
-        wireframe,
-      }),
-      // Spindle drive motor (precision dark graphite)
-      motorBlue: new THREE.MeshStandardMaterial({
-        color: '#1e293b',
-        roughness: 0.45,
-        metalness: 0.5,
-        wireframe,
-      }),
-      // Carbide cutter coating (TiN Gold)
-      carbideGold: new THREE.MeshStandardMaterial({
-        color: '#eab308',
-        roughness: 0.2,
+        color: '#dde4ef',
+        roughness: 0.10,
         metalness: 0.95,
+        envMapIntensity: ENV * 1.6,
         wireframe,
       }),
-      // Coolant Loc-Line hose segments
+      // Precision ground steel — ultra-smooth (spindle cartridge, table top, vise ways)
+      groundSteel: new THREE.MeshStandardMaterial({
+        color: '#e8edf5',
+        roughness: 0.06,
+        metalness: 0.98,
+        envMapIntensity: ENV * 2.0,
+        wireframe,
+      }),
+      // Dark anodized aluminium — satin black with subtle metallic sheen
+      anodizedSteel: new THREE.MeshStandardMaterial({
+        color: '#2d3d52',
+        roughness: 0.28,
+        metalness: 0.72,
+        envMapIntensity: ENV * 1.0,
+        wireframe,
+      }),
+      // Safety polycarbonate window — tinted, physically-based transmission glass
+      safetyGlass: new THREE.MeshPhysicalMaterial({
+        color: '#aac4d0',
+        roughness: 0.04,
+        metalness: 0.0,
+        transmission: 0.94,
+        thickness: 0.5,
+        ior: 1.5,
+        opacity: 0.28,
+        transparent: true,
+        envMapIntensity: ENV * 1.5,
+        wireframe,
+      }),
+      // Spindle drive servo motor body — matte graphite epoxy paint
+      motorBlue: new THREE.MeshStandardMaterial({
+        color: '#1a2337',
+        roughness: 0.50,
+        metalness: 0.55,
+        envMapIntensity: ENV * 0.6,
+        wireframe,
+      }),
+      // Carbide end mill — TiN gold PVD coating, mirror-bright
+      carbideGold: new THREE.MeshStandardMaterial({
+        color: '#d4a017',
+        roughness: 0.12,
+        metalness: 0.98,
+        envMapIntensity: ENV * 2.0,
+        wireframe,
+      }),
+      // Coolant Loc-Line articulating hose — matte nylon plastic
       coolantBlue: new THREE.MeshStandardMaterial({
-        color: '#2563eb',
-        roughness: 0.5,
-        metalness: 0.2,
+        color: '#1d4ed8',
+        roughness: 0.60,
+        metalness: 0.05,
+        envMapIntensity: ENV * 0.3,
         wireframe,
       }),
       coolantOrange: new THREE.MeshStandardMaterial({
-        color: '#ea580c',
-        roughness: 0.5,
-        metalness: 0.2,
+        color: '#c2410c',
+        roughness: 0.60,
+        metalness: 0.05,
+        envMapIntensity: ENV * 0.3,
         wireframe,
       }),
-      // CNC controller screen (glowing green LCD)
+      // CNC display — dark LCD backlit panel
       screenGlow: new THREE.MeshBasicMaterial({
-        color: '#064e3b',
+        color: '#052e1a',
         wireframe,
       }),
+      // LCD green phosphor G-code readout
       screenText: new THREE.MeshBasicMaterial({
-        color: '#34d399',
+        color: '#2ecc71',
         wireframe,
       }),
-      // Emergency stop button (high-vis red)
+      // E-Stop mushroom button — gloss red with chrome collar
       eStopRed: new THREE.MeshStandardMaterial({
-        color: '#dc2626',
-        roughness: 0.3,
-        metalness: 0.2,
+        color: '#b91c1c',
+        roughness: 0.18,
+        metalness: 0.15,
+        envMapIntensity: ENV * 0.8,
         wireframe,
       }),
       eStopYellow: new THREE.MeshStandardMaterial({
-        color: '#facc15',
-        roughness: 0.3,
-        metalness: 0.2,
+        color: '#f59e0b',
+        roughness: 0.20,
+        metalness: 0.15,
+        envMapIntensity: ENV * 0.8,
         wireframe,
       }),
-      // Stack light lenses
+      // Stack light lenses — emissive glowing plastic domes
       stackGreen: new THREE.MeshStandardMaterial({
-        color: '#22c55e',
+        color: '#16a34a',
         emissive: '#15803d',
-        emissiveIntensity: 0.6,
-        roughness: 0.2,
+        emissiveIntensity: 1.4,
+        roughness: 0.15,
+        metalness: 0.0,
         wireframe,
       }),
       stackAmber: new THREE.MeshStandardMaterial({
-        color: '#f59e0b',
-        roughness: 0.3,
+        color: '#d97706',
+        emissive: '#92400e',
+        emissiveIntensity: 0.5,
+        roughness: 0.20,
+        metalness: 0.0,
         wireframe,
       }),
       stackRed: new THREE.MeshStandardMaterial({
-        color: '#ef4444',
-        roughness: 0.3,
+        color: '#dc2626',
+        emissive: '#7f1d1d',
+        emissiveIntensity: 0.5,
+        roughness: 0.20,
+        metalness: 0.0,
         wireframe,
       }),
-      // Aluminum machined workpiece
+      // Clamped aluminium billet — machined alloy 6061-T6
       aluminumBillet: new THREE.MeshStandardMaterial({
-        color: '#e2e8f0',
-        roughness: 0.25,
-        metalness: 0.8,
+        color: '#c8d5e8',
+        roughness: 0.18,
+        metalness: 0.85,
+        envMapIntensity: ENV * 1.4,
         wireframe,
       }),
     };
