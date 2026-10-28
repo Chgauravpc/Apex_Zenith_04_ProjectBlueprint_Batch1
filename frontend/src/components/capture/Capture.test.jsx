@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import Capture from '../../pages/Capture';
 import NoteEditor from './NoteEditor';
+import PhotoUpload from './PhotoUpload';
 import * as captureApi from '../../api/capture';
 
 vi.mock('../../api/capture', () => ({
@@ -69,5 +70,32 @@ describe('Capture page and components (T18)', () => {
       expect(screen.getByText('Reduce feed from 0.28 to 0.20 mm/rev')).toBeDefined();
       expect(screen.getByText('CAUTION — RISK DETECTED')).toBeDefined();
     });
+  });
+
+  it('checks a handwritten note with Note Guardian and lists what was read', async () => {
+    URL.createObjectURL = vi.fn(() => 'blob:page');
+    URL.revokeObjectURL = vi.fn();
+    captureApi.captureHandwritten.mockResolvedValueOnce({ job_id: 'j1' });
+    captureApi.pollJob.mockResolvedValueOnce({
+      title: 'Shift note',
+      issues: [{ text: 'VMC-3 chatter on SS304', confidence: 0.9 }],
+      decisions: [],
+      action_items: [{ text: 'Check spindle bearing', owner: 'Anil' }],
+      guardian: {
+        severity: 'stop',
+        warnings: [{ severity: 'stop', rule: 'param_limit', message: 'feed 0.3 is above the 0.2 limit' }],
+        evidence: [],
+      },
+    });
+    render(<PhotoUpload />);
+
+    const page = new File(['jpeg'], 'page.jpg', { type: 'image/jpeg' });
+    fireEvent.change(document.getElementById('photo-input'), { target: { files: [page] } });
+    fireEvent.click(screen.getByText('Process Photo'));
+
+    expect(await screen.findByText(/STOP — CRITICAL WARNING/i)).toBeDefined();
+    expect(screen.getByText(/feed 0.3 is above the 0.2 limit/i)).toBeDefined();
+    expect(screen.getByText(/VMC-3 chatter on SS304/i)).toBeDefined();
+    expect(screen.getByText(/Check spindle bearing/i)).toBeDefined();
   });
 });

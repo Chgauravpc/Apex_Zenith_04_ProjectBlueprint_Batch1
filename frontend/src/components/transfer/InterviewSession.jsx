@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import useDictation from '../../hooks/useDictation';
 import { answerInterview, startInterview } from '../../api/transfer';
+import WarningBanner from '../guardian/WarningBanner';
 
 /**
  * AI interview with a leaving old employee. Questions come from real gaps
@@ -12,6 +13,7 @@ export default function InterviewSession({ employeeId, employeeName, language, o
   const [textAnswer, setTextAnswer] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [createdCard, setCreatedCard] = useState(null);
+  const [guardian, setGuardian] = useState(null);
   const [error, setError] = useState(null);
 
   const { isRecording, duration, isTranscribing, dictationError, startRecording, stopRecording } =
@@ -44,6 +46,7 @@ export default function InterviewSession({ employeeId, employeeName, language, o
         answer_text: textAnswer.trim(),
       });
       setCreatedCard(response.card);
+      setGuardian(response.guardian || null);
       setSession((prev) => ({
         ...prev,
         questions: prev.questions.map((q) => (q.id === currentQ.id ? { ...q, answered: true } : q)),
@@ -196,6 +199,8 @@ export default function InterviewSession({ employeeId, employeeName, language, o
             <span>✓</span>
             <span>New Know-How Card Created & Verified</span>
           </span>
+
+          {guardian && <WarningBanner result={guardian} />}
 
           <div className="bg-emerald-50/50 border border-emerald-200 rounded-xl p-4 shadow-xs space-y-2 text-xs">
             <div className="flex items-center justify-between">

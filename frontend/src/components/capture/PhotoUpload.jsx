@@ -3,6 +3,7 @@ import { captureHandwritten, pollJob } from '../../api/capture';
 import { useAuthStore } from '../../store/useAuthStore';
 import useCamera from '../../hooks/useCamera';
 import { formatBytes } from '../../utils/format';
+import WarningBanner from '../guardian/WarningBanner';
 
 export default function PhotoUpload({ onComplete }) {
   const { currentUser } = useAuthStore();
@@ -243,6 +244,8 @@ export default function PhotoUpload({ onComplete }) {
             <span>Extracted Handwritten Insights</span>
           </h3>
 
+          {result.guardian && <WarningBanner result={result.guardian} />}
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Issues */}
             <div className="bg-rose-50 border border-rose-200 rounded-xl p-4 space-y-2">
@@ -251,7 +254,7 @@ export default function PhotoUpload({ onComplete }) {
               </span>
               <ul className="text-xs text-rose-950 space-y-1">
                 {result.issues?.map((issue, idx) => (
-                  <li key={idx}>• {issue}</li>
+                  <li key={idx}>• {issue.text || issue}</li>
                 ))}
               </ul>
             </div>
@@ -263,7 +266,7 @@ export default function PhotoUpload({ onComplete }) {
               </span>
               <ul className="text-xs text-amber-950 space-y-1">
                 {result.decisions?.map((dec, idx) => (
-                  <li key={idx}>• {dec}</li>
+                  <li key={idx}>• {dec.text || dec}</li>
                 ))}
               </ul>
             </div>
@@ -275,7 +278,7 @@ export default function PhotoUpload({ onComplete }) {
               </span>
               <ul className="text-xs text-emerald-950 space-y-1">
                 {result.action_items?.map((act, idx) => (
-                  <li key={idx}>• {act}</li>
+                  <li key={idx}>• {act.text || act}</li>
                 ))}
               </ul>
             </div>

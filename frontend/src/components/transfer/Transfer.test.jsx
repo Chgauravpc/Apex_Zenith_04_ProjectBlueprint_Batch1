@@ -92,8 +92,34 @@ describe('Transfer & Review components (T23)', () => {
     fireEvent.click(screen.getByText(/Save & Publish Card/i));
 
     expect(await screen.findByText('Spindle bearing sound')).toBeDefined();
+    expect(screen.queryByText(/STOP — CRITICAL WARNING/i)).toBeNull(); // no warnings: no banner
     expect(transferApi.answerInterview).toHaveBeenCalledWith(9, { question_id: 0, answer_text: 'Growl at 3000 rpm' });
     expect(screen.getByText(/Verified by Ramesh/i)).toBeDefined();
+  });
+
+  it('checks an old employee’s interview answer with Note Guardian', async () => {
+    transferApi.startInterview.mockResolvedValue({
+      id: 9, employee_id: 1, machine_id: 1, status: 'open', mode: 'live',
+      questions: [{ id: 0, text: 'Finish feed on SS304?', reason: 'Nothing recorded', answered: false }],
+    });
+    transferApi.answerInterview.mockResolvedValue({
+      session_id: 9, question_id: 0, remaining: 0,
+      card: { ...CARD, id: 51, title: 'Finish feed', action: 'Feed 0.3 on SS304' },
+      guardian: {
+        severity: 'stop',
+        warnings: [{ severity: 'stop', rule: 'param_limit', message: 'feed 0.3 is above the 0.2 limit' }],
+        evidence: [],
+      },
+    });
+    renderHandover();
+
+    fireEvent.click(await screen.findByText(/AI Tacit Interview/i));
+    fireEvent.click(await screen.findByText(/Start Interview/i));
+    fireEvent.change(await screen.findByLabelText(/Your Answer/i), { target: { value: 'Feed 0.3 on SS304' } });
+    fireEvent.click(screen.getByText(/Save & Publish Card/i));
+
+    expect(await screen.findByText(/STOP — CRITICAL WARNING/i)).toBeDefined();
+    expect(screen.getByText(/feed 0.3 is above the 0.2 limit/i)).toBeDefined();
   });
 
   it('replies to a routed question and shows a real error when saving fails', async () => {

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { captureVideo, pollJob } from '../../api/capture';
 import { useAuthStore } from '../../store/useAuthStore';
 import { formatBytes } from '../../utils/format';
+import WarningBanner from '../guardian/WarningBanner';
 
 export default function VideoUpload({ onComplete }) {
   const { currentUser } = useAuthStore();
@@ -168,6 +169,8 @@ export default function VideoUpload({ onComplete }) {
               Status: Draft (Pending Review)
             </span>
           </div>
+
+          {result.guardian && <WarningBanner result={result.guardian} />}
 
           <div className="space-y-3">
             {result.steps?.map((step, idx) => (

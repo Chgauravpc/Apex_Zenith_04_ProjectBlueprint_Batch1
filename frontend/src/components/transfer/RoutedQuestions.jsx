@@ -4,6 +4,7 @@ import useDictation from '../../hooks/useDictation';
 import LoadState from '../common/LoadState';
 import { getRoutedQuestions, replyRoutedQuestion } from '../../api/transfer';
 import { useAuthStore } from '../../store/useAuthStore';
+import WarningBanner from '../guardian/WarningBanner';
 
 const formatWhen = (iso) =>
   new Date(iso).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
@@ -28,6 +29,7 @@ export default function RoutedQuestions({ employeeId = null, onReplySuccess }) {
   const [replyText, setReplyText] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successMsg, setSuccessMsg] = useState(null);
+  const [guardian, setGuardian] = useState(null);
   const [error, setError] = useState(null);
 
   // Old employees and supervisors answer for the team; new employees only read.
@@ -40,6 +42,7 @@ export default function RoutedQuestions({ employeeId = null, onReplySuccess }) {
     if (!replyText.trim()) return;
     setIsSubmitting(true);
     setSuccessMsg(null);
+    setGuardian(null);
     setError(null);
     try {
       const res = await replyRoutedQuestion(q.id, {
@@ -52,6 +55,7 @@ export default function RoutedQuestions({ employeeId = null, onReplySuccess }) {
       setSuccessMsg(
         `Your reply was saved as a verified know-how card${q.asked_by ? ` for ${q.asked_by.split(' ')[0]}` : ''}!`
       );
+      setGuardian(res.guardian || null);
       setReplyText('');
       setActiveReplyId(null);
       if (onReplySuccess) onReplySuccess(q.id);
@@ -87,6 +91,8 @@ export default function RoutedQuestions({ employeeId = null, onReplySuccess }) {
           </button>
         </div>
       )}
+
+      {guardian && <WarningBanner result={guardian} />}
 
       {(error || dictationError) && (
         <div role="alert" className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-800 text-xs font-semibold">
