@@ -7,7 +7,7 @@ verified by the old employee who gave it.
 """
 
 import logging
-from typing import List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -31,6 +31,7 @@ from app.schemas.transfer import (
 )
 from app.services import llm
 from app.services.capture.extractor import extract_cards, save_cards
+from app.services.capture.voice import on_note_saved
 from app.services.transfer.handover import refresh_progress
 from app.services.transfer.profiles import holders
 from app.utils.audit import audit
@@ -48,15 +49,19 @@ def record_answer(
     machine_id: Optional[int],
     component_id: Optional[int],
     question: str,
-) -> KnowledgeCard:
+) -> Tuple[KnowledgeCard, Optional[Dict[str, Any]]]:
     """Store an old employee's answer as a card they verify themselves (it is their word).
 
     The question is kept as the card's context and, when no LLM shaped the card, as its
     title, so the card reads "question → answer" and is found by people asking the same.
+    The answer is checked by Note Guardian like any note: a verified card skips review, so
+    a value against the machine's limits or history must be flagged now.
+
+    Returns:
+        The card and the Guardian result (None when no check ran).
     """
-    doc = Document(
-        type="text", text=f"{question}\n{answer_text}", uploader_id=author_id, machine_id=machine_id
-    )
+    # Only the answer is the employee's input; the question would trigger its own symptoms.
+    doc = Document(type="text", text=answer_text, uploader_id=author_id, machine_id=machine_id)
     db.add(doc)
     db.commit()
     cards = extract_cards(answer_text, author_id, machine_id)
@@ -91,7 +96,7 @@ def record_answer(
             via="answer",
         )
     db.commit()
-    return rows[0]
+    return rows[0], on_note_saved(db, doc)
 
 
 def _topics(db: Session, session: InterviewSession, n: int) -> List[Topic]:
@@ -283,7 +288,7 @@ def answer_interview(
         raise NotFound(f"question {payload.question_id} not in interview {session_id}")
     if q["answered"]:
         raise ValidationFailed("this question is already answered")
-    card = record_answer(
+    card, guardian = record_answer(
         db,
         payload.answer_text,
         session.employee_id,
@@ -311,4 +316,5 @@ def answer_interview(
         question_id=q["id"],
         card=CardOut.model_validate(card),
         remaining=remaining,
+        guardian=guardian,
     )

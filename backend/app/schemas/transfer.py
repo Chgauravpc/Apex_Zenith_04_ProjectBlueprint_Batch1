@@ -1,7 +1,7 @@
 """Old → new transfer schemas. Field names follow the frontend's transfer and dashboard views."""
 
 import datetime as dt
-from typing import List, Literal, Optional
+from typing import Any, Dict, List, Literal, Optional
 
 from pydantic import BaseModel, Field
 
@@ -89,6 +89,7 @@ class InterviewAnswerOut(BaseModel):
     question_id: int
     card: CardOut
     remaining: int
+    guardian: Optional[Dict[str, Any]] = None  # Note Guardian check of the answer
 
 
 class RouteIn(BaseModel):
@@ -122,6 +123,7 @@ class ReplyIn(BaseModel):
 class ReplyOut(BaseModel):
     routed: RoutedQuestionOut
     card: CardOut
+    guardian: Optional[Dict[str, Any]] = None  # Note Guardian check of the reply
 
 
 class NewEmployeeProgress(BaseModel):

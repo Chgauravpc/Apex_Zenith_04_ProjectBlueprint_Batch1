@@ -163,6 +163,7 @@ def test_asked_once_answered_forever(client, db, story, fake_llm) -> None:
     ).json()
     card_id = reply["card"]["id"]
     assert reply["routed"]["status"] == "answered" and reply["card"]["verified_by_id"] == ramesh.id
+    assert reply["guardian"] is not None  # the old employee's reply was checked too
     assert (
         db.execute(select(Notification).filter_by(employee_id=priya.id, kind="answer")).scalar_one()
         is not None
@@ -195,7 +196,7 @@ def test_routing_is_idempotent_and_reply_once(db, story, fake_llm) -> None:
 def test_offline_answer_card_reads_question_then_answer(db, story, fake_llm) -> None:
     from app.services.transfer.interview import _template, record_answer
 
-    card = record_answer(
+    card, _ = record_answer(
         db,
         "Touch off T1, then G10 L10.",
         story["people"]["Ramesh"].id,

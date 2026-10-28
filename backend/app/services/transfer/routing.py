@@ -6,7 +6,7 @@ answer from the assistant, even after that old employee has left.
 """
 
 import logging
-from typing import Optional, Tuple
+from typing import Any, Dict, Optional, Tuple
 
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session, aliased
@@ -125,8 +125,13 @@ def list_routed(
     return RoutedList(items=items, total=total)
 
 
-def reply(db: Session, routed_id: int, payload: ReplyIn) -> Tuple[RoutedQuestion, KnowledgeCard]:
-    """The old employee's reply becomes a verified card; the asker is told; the gap closes."""
+def reply(
+    db: Session, routed_id: int, payload: ReplyIn
+) -> Tuple[RoutedQuestion, KnowledgeCard, Optional[Dict[str, Any]]]:
+    """The old employee's reply becomes a verified card; the asker is told; the gap closes.
+
+    Returns the question, the card and Note Guardian's check of the reply.
+    """
     rq = db.get(RoutedQuestion, routed_id)
     if rq is None:
         raise NotFound(f"routed question {routed_id} not found")
@@ -137,7 +142,7 @@ def reply(db: Session, routed_id: int, payload: ReplyIn) -> Tuple[RoutedQuestion
         raise ValidationFailed("only an old employee or a supervisor can answer for the team")
     if rq.status == "answered":
         raise ValidationFailed("this question is already answered")
-    card = record_answer(
+    card, guardian = record_answer(
         db, payload.reply_text.strip(), author.id, rq.machine_id, None, rq.question
     )
     rq.status, rq.answer_card_id, rq.answered_at = "answered", card.id, utcnow()
@@ -157,12 +162,12 @@ def reply(db: Session, routed_id: int, payload: ReplyIn) -> Tuple[RoutedQuestion
             )
         )
     db.commit()
-    return rq, card
+    return rq, card, guardian
 
 
 def reply_out(db: Session, routed_id: int, payload: ReplyIn) -> ReplyOut:
-    rq, card = reply(db, routed_id, payload)
-    return ReplyOut(routed=_out(db, rq), card=CardOut.model_validate(card))
+    rq, card, guardian = reply(db, routed_id, payload)
+    return ReplyOut(routed=_out(db, rq), card=CardOut.model_validate(card), guardian=guardian)
 
 
 def route_out(db: Session, query_id: int) -> RoutedQuestionOut:

@@ -249,3 +249,49 @@ def test_guardian_endpoints_and_capture_hook(client, db, story, fake_llm) -> Non
         "/api/capture/text", json={"text": DEMO_NOTE, "author_id": priya.id}
     ).json()
     assert captured["guardian"]["severity"] == "stop"  # hook ran on the captured note
+
+
+# --- every input is checked, from every employee ---------------------------------------------
+
+
+def test_handwritten_note_is_checked(client, db, story, fake_llm, tmp_path) -> None:
+    import cv2
+    import numpy as np
+
+    from app.schemas.capture import HandwrittenResult
+    from app.services.capture.handwritten import process_handwritten
+
+    page = tmp_path / "page.jpg"
+    cv2.imwrite(str(page), np.full((60, 80, 3), 255, np.uint8))
+    fake_llm.responses["vision"] = HandwrittenResult(title="Shift note", text=DEMO_NOTE)
+
+    out = process_handwritten(db, page, story["people"]["Priya"].id)
+    assert out.guardian["severity"] == "stop"
+    assert any(w["rule"] == "param_limit" for w in out.guardian["warnings"])
+
+
+def test_old_employee_answer_is_checked_too(client, db, story, fake_llm) -> None:
+    from app.services.transfer.interview import record_answer
+
+    ramesh, vmc = story["people"]["Ramesh"], story["machines"]["VMC-3"]
+    _, guardian = record_answer(
+        db, "On SS304 I run the finish pass at feed 0.3", ramesh.id, vmc.id, None, "Finish feed?"
+    )
+    assert guardian["severity"] == "stop"
+    assert any(w["rule"] == "param_limit" for w in guardian["warnings"])
+
+
+def test_only_the_answer_is_checked_not_the_question(client, db, story, fake_llm) -> None:
+    from app.services.transfer.interview import record_answer
+
+    ramesh, vmc = story["people"]["Ramesh"], story["machines"]["VMC-3"]
+    _, guardian = record_answer(
+        db,
+        "Shorten stick-out and keep feed at 0.12",
+        ramesh.id,
+        vmc.id,
+        None,
+        "What do you do when chatter starts on VMC-3?",  # a symptom in the question only
+    )
+    assert guardian["severity"] != "stop"
+    assert all(w["rule"] != "precursor" for w in guardian["warnings"])
