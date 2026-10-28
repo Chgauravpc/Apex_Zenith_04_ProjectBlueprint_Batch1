@@ -205,6 +205,7 @@ export default function VmcMachine({
         componentId="machine_body"
         name="Machine Body & Column"
         risk="none"
+        bounds={{ center: [0, 1.25, 0], size: [2.35, 2.2, 2.15] }}
         isSelected={selectedComponent === 'machine_body'}
         isHighlighted={highlightedComponent === 'machine_body'}
         onClick={onSelectComponent}
@@ -314,6 +315,7 @@ export default function VmcMachine({
         componentId="spindle"
         name="Spindle Assembly"
         risk="high"
+        bounds={{ center: [0, 1.45, -0.15], size: [0.72, 1.15, 0.62] }}
         isSelected={selectedComponent === 'spindle'}
         isHighlighted={highlightedComponent === 'spindle'}
         onClick={onSelectComponent}
@@ -396,6 +398,7 @@ export default function VmcMachine({
         componentId="tool_holder"
         name="Tool Holder & ATC"
         risk="medium"
+        bounds={{ center: [0, 1.12, -0.15], size: [0.26, 0.44, 0.26] }}
         isSelected={selectedComponent === 'tool_holder'}
         isHighlighted={highlightedComponent === 'tool_holder'}
         onClick={onSelectComponent}
@@ -464,6 +467,7 @@ export default function VmcMachine({
         componentId="worktable"
         name="T-Slot Worktable"
         risk="low"
+        bounds={{ center: [0, 0.62, 0.04], size: [1.38, 0.32, 0.88] }}
         isSelected={selectedComponent === 'worktable'}
         isHighlighted={highlightedComponent === 'worktable'}
         onClick={onSelectComponent}
@@ -507,6 +511,7 @@ export default function VmcMachine({
         componentId="vise"
         name="Precision Milling Vise"
         risk="low"
+        bounds={{ center: [0, 0.86, 0.04], size: [0.44, 0.26, 0.62] }}
         isSelected={selectedComponent === 'vise'}
         isHighlighted={highlightedComponent === 'vise'}
         onClick={onSelectComponent}
@@ -575,6 +580,7 @@ export default function VmcMachine({
         componentId="control_panel"
         name="CNC Control Panel"
         risk="low"
+        bounds={{ center: [1.36, 1.55, 0.88], size: [0.55, 0.92, 0.36] }}
         isSelected={selectedComponent === 'control_panel'}
         isHighlighted={highlightedComponent === 'control_panel'}
         onClick={onSelectComponent}
@@ -661,6 +667,7 @@ export default function VmcMachine({
         componentId="doors"
         name="Enclosure Doors"
         risk="none"
+        bounds={{ center: [0, 1.34, 1.04], size: [1.68, 1.82, 0.16] }}
         isSelected={selectedComponent === 'doors'}
         isHighlighted={highlightedComponent === 'doors'}
         onClick={onSelectComponent}
@@ -680,8 +687,8 @@ export default function VmcMachine({
           <mesh material={materials.sheetMetalDark} castShadow>
             <boxGeometry args={[0.74, 1.72, 0.035]} />
           </mesh>
-          {/* Large Observation Safety Polycarbonate Window */}
-          <mesh position={[0, 0.06, 0]} material={materials.safetyGlass}>
+          {/* Large Observation Safety Polycarbonate Window - bypasses raycast so internal parts are clickable through glass */}
+          <mesh position={[0, 0.06, 0]} material={materials.safetyGlass} raycast={() => null}>
             <boxGeometry args={[0.58, 1.36, 0.015]} />
           </mesh>
           {/* Vertical Door Handle (Right edge of left door) */}
@@ -696,8 +703,8 @@ export default function VmcMachine({
           <mesh material={materials.sheetMetalDark} castShadow>
             <boxGeometry args={[0.74, 1.72, 0.035]} />
           </mesh>
-          {/* Large Observation Safety Polycarbonate Window */}
-          <mesh position={[0, 0.06, 0]} material={materials.safetyGlass}>
+          {/* Large Observation Safety Polycarbonate Window - bypasses raycast so internal parts are clickable through glass */}
+          <mesh position={[0, 0.06, 0]} material={materials.safetyGlass} raycast={() => null}>
             <boxGeometry args={[0.58, 1.36, 0.015]} />
           </mesh>
           {/* Vertical Door Handle (Left edge of right door) */}
