@@ -32,6 +32,8 @@ class Settings(BaseSettings):
 
     database_url: str = "sqlite:///./blueprint.db"
     storage_dir: str = "storage"
+    # The local embedding model needs ~500 MB RAM; turn off on small hosts (search is FTS-only).
+    enable_embeddings: bool = True
     frontend_origin: str = "http://localhost:5173"
     erp_base_url: str = "http://localhost:8001"
 

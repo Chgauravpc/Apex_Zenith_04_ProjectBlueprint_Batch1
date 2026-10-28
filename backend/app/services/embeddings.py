@@ -11,6 +11,7 @@ from typing import Any, List, Literal, Optional
 
 import numpy as np
 
+from app.config import get_settings
 from app.errors import ProviderUnavailable
 
 logger = logging.getLogger(__name__)
@@ -28,6 +29,8 @@ _lock = threading.Lock()
 def _get_model() -> Any:
     """Load the model once (thread-safe); remember a failure so we do not retry per call."""
     global _model, _load_failed
+    if not get_settings().enable_embeddings:
+        raise ProviderUnavailable("embeddings are turned off (ENABLE_EMBEDDINGS=false)")
     if _model is not None:
         return _model
     with _lock:

@@ -228,6 +228,17 @@ def test_embeddings_unavailable_returns_none(monkeypatch) -> None:
     assert embeddings.embed([]).shape == (0, 384)
 
 
+def test_embeddings_switched_off_never_loads_the_model(monkeypatch) -> None:
+    from app.config import get_settings
+    from app.services import embeddings
+
+    monkeypatch.setattr(get_settings(), "enable_embeddings", False)
+    monkeypatch.setattr(embeddings, "_model", None)
+    monkeypatch.setattr(embeddings, "_load_failed", False)
+    assert embeddings.try_embed(["chatter"]) is None
+    assert embeddings._load_failed is False  # flag is checked before any import or download
+
+
 # --- capture endpoints -----------------------------------------------------------------------
 
 
