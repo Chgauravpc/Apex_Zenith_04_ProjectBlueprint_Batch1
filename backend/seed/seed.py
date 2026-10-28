@@ -35,6 +35,7 @@ from app.models.knowledge import ChipSample, Document, KnowledgeCard, SoundClip
 from app.models.map3d import Component
 from app.models.ops import Event
 from app.models.transfer import KnowledgeBuddy
+from app.services.capture import extractor
 from seed.history import seed_history
 from seed.training import seed_training
 
@@ -253,8 +254,10 @@ def main() -> None:
     init_db()
     with SessionLocal() as db:
         counts = seed(db, date.today())
+        filled = extractor.backfill_embeddings(db)
     for table, n in counts.items():
         logger.info("%-16s %d", table, n)
+    logger.info("card vectors     %d (0 means embeddings are off or unavailable)", filled)
 
 
 if __name__ == "__main__":

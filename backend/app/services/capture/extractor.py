@@ -28,6 +28,7 @@ logger = logging.getLogger(__name__)
 MAX_NOTE_CHARS = 8000  # ~10 min of speech; longer text is cut to protect the free quota
 OFFLINE_CONFIDENCE = 0.4  # keyword match only: always goes to the review queue
 OFFLINE_TITLE_CHARS = 80
+BACKFILL_BATCH = 32  # cards per embedding call when filling missing vectors
 # When several symptoms appear offline, the card is filed under the most serious one.
 SYMPTOM_PRIORITY = [
     "chatter",
@@ -183,3 +184,42 @@ def save_cards(db: Session, cards: List[ExtractedCard], source_doc_id: int) -> L
         "saved %d cards from doc %s (embeddings=%s)", len(rows), doc.id, vectors is not None
     )
     return rows
+
+
+def backfill_embeddings(db: Session, batch_size: int = BACKFILL_BATCH) -> int:
+    """Embed cards that were saved without a vector (model off or provider down at the time).
+
+    Walks the cards by id in batches and commits each batch, so it is safe to stop and run
+    again; a second run finds nothing to do. Stops at the first batch the provider cannot
+    embed and leaves those cards for the next run.
+
+    Returns:
+        Number of cards that got a vector.
+
+    Complexity: one query + one embedding call per batch.
+    """
+    filled, after = 0, 0
+    while True:
+        rows = (
+            db.execute(
+                select(KnowledgeCard)
+                .where(KnowledgeCard.embedding.is_(None), KnowledgeCard.id > after)
+                .order_by(KnowledgeCard.id)
+                .limit(batch_size)
+            )
+            .scalars()
+            .all()
+        )
+        if not rows:
+            break
+        vectors = embeddings.try_embed([card_text(r) for r in rows])
+        if vectors is None:
+            logger.warning("embedding backfill paused: provider unavailable (%d filled)", filled)
+            break
+        for row, vector in zip(rows, vectors):
+            row.embedding = embeddings.to_bytes(vector)
+        db.commit()
+        filled += len(rows)
+        after = rows[-1].id
+    logger.info("embedding backfill filled %d cards", filled)
+    return filled

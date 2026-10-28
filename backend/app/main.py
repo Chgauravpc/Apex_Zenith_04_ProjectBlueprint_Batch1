@@ -5,6 +5,7 @@ and (when built) the React app from `frontend/dist`.
 """
 
 import logging
+import threading
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import AsyncIterator, Dict
@@ -14,10 +15,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from app.config import get_settings
-from app.database import init_db
+from app.database import SessionLocal, init_db
 from app.errors import register_handlers
 from app.routers import ask, capture, erp, guardian, guide, machines, reports, transfer
-from app.services.capture import erp_sync, voice
+from app.services.capture import erp_sync, extractor, voice
 from app.services.guardian import check
 from app.services.transfer import handover
 
@@ -28,9 +29,22 @@ FRONTEND_DIST = Path(__file__).resolve().parents[2] / "frontend" / "dist"
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
-    """Create tables and the FTS index once at startup."""
+    """Create tables and the FTS index once at startup, then fill missing card vectors."""
     init_db()
+    if get_settings().enable_embeddings:
+        worker = threading.Thread(target=_backfill_embeddings, name="embedding-backfill")
+        worker.daemon = True
+        worker.start()
     yield
+
+
+def _backfill_embeddings() -> None:
+    """Give vectors to cards saved while embeddings were down (background, never blocks startup)."""
+    try:
+        with SessionLocal() as db:
+            extractor.backfill_embeddings(db)
+    except Exception:  # noqa: BLE001  a failed backfill must not take the API down
+        logger.exception("embedding backfill failed")
 
 
 def create_app() -> FastAPI:

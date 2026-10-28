@@ -219,6 +219,59 @@ def test_save_cards_unknown_document(db) -> None:
         save_cards(db, [], 999)
 
 
+def _cards_without_vectors(db, shop, n: int):
+    from app.models.knowledge import KnowledgeCard
+
+    rows = [
+        KnowledgeCard(title=f"Tip {i}", action=f"Check spindle {i}", machine_id=shop["vmc"].id)
+        for i in range(n)
+    ]
+    db.add_all(rows)
+    db.commit()
+    return rows
+
+
+def test_backfill_fills_missing_vectors_once(db, shop, monkeypatch) -> None:
+    import numpy as np
+
+    from app.services import embeddings
+    from app.services.capture.extractor import backfill_embeddings
+
+    calls = []
+
+    def embed(texts, kind="passage"):
+        calls.append((len(texts), kind))
+        return np.ones((len(texts), 384), np.float32)
+
+    monkeypatch.setattr(embeddings, "try_embed", embed)
+    rows = _cards_without_vectors(db, shop, 5)
+
+    assert backfill_embeddings(db, batch_size=2) == 5
+    assert calls == [(2, "passage"), (2, "passage"), (1, "passage")]
+    assert all(len(r.embedding) == 384 * 4 for r in rows)
+    assert backfill_embeddings(db) == 0 and len(calls) == 3  # nothing left: no API call
+
+
+def test_backfill_keeps_cards_for_later_when_provider_is_down(db, shop, monkeypatch) -> None:
+    import numpy as np
+
+    from app.services import embeddings
+    from app.services.capture.extractor import backfill_embeddings
+
+    replies = [np.ones((2, 384), np.float32), None]
+    monkeypatch.setattr(embeddings, "try_embed", lambda texts, kind="passage": replies.pop(0))
+    rows = _cards_without_vectors(db, shop, 4)
+
+    assert backfill_embeddings(db, batch_size=2) == 2  # first batch saved, then provider down
+    assert [r.embedding is not None for r in rows] == [True, True, False, False]
+
+    def embed(texts, kind="passage"):
+        return np.ones((len(texts), 384), np.float32)
+
+    monkeypatch.setattr(embeddings, "try_embed", embed)
+    assert backfill_embeddings(db) == 2 and all(r.embedding is not None for r in rows)
+
+
 def test_embeddings_unavailable_returns_none(monkeypatch) -> None:
     from app.services import embeddings
 
