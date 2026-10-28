@@ -15,6 +15,7 @@ from app.schemas.capture import (
     ReviewQueueOut,
     SensorBatchIn,
     TextNoteIn,
+    TranscriptOut,
     VoiceNoteOut,
 )
 from app.services import jobs
@@ -41,6 +42,15 @@ def capture_voice(
 ) -> VoiceNoteOut:
     """Save a voice note (≤ 25 MB), transcribe it and return the cards found in it."""
     return voice.capture_voice(db, file, author_id, machine_id, language, consent)
+
+
+@router.post("/transcribe", response_model=TranscriptOut)
+def transcribe(
+    file: UploadFile = File(...),
+    language: Optional[Literal["hi", "mr", "en"]] = Form(None),
+) -> TranscriptOut:
+    """Turn a spoken reply into text the speaker can check before sending; nothing is kept."""
+    return voice.transcribe_only(file, language)
 
 
 @router.post("/video", response_model=JobCreated, status_code=202)

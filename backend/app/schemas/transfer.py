@@ -122,3 +122,29 @@ class ReplyIn(BaseModel):
 class ReplyOut(BaseModel):
     routed: RoutedQuestionOut
     card: CardOut
+
+
+class NewEmployeeProgress(BaseModel):
+    employee_id: int
+    employee: str
+    days_on_job: Optional[int] = None
+    independent_ops: int  # operations at skill level 3 (independent) or above
+    trained_ops: int  # operations at level 1 or above
+    clean_runs: int  # finished guided runs where every check passed
+
+
+class TransferMetrics(BaseModel):
+    """How far the old → new transfer has got, counted from the records (no estimates)."""
+
+    coverage: int  # % of machine parts with verified know-how from an old employee
+    parts_total: int
+    parts_at_risk: int  # parts whose know-how leaves with planned exits
+    verified_cards: int
+    pending_review: int
+    guardian_stops: int
+    guardian_cautions: int
+    warnings_with_fix: int  # warnings that showed what an old employee did last time
+    questions_routed: int
+    questions_answered: int
+    handover_progress: Optional[int] = None  # mean progress of active handover plans
+    new_employees: List[NewEmployeeProgress]

@@ -156,6 +156,8 @@ def cards(db: Session):
 def test_review_queue_lists_unverified_least_confident_first(client, cards) -> None:
     body = client.get("/api/capture/review-queue?limit=1").json()
     assert body["total"] == 2 and [c["title"] for c in body["items"]] == ["Nozzle"]
+    first = body["items"][0]
+    assert (first["machine"], first["author"]) == ("VMC-3", cards["priya"].name)
     page2 = client.get("/api/capture/review-queue?limit=1&offset=1").json()
     assert [c["title"] for c in page2["items"]] == ["Seat part"]
     assert client.get("/api/capture/review-queue?limit=500").status_code == 422

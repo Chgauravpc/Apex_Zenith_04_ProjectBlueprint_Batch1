@@ -12,10 +12,10 @@ from sqlalchemy.orm import Session
 
 from app.database import fts_index, utcnow
 from app.errors import NotFound, ValidationFailed
-from app.models.erp import ROLE_NEW, Employee
+from app.models.erp import ROLE_NEW, Employee, Machine
 from app.models.knowledge import KnowledgeCard
-from app.models.map3d import ComponentPin
-from app.schemas.capture import CardOut, ReviewIn, ReviewQueueOut
+from app.models.map3d import Component, ComponentPin
+from app.schemas.capture import CardOut, ReviewCardOut, ReviewIn, ReviewQueueOut
 from app.services import embeddings
 from app.services.capture.extractor import card_text
 from app.utils import lexicon
@@ -43,9 +43,28 @@ def review_queue(db: Session, limit: int = 20, offset: int = 0) -> ReviewQueueOu
         .scalars()
         .all()
     )
-    return ReviewQueueOut(
-        items=[CardOut.model_validate(r) for r in rows], total=total, limit=limit, offset=offset
-    )
+
+    def names(model, attr: str, ids) -> dict:
+        ids = {i for i in ids if i is not None}
+        if not ids:
+            return {}
+        col = getattr(model, attr)
+        return dict(db.execute(select(model.id, col).where(model.id.in_(ids))).all())
+
+    machines = names(Machine, "name", (r.machine_id for r in rows))
+    parts = names(Component, "display_name", (r.component_id for r in rows))
+    people = names(Employee, "name", (r.author_id for r in rows))
+    items = [
+        ReviewCardOut.model_validate(r).model_copy(
+            update={
+                "machine": machines.get(r.machine_id),
+                "component": parts.get(r.component_id),
+                "author": people.get(r.author_id),
+            }
+        )
+        for r in rows
+    ]
+    return ReviewQueueOut(items=items, total=total, limit=limit, offset=offset)
 
 
 def _reviewer(db: Session, reviewer_id: int) -> Employee:

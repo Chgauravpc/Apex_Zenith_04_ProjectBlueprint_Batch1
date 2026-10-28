@@ -16,7 +16,7 @@ from fastapi.staticfiles import StaticFiles
 from app.config import get_settings
 from app.database import init_db
 from app.errors import register_handlers
-from app.routers import ask, capture, erp, guardian, guide, reports, transfer
+from app.routers import ask, capture, erp, guardian, guide, machines, reports, transfer
 from app.services.capture import erp_sync, voice
 from app.services.guardian import check
 from app.services.transfer import handover
@@ -55,6 +55,7 @@ def create_app() -> FastAPI:
     app.include_router(capture.router, prefix="/api")
     app.include_router(capture.jobs_router, prefix="/api")
     app.include_router(erp.router, prefix="/api")
+    app.include_router(machines.router, prefix="/api")
     app.include_router(guardian.router, prefix="/api")
     app.include_router(ask.router, prefix="/api")
     app.include_router(transfer.router, prefix="/api")

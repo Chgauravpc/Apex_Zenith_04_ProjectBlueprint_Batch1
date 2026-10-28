@@ -18,8 +18,9 @@ from app.schemas.transfer import (
     RoutedList,
     RoutedQuestionOut,
     RouteIn,
+    TransferMetrics,
 )
-from app.services.transfer import handover, interview, routing
+from app.services.transfer import handover, interview, metrics, routing
 
 router = APIRouter(prefix="/transfer", tags=["transfer"])
 
@@ -74,3 +75,9 @@ def reply(routed_id: int, payload: ReplyIn, db: Session = Depends(get_db)) -> Re
 def risk(machine_id: Optional[int] = None, db: Session = Depends(get_db)) -> List[RiskCell]:
     """Who holds the know-how per machine and part, and how much leaves with exits."""
     return handover.knowledge_risk(db, machine_id)
+
+
+@router.get("/metrics", response_model=TransferMetrics)
+def transfer_metrics(db: Session = Depends(get_db)) -> TransferMetrics:
+    """Coverage, Guardian warnings, answered questions and new employees' progress."""
+    return metrics.transfer_metrics(db)

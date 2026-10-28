@@ -13,7 +13,7 @@ from sqlalchemy.orm import Session
 from app.errors import NotFound, ProviderUnavailable, ValidationFailed
 from app.models.erp import Employee, Machine
 from app.models.knowledge import Document
-from app.schemas.capture import CardOut, ExtractedCard, TextNoteIn, VoiceNoteOut
+from app.schemas.capture import CardOut, ExtractedCard, TextNoteIn, TranscriptOut, VoiceNoteOut
 from app.services import stt
 from app.services.capture.extractor import extract_cards, save_cards
 from app.utils.files import save_upload
@@ -131,3 +131,18 @@ def capture_voice(
         return _finish(db, doc, [], transcript="")
     cards = extract_cards(transcript.text, author_id, machine_id)
     return _finish(db, doc, cards, transcript=transcript.text)
+
+
+def transcribe_only(file: UploadFile, language: Optional[str] = None) -> TranscriptOut:
+    """Speech to text for a reply box: nothing is saved, the speaker edits and sends the text.
+
+    Offline (no STT provider) returns empty text with mode "offline" so the UI asks to type.
+    """
+    path = save_upload(file, "audio")
+    try:
+        transcript = stt.transcribe(path, language)
+    except ProviderUnavailable:
+        return TranscriptOut(text="", language=language, mode="offline")
+    finally:
+        path.unlink(missing_ok=True)
+    return TranscriptOut(text=transcript.text.strip(), language=language or transcript.language)
