@@ -106,7 +106,7 @@ export default function WarningBanner({ result, onDismiss }) {
         <EvidenceList
           evidence={result.evidence}
           expertFix={result.expert_fix}
-          authorName={result.author_name || 'Ramesh (Old Employee)'}
+          authorName={result.author_name || 'An old employee'}
         />
       )}
     </div>

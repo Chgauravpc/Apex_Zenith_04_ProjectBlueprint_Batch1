@@ -37,6 +37,13 @@ export const answerInterview = (sessionId, answerData, signal) =>
  * @param {Object} [params] { employee_id, status }
  * @param {AbortSignal} [signal]
  */
+/**
+ * Send a question the assistant could not answer to the old employee who knows the machine.
+ * @param {number} queryId the query_id of the unanswered Ask result
+ */
+export const routeQuestion = (queryId, signal) =>
+  client.post('/transfer/routed-questions', { query_id: queryId }, { signal }).then((r) => r.data);
+
 export const getRoutedQuestions = (params, signal) =>
   client.get('/transfer/routed-questions', { params, signal }).then((r) => r.data);
 

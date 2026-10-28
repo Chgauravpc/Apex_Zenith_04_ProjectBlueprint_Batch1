@@ -3,20 +3,23 @@ import SourceCard from './SourceCard';
 import useSpeech from '../../hooks/useSpeech';
 import { submitFeedback } from '../../api/ask';
 
-export default function AnswerCard({ answer, onAskExpert }) {
+export default function AnswerCard({ answer, onAskExpert, language = 'hi' }) {
   const { isPlaying, speak, stop } = useSpeech();
   const [feedbackGiven, setFeedbackGiven] = useState(null);
+  const [feedbackError, setFeedbackError] = useState(null);
 
   if (!answer) return null;
 
   const handleFeedback = async (helpful) => {
     if (feedbackGiven !== null) return;
     setFeedbackGiven(helpful);
+    setFeedbackError(null);
     if (answer.query_id) {
       try {
         await submitFeedback(answer.query_id, { helpful });
       } catch (e) {
-        console.error('Feedback submit failed', e);
+        setFeedbackGiven(null); // not saved: let them try again
+        setFeedbackError(`Feedback not saved: ${e.message}`);
       }
     }
   };
@@ -26,7 +29,7 @@ export default function AnswerCard({ answer, onAskExpert }) {
       stop();
     } else {
       const fullText = `${answer.answer}. ${answer.watch_out ? `Watch out: ${answer.watch_out}` : ''}`;
-      speak(fullText, 'hi', answer.audio_url);
+      speak(fullText, language, answer.audio_url);
     }
   };
 
@@ -41,15 +44,17 @@ export default function AnswerCard({ answer, onAskExpert }) {
           </div>
           <p>
             The system could not find enough verified cards to answer this safely without guessing.
-            Would you like to route this question directly to {answer.suggested_expert || 'Ramesh (Old Employee)'}?
+            {answer.suggested_expert
+              ? `Would you like to route this question directly to ${answer.suggested_expert}?`
+              : 'Nobody has recorded know-how on this machine yet, so there is no expert to route it to.'}
           </p>
-          {onAskExpert && (
+          {onAskExpert && answer.suggested_expert && (
             <button
               type="button"
               onClick={() => onAskExpert(answer)}
               className="btn-touch px-4 py-2 bg-maroon-700 hover:bg-maroon-800 text-white font-medium rounded-xl text-xs transition shadow-xs"
             >
-              Ask {answer.suggested_expert || 'Ramesh'} via Voice/Message →
+              Ask {answer.suggested_expert} →
             </button>
           )}
         </div>
@@ -63,7 +68,7 @@ export default function AnswerCard({ answer, onAskExpert }) {
                 Grounded Machine Advice
               </span>
               <span className="px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-maroon-50 text-maroon-800 border border-maroon-200">
-                Confidence {Math.round((answer.confidence || 0.88) * 100)}%
+                Confidence {Math.round((answer.confidence ?? 0) * 100)}%
               </span>
             </div>
 
@@ -157,6 +162,11 @@ export default function AnswerCard({ answer, onAskExpert }) {
               </button>
             </div>
           </div>
+          {feedbackError && (
+            <p role="alert" className="text-xs text-red-300">
+              {feedbackError}
+            </p>
+          )}
         </>
       )}
     </div>

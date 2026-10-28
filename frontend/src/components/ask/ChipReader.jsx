@@ -2,6 +2,20 @@ import React, { useState } from 'react';
 import useCamera from '../../hooks/useCamera';
 import { askChips } from '../../api/ask';
 
+// Swatches for every colour class the backend returns (services/ask/chips.py).
+const SWATCH = {
+  silver: 'bg-slate-300',
+  straw: 'bg-amber-300',
+  bronze: 'bg-orange-700',
+  violet: 'bg-violet-600',
+  blue: 'bg-blue-600',
+};
+const SEVERITY_BADGE = {
+  ok: 'bg-emerald-50 text-emerald-800 border-emerald-200',
+  caution: 'bg-amber-50 text-amber-900 border-amber-200',
+  stop: 'bg-red-50 text-red-800 border-red-200',
+};
+
 export default function ChipReader() {
   const [file, setFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
@@ -231,11 +245,7 @@ export default function ChipReader() {
               <div className="flex items-center space-x-3">
                 <div
                   className={`w-6 h-6 rounded-full border border-slate-200 shadow-xs ${
-                    result.colour === 'blue'
-                      ? 'bg-blue-600'
-                      : result.colour === 'straw' || result.colour === 'golden'
-                        ? 'bg-amber-400'
-                        : 'bg-slate-300'
+                    SWATCH[result.colour] || 'bg-slate-300'
                   }`}
                 />
                 <div>
@@ -243,28 +253,37 @@ export default function ChipReader() {
                     Classified Chip Colour
                   </span>
                   <div className="text-lg font-bold text-slate-900 capitalize">
-                    {result.colour || 'Dark Blue'} ({result.temperature_range || '550°C – 650°C'})
+                    {result.colour} ({result.temperature_range})
                   </div>
                 </div>
               </div>
 
-              <span className="px-3 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-900 border border-amber-200">
-                {result.diagnosis || 'High Thermal Zone'}
+              <span
+                className={`px-3 py-1 rounded-full text-xs font-bold border ${
+                  SEVERITY_BADGE[result.severity] || SEVERITY_BADGE.caution
+                }`}
+              >
+                {result.diagnosis}
               </span>
             </div>
 
             <div className="space-y-1 text-xs">
               <span className="font-bold text-slate-700 block">Recommended Action:</span>
               <p className="text-slate-800 leading-relaxed font-normal">
-                {result.recommendation || 'Reduce cutting speed by 15% and verify coolant angle directly hits tool insert tip.'}
+                {result.recommendation}
               </p>
             </div>
+
+            <p className="text-[11px] text-slate-400 italic">{result.note}</p>
 
             {result.expert_card && (
               <div className="bg-amber-50/70 border border-amber-200/90 rounded-xl p-3.5 space-y-1 text-xs text-amber-950">
                 <div className="font-bold text-amber-900 flex items-center space-x-1.5">
                   <span>💡</span>
-                  <span>Ramesh’s Rule of Thumb for Stainless Steel Chips:</span>
+                  <span>
+                    {result.expert_card.author ? `${result.expert_card.author}’s` : 'Recorded'} rule for{' '}
+                    {result.workpiece} chips: {result.expert_card.title}
+                  </span>
                 </div>
                 <p className="text-slate-800">{result.expert_card.action}</p>
               </div>

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import MachineOptions from '../common/MachineOptions';
 import { askQuestion, askVoice } from '../../api/ask';
+import { routeQuestion } from '../../api/transfer';
 import { useAuthStore } from '../../store/useAuthStore';
 import AnswerCard from './AnswerCard';
 import useRecorder from '../../hooks/useRecorder';
@@ -44,9 +45,13 @@ export default function ChatWindow() {
         question: textToAsk,
         machine_id: machineId,
         language,
+        asked_by_id: currentUser.id,
       });
 
-      setHistory((prev) => [{ role: 'assistant', data: answer, ts: new Date().toLocaleTimeString() }, ...prev]);
+      setHistory((prev) => [
+        { role: 'assistant', data: answer, language, ts: new Date().toLocaleTimeString() },
+        ...prev,
+      ]);
     } catch (err) {
       setError(err.message || 'Failed to retrieve grounded advice.');
     } finally {
@@ -71,14 +76,36 @@ export default function ChatWindow() {
       formData.append('file', audioBlob, 'question.webm');
       formData.append('machine_id', machineId.toString());
       formData.append('language', language);
+      formData.append('asked_by_id', currentUser.id.toString());
 
       const answer = await askVoice(formData);
-      setHistory((prev) => [{ role: 'assistant', data: answer, ts: new Date().toLocaleTimeString() }, ...prev]);
+      setHistory((prev) => [
+        { role: 'assistant', data: answer, language, ts: new Date().toLocaleTimeString() },
+        ...prev,
+      ]);
       resetRecording();
     } catch (err) {
       setError(err.message || 'Failed to process voice query.');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  /** Route an unanswered question to the expert; their reply becomes a verified card. */
+  const handleAskExpert = async (answer) => {
+    setError(null);
+    try {
+      const routed = await routeQuestion(answer.query_id);
+      setHistory((prev) => [
+        {
+          role: 'system',
+          text: `Sent to ${routed.routed_to}. Their reply will be saved as a verified card.`,
+          ts: new Date().toLocaleTimeString(),
+        },
+        ...prev,
+      ]);
+    } catch (err) {
+      setError(`Question not sent: ${err.message}`);
     }
   };
 
@@ -246,8 +273,19 @@ export default function ChatWindow() {
                   <p>{item.text}</p>
                 </div>
               </div>
+            ) : item.role === 'system' ? (
+              <p className="text-center text-xs text-emerald-300">
+                ✓ {item.text} • {item.ts}
+              </p>
             ) : (
-              <AnswerCard answer={item.data} />
+              <>
+                {item.data.transcript && (
+                  <p className="text-xs text-slate-400 mb-2">
+                    Heard: <span className="text-slate-200">“{item.data.transcript}”</span>
+                  </p>
+                )}
+                <AnswerCard answer={item.data} language={item.language} onAskExpert={handleAskExpert} />
+              </>
             )}
           </div>
         ))}
