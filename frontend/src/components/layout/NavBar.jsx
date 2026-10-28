@@ -21,36 +21,36 @@ export default function NavBar() {
   ];
 
   return (
-    <header className="sticky top-0 z-40 bg-slate-950/90 backdrop-blur-md border-b border-slate-700/80 shadow-lg shadow-black/20">
+    <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-[#DADCE0] shadow-xs">
       <div className="max-w-[1600px] w-full mx-auto px-2 sm:px-4 lg:px-6">
         <div className="flex items-center justify-between h-16 gap-2">
           {/* Brand Logo */}
           <div className="flex items-center flex-shrink-0">
             <NavLink
               to="/"
-              className="flex items-center space-x-2 text-slate-100 hover:text-cyan-400 transition group"
+              className="flex items-center space-x-2.5 text-slate-900 hover:text-maroon-800 transition group"
             >
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-400 via-cyan-500 to-blue-600 flex items-center justify-center font-black text-slate-950 text-sm shadow-sm ring-1 ring-cyan-300/40 group-hover:scale-105 transition-transform">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-maroon-700 via-maroon-800 to-maroon-900 flex items-center justify-center font-black text-white text-sm shadow-xs ring-1 ring-maroon-200 group-hover:scale-105 transition-transform">
                 BP
               </div>
-              <span className="font-extrabold text-sm sm:text-base tracking-tight text-white hidden sm:inline-block">
+              <span className="font-extrabold text-sm sm:text-base tracking-tight text-slate-900 hidden sm:inline-block">
                 {t('appName', language)}
               </span>
             </NavLink>
           </div>
 
           {/* Desktop Navigation Links Rail */}
-          <nav className="hidden lg:flex items-center space-x-0.5 bg-slate-900/80 p-1 rounded-xl border border-slate-800 flex-shrink-0" aria-label="Main Navigation">
+          <nav className="hidden lg:flex items-center space-x-1 bg-slate-50/90 p-1 rounded-full border border-slate-200/90 shadow-xs flex-shrink-0" aria-label="Main Navigation">
             {navItems.map((item) => (
               <NavLink
                 key={item.to}
                 to={item.to}
                 end={item.to === '/'}
                 className={({ isActive }) =>
-                  `px-2.5 xl:px-3 py-1.5 rounded-lg text-xs transition-all flex items-center ${
+                  `px-3 xl:px-3.5 py-1.5 rounded-full text-xs transition-all flex items-center ${
                     isActive
-                      ? 'bg-slate-800 text-cyan-300 font-semibold border border-slate-700 shadow-sm'
-                      : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50 border border-transparent font-medium'
+                      ? 'bg-maroon-50 text-maroon-800 font-semibold ring-1 ring-maroon-200 shadow-xs text-cyan-300'
+                      : 'text-slate-600 hover:text-maroon-900 hover:bg-maroon-50/50 border border-transparent font-medium'
                   }`
                 }
               >
@@ -68,7 +68,7 @@ export default function NavBar() {
             <button
               type="button"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="lg:hidden p-2 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-slate-800/80 border border-slate-700/60 focus:outline-none focus:ring-2 focus:ring-cyan-500 transition"
+              className="lg:hidden p-2 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-maroon-500 transition"
               aria-label="Toggle navigation menu"
               aria-expanded={mobileMenuOpen}
             >
@@ -86,9 +86,9 @@ export default function NavBar() {
 
       {/* Mobile Drawer */}
       {mobileMenuOpen && (
-        <div className="lg:hidden border-t border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-950/95 backdrop-blur-md px-4 pt-3 pb-5 space-y-2 shadow-2xl">
-          <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-slate-800">
-            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Theme Preference:</span>
+        <div className="lg:hidden border-t border-slate-200 bg-white/98 backdrop-blur-md px-4 pt-3 pb-5 space-y-2 shadow-card" aria-label="Mobile Navigation">
+          <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+            <span className="text-xs font-semibold text-slate-600">Theme Preference:</span>
             <ThemeToggle />
           </div>
           {navItems.map((item) => (
@@ -98,10 +98,10 @@ export default function NavBar() {
               end={item.to === '/'}
               onClick={() => setMobileMenuOpen(false)}
               className={({ isActive }) =>
-                `px-3 py-2.5 rounded-xl text-xs font-medium transition flex items-center ${
+                `px-3.5 py-2.5 rounded-xl text-xs font-medium transition flex items-center ${
                   isActive
-                    ? 'bg-emerald-500/10 text-emerald-700 dark:bg-teal-500/15 dark:text-teal-300 font-semibold border border-emerald-500/30 dark:border-teal-500/30'
-                    : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/80 border border-transparent'
+                    ? 'bg-maroon-50 text-maroon-800 font-semibold border border-maroon-200 text-cyan-300'
+                    : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900 border border-transparent'
                 }`
               }
             >

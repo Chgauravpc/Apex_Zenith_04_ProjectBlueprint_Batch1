@@ -4,39 +4,51 @@
 
 @layer base {
   /* ========================================================
-     DUAL THEME DESIGN SYSTEM
-     - Light Theme: Clean White & Emerald
-     - Dark Theme: Graphite & Teal
+     GOOGLE-INSPIRED DESIGN SYSTEM
+     - Clean White Canvas (#FFFFFF / #F8F9FA)
+     - Rich Maroon Accent (#721026 / #800020 / #5C0B1D)
      ======================================================== */
   :root {
     color-scheme: light;
-    --bg-main: #F8FAFC;
+    --bg-main: #FFFFFF;
+    --bg-secondary: #F8F9FA;
     --bg-header: #FFFFFF;
     --bg-card: #FFFFFF;
-    --bg-secondary: #F1F5F9;
-    --bg-elevated: #F8FAFC;
-    --bg-well: #F1F5F9;
+    --bg-elevated: #FFFFFF;
+    --bg-well: #F8F9FA;
     --bg-input: #FFFFFF;
-    --primary-accent: #059669;
-    --primary-accent-hover: #047857;
-    --accent-light: rgba(5, 150, 105, 0.08);
-    --accent-border: rgba(5, 150, 105, 0.25);
-    --primary-text: #0F172A;
-    --secondary-text: #475569;
-    --muted-text: #64748B;
-    --border-default: #E2E8F0;
-    --border-hover: #CBD5E1;
-    --color-success: #15803D;
-    --color-warning: #B45309;
-    --color-error: #B91C1C;
-    --shadow-card: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.04);
-    --shadow-elevated: 0 4px 6px -1px rgba(0, 0, 0, 0.06), 0 2px 4px -2px rgba(0, 0, 0, 0.04);
-    --selection-bg: rgba(5, 150, 105, 0.2);
-    --selection-text: #0F172A;
-    --focus-ring: #059669;
-    --scrollbar-track: #F1F5F9;
-    --scrollbar-thumb: #CBD5E1;
-    --scrollbar-thumb-hover: #94A3B8;
+
+    --primary-accent: #721026;
+    --primary-accent-hover: #5C0B1D;
+    --primary-accent-light: #FDF2F4;
+    --accent-light: #FDF2F4;
+    --accent-border: #F9D2D9;
+
+    --text-primary: #1F2937;
+    --primary-text: #1F2937;
+    --text-secondary: #4B5563;
+    --secondary-text: #4B5563;
+    --muted-text: #6B7280;
+
+    --border-default: #DADCE0;
+    --border-subtle: #E2E8F0;
+    --border-hover: #BDC1C6;
+
+    --color-success: #137333;
+    --color-warning: #B06000;
+    --color-error: #C5221F;
+
+    --shadow-xs: 0 1px 2px 0 rgba(60, 64, 67, 0.1), 0 1px 3px 1px rgba(60, 64, 67, 0.05);
+    --shadow-card: 0 1px 3px 0 rgba(60, 64, 67, 0.12), 0 1px 2px -1px rgba(60, 64, 67, 0.08);
+    --shadow-elevated: 0 4px 6px -1px rgba(60, 64, 67, 0.12), 0 2px 4px -2px rgba(60, 64, 67, 0.08);
+
+    --selection-bg: #F9D2D9;
+    --selection-text: #5C0B1D;
+    --focus-ring: #721026;
+
+    --scrollbar-track: #F8F9FA;
+    --scrollbar-thumb: #DADCE0;
+    --scrollbar-thumb-hover: #BDC1C6;
   }
 
   .dark {
@@ -48,23 +60,35 @@
     --bg-elevated: #273449;
     --bg-well: #111827;
     --bg-input: #111827;
-    --primary-accent: #14B8A6;
-    --primary-accent-hover: #0D9488;
-    --accent-light: rgba(20, 184, 166, 0.12);
-    --accent-border: rgba(20, 184, 166, 0.35);
+
+    --primary-accent: #DE4B71;
+    --primary-accent-hover: #EC7A96;
+    --primary-accent-light: rgba(222, 75, 113, 0.15);
+    --accent-light: rgba(222, 75, 113, 0.15);
+    --accent-border: rgba(222, 75, 113, 0.35);
+
+    --text-primary: #F9FAFB;
     --primary-text: #F9FAFB;
+    --text-secondary: #CBD5E1;
     --secondary-text: #CBD5E1;
     --muted-text: #94A3B8;
+
     --border-default: #374151;
+    --border-subtle: #4B5563;
     --border-hover: #4B5563;
+
     --color-success: #34D399;
     --color-warning: #FBBF24;
     --color-error: #F87171;
+
+    --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
     --shadow-card: 0 4px 20px -2px rgba(0, 0, 0, 0.4), 0 2px 6px -1px rgba(0, 0, 0, 0.3);
     --shadow-elevated: 0 10px 30px -5px rgba(0, 0, 0, 0.5), 0 4px 10px -2px rgba(0, 0, 0, 0.3);
-    --selection-bg: rgba(20, 184, 166, 0.25);
+
+    --selection-bg: rgba(222, 75, 113, 0.25);
     --selection-text: #F9FAFB;
-    --focus-ring: #14B8A6;
+    --focus-ring: #DE4B71;
+
     --scrollbar-track: #111827;
     --scrollbar-thumb: #374151;
     --scrollbar-thumb-hover: #4B5563;
@@ -405,7 +429,8 @@ div[class*="from-cyan-400"][class*="to-blue-600"] {
   border: 1px solid rgba(52, 211, 153, 0.35);
 }
 
-.badge-cyan {
+.badge-cyan,
+.badge-maroon {
   background-color: var(--accent-light);
   color: var(--primary-accent);
   border: 1px solid var(--accent-border);
@@ -535,6 +560,82 @@ footer {
 .dark .bg-emerald-950\/80 .bg-black\/40 {
   background-color: rgba(0, 0, 0, 0.5) !important;
   color: #D1FAE5 !important;
+}
+
+/* ========================================================
+   GOOGLE-INSPIRED UI PRIMITIVES & HELPER CLASSES
+   ======================================================== */
+.google-card {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-default);
+  border-radius: 0.75rem;
+  box-shadow: var(--shadow-card);
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+.google-card:hover {
+  box-shadow: var(--shadow-elevated);
+}
+
+.google-button-primary {
+  background-color: var(--primary-accent);
+  color: #FFFFFF;
+  border: 1px solid transparent;
+  border-radius: 0.625rem;
+  box-shadow: var(--shadow-xs);
+  transition: all 0.15s ease-in-out;
+}
+.google-button-primary:hover {
+  background-color: var(--primary-accent-hover);
+}
+
+.google-button-secondary {
+  background-color: var(--bg-card);
+  color: var(--primary-text);
+  border: 1px solid var(--border-default);
+  border-radius: 0.625rem;
+  box-shadow: var(--shadow-xs);
+  transition: all 0.15s ease-in-out;
+}
+.google-button-secondary:hover {
+  background-color: var(--bg-secondary);
+  border-color: var(--border-hover);
+}
+
+.google-pill-active {
+  background-color: var(--primary-accent);
+  color: #FFFFFF;
+  border-radius: 9999px;
+  font-weight: 500;
+}
+.google-pill-subtle-active {
+  background-color: var(--primary-accent-light);
+  color: var(--primary-accent);
+  border: 1px solid var(--accent-border);
+  border-radius: 9999px;
+  font-weight: 600;
+}
+
+/* Accessibility: Forced Colors & High Contrast Mode */
+@media (forced-colors: active) {
+  :root, .dark {
+    --primary-accent: Highlight;
+    --primary-accent-hover: Highlight;
+    --primary-text: CanvasText;
+    --secondary-text: CanvasText;
+    --muted-text: GrayText;
+    --border-default: CanvasText;
+    --border-subtle: CanvasText;
+    --focus-ring: Highlight;
+  }
+}
+
+@media (prefers-contrast: more) {
+  :root {
+    --border-default: #71717A;
+    --border-subtle: #71717A;
+    --secondary-text: #1F2937;
+    --muted-text: #374151;
+  }
 }
 
 /* Accessible reduced-motion */

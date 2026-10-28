@@ -37,31 +37,31 @@ export class ErrorBoundary extends React.Component {
       return (
         <div
           role="alert"
-          className="m-4 p-6 bg-slate-800/90 border border-red-500/30 rounded-xl shadow-xl text-slate-100 max-w-2xl mx-auto"
+          className="m-4 p-6 bg-white border border-[#DADCE0] rounded-2xl shadow-md text-slate-800 max-w-2xl mx-auto"
         >
           <div className="flex items-center space-x-3 mb-3">
-            <span className="p-2 bg-red-500/20 text-red-400 rounded-lg text-xl" aria-hidden="true">
+            <span className="p-2 bg-red-50 text-red-600 border border-red-200 rounded-xl text-xl" aria-hidden="true">
               ⚠️
             </span>
-            <h2 className="text-xl font-bold text-red-300">
+            <h2 className="text-xl font-bold text-slate-900">
               {this.props.title || 'Component Error Occurred'}
             </h2>
           </div>
-          <p className="text-slate-300 text-sm mb-4">
-            {this.state.error?.message || 'An unexpected error occurred while rendering this section.'}
+          <p className="text-slate-600 text-sm mb-5 leading-relaxed">
+            Something went wrong while rendering this section: {this.state.error?.message || 'An unexpected error occurred.'}
           </p>
           <div className="flex items-center space-x-3">
             <button
               type="button"
               onClick={this.handleReset}
-              className="btn-touch px-4 py-2 bg-red-600 hover:bg-red-500 text-white font-medium rounded-lg shadow transition duration-150"
+              className="btn-touch px-4 py-2 bg-maroon-800 hover:bg-maroon-900 text-white font-medium rounded-xl shadow-xs transition duration-150"
             >
               Try Again
             </button>
             <button
               type="button"
               onClick={() => window.location.reload()}
-              className="btn-touch px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 font-medium rounded-lg transition duration-150"
+              className="btn-touch px-4 py-2 bg-white hover:bg-slate-50 border border-[#DADCE0] text-slate-700 font-medium rounded-xl shadow-xs transition duration-150"
             >
               Reload Page
             </button>

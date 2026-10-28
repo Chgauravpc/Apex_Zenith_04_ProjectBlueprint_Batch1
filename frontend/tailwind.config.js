@@ -8,6 +8,38 @@ export default {
   theme: {
     extend: {
       colors: {
+        maroon: {
+          50: '#FDF2F4',
+          100: '#FCE7EB',
+          200: '#F9D2D9',
+          300: '#F4ADC0',
+          400: '#EC7A96',
+          500: '#DE4B71',
+          600: '#C22650',
+          700: '#800020',
+          800: '#721026',
+          900: '#5C0B1D',
+          950: '#2A020B',
+        },
+        surface: {
+          DEFAULT: '#FFFFFF',
+          canvas: '#FFFFFF',
+          subtle: '#F8F9FA',
+          elevated: '#FFFFFF',
+          muted: '#F1F3F4',
+        },
+        border: {
+          DEFAULT: '#DADCE0',
+          subtle: '#E2E8F0',
+        },
+        google: {
+          border: '#DADCE0',
+          subtle: '#E2E8F0',
+          surface: '#F8F9FA',
+          card: '#FFFFFF',
+          text: '#1F2937',
+          muted: '#4B5563',
+        },
         industrial: {
           bg: '#0B1120',
           nav: '#101827',
@@ -59,6 +91,14 @@ export default {
           500: '#ef4444',
           600: '#dc2626',
         },
+      },
+      boxShadow: {
+        'xs': '0 1px 2px 0 rgba(60, 64, 67, 0.1), 0 1px 3px 1px rgba(60, 64, 67, 0.05)',
+        'sm': '0 1px 3px 0 rgba(60, 64, 67, 0.12), 0 1px 2px -1px rgba(60, 64, 67, 0.08)',
+        'md': '0 4px 6px -1px rgba(60, 64, 67, 0.12), 0 2px 4px -2px rgba(60, 64, 67, 0.08)',
+        'lg': '0 10px 15px -3px rgba(60, 64, 67, 0.12), 0 4px 6px -4px rgba(60, 64, 67, 0.08)',
+        'card': '0 1px 3px 0 rgba(60, 64, 67, 0.1), 0 1px 2px -1px rgba(60, 64, 67, 0.06)',
+        'card-hover': '0 4px 12px 0 rgba(60, 64, 67, 0.15), 0 1px 3px 0 rgba(60, 64, 67, 0.08)',
       },
       fontFamily: {
         sans: [
