@@ -3,7 +3,9 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import ComponentPanel from './ComponentPanel';
 import PinForm from './PinForm';
+import GuardianDemoBanner from './GuardianDemoBanner';
 import { VMC_COMPONENTS_DATA } from '../../api/map3d';
+import { GUARDIAN_DEMO_INCIDENT } from '../../data/guardianDemoIncident';
 
 describe('3D Machine Knowledge Map Components (T21)', () => {
   const spindleComponent = VMC_COMPONENTS_DATA.find((c) => c.mesh_name === 'spindle');
@@ -78,6 +80,75 @@ describe('3D Machine Knowledge Map Components (T21)', () => {
     expect(resetBtns.length).toBeGreaterThanOrEqual(1);
     fireEvent.click(resetBtns[0]);
     expect(handleReset).toHaveBeenCalled();
+  });
+
+  it('renders active Note Guardian demo incident in ComponentPanel with evidence and Ramesh advice', () => {
+    render(
+      <BrowserRouter>
+        <ComponentPanel
+          component={spindleComponent}
+          activeDemoIncident={GUARDIAN_DEMO_INCIDENT}
+        />
+      </BrowserRouter>
+    );
+
+    // Clearly labeled demo alert and severity
+    expect(screen.getByText(/\[DEMO DATA · SIMULATED INCIDENT\]/i)).toBeDefined();
+    expect(screen.getByText(/STOP — CRITICAL CHATTER HARMONIC/i)).toBeDefined();
+    expect(screen.getByText(/Abnormal 427 Hz Chatter on Spindle during SS304 Roughing/i)).toBeDefined();
+
+    // Telemetry
+    expect(screen.getAllByText(/427 Hz/i).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText(/4.8 mm\/s/i)).toBeDefined();
+
+    // Cited Historical evidence
+    expect(screen.getByText(/Cited Historical Evidence:/i)).toBeDefined();
+    expect(screen.getByText(/98% match on frequency & material/i)).toBeDefined();
+
+    // Ramesh's expert guidance
+    expect(screen.getByText(/Expert Guidance \(Ramesh \(Old Employee\)\)/i)).toBeDefined();
+    expect(screen.getByText(/Shift spindle RPM down from 8,200 RPM to stable sweet-spot of 7,200 RPM/i)).toBeDefined();
+    expect(screen.getByText(/8,000 to 8,400 RPM is the death zone for SS304/i)).toBeDefined();
+
+    // Demo disclaimer
+    expect(screen.getByText(/No physical CNC machine has been diagnosed/i)).toBeDefined();
+  });
+
+  it('handles Note Guardian warning demo banner interactions', () => {
+    const handleSelect = vi.fn();
+    const handleDismiss = vi.fn();
+
+    // Initial inactive state
+    const { rerender } = render(
+      <GuardianDemoBanner
+        isActive={false}
+        onSelectIncident={handleSelect}
+        onDismissIncident={handleDismiss}
+      />
+    );
+
+    expect(screen.getByText(/\[DEMO DATA · SIMULATED INCIDENT\]/i)).toBeDefined();
+    expect(screen.getByText(/Abnormal 427 Hz Chatter on Spindle during SS304 Roughing/i)).toBeDefined();
+
+    // Click inspect in 3D
+    const inspectBtn = screen.getByRole('button', { name: /Inspect Incident in 3D/i });
+    fireEvent.click(inspectBtn);
+    expect(handleSelect).toHaveBeenCalledWith(GUARDIAN_DEMO_INCIDENT);
+
+    // Active state
+    rerender(
+      <GuardianDemoBanner
+        isActive={true}
+        onSelectIncident={handleSelect}
+        onDismissIncident={handleDismiss}
+      />
+    );
+
+    // Shows clear demo button
+    const clearBtn = screen.getByRole('button', { name: /Clear Demo/i });
+    expect(clearBtn).toBeDefined();
+    fireEvent.click(clearBtn);
+    expect(handleDismiss).toHaveBeenCalled();
   });
 
   it('toggles troubleshooting guidance items accordion for a component', () => {
