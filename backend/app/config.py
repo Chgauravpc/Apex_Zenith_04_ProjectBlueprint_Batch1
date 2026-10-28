@@ -5,7 +5,7 @@ instance through `get_settings()` (or `Depends(get_settings)` in routers).
 """
 
 from functools import lru_cache
-from typing import Optional
+from typing import Literal, Optional
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -32,8 +32,12 @@ class Settings(BaseSettings):
 
     database_url: str = "sqlite:///./blueprint.db"
     storage_dir: str = "storage"
-    # The local embedding model needs ~500 MB RAM; turn off on small hosts (search is FTS-only).
-    enable_embeddings: bool = True
+    # Where card vectors come from: "local" model (needs torch, ~500 MB RAM), "cloud"
+    # (Hugging Face Inference API, for small hosts) or "off" (keyword search only).
+    embedding_provider: Literal["local", "cloud", "off"] = "local"
+    hf_api_token: Optional[str] = None
+    # Must give 384-dim vectors: stored vectors and new ones have to come from the same model.
+    embedding_model: str = "intfloat/multilingual-e5-small"
     frontend_origin: str = "http://localhost:5173"
     erp_base_url: str = "http://localhost:8001"
 

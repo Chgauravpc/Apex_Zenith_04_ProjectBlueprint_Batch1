@@ -285,11 +285,111 @@ def test_embeddings_switched_off_never_loads_the_model(monkeypatch) -> None:
     from app.config import get_settings
     from app.services import embeddings
 
-    monkeypatch.setattr(get_settings(), "enable_embeddings", False)
+    monkeypatch.setattr(get_settings(), "embedding_provider", "off")
     monkeypatch.setattr(embeddings, "_model", None)
     monkeypatch.setattr(embeddings, "_load_failed", False)
     assert embeddings.try_embed(["chatter"]) is None
     assert embeddings._load_failed is False  # flag is checked before any import or download
+
+
+# --- cloud embeddings (Hugging Face API, mocked HTTP) ----------------------------------------
+
+
+@pytest.fixture()
+def hf(monkeypatch):
+    """Cloud provider pointed at a mock transport; `hf.replies` are served in order."""
+    import json
+
+    import httpx
+
+    from app.config import get_settings
+    from app.services import embeddings
+
+    class HF:
+        replies: list = []
+        requests: list = []
+        waits: list = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        HF.requests.append(request)
+        reply = HF.replies.pop(0)
+        if isinstance(reply, Exception):
+            raise reply
+        if isinstance(reply, int):
+            return httpx.Response(reply, json={"error": "nope"})
+        if reply == "echo":  # one vector per input, length 2 before normalising
+            n = len(json.loads(request.content)["inputs"])
+            return httpx.Response(200, json=[[2.0] + [0.0] * 383] * n)
+        return httpx.Response(200, json=reply)
+
+    HF.replies, HF.requests, HF.waits = [], [], []
+    monkeypatch.setattr(get_settings(), "embedding_provider", "cloud")
+    monkeypatch.setattr(get_settings(), "hf_api_token", "hf_test_token")
+    monkeypatch.setattr(embeddings, "_cloud_down_until", 0.0)
+    monkeypatch.setattr(embeddings, "_client", httpx.Client(transport=httpx.MockTransport(handler)))
+    monkeypatch.setattr(embeddings.time, "sleep", HF.waits.append)
+    return HF
+
+
+def test_cloud_embeddings_batch_prefix_and_normalise(hf) -> None:
+    import json
+
+    from app.services import embeddings
+
+    hf.replies = ["echo", "echo"]
+    vectors = embeddings.try_embed([f"chatter {i}" for i in range(40)], kind="query")
+
+    assert vectors.shape == (40, 384) and vectors[0][0] == pytest.approx(1.0)
+    sizes = [len(json.loads(r.content)["inputs"]) for r in hf.requests]
+    assert sizes == [32, 8]
+    first = hf.requests[0]
+    assert json.loads(first.content)["inputs"][0] == "query: chatter 0"
+    assert first.headers["authorization"] == "Bearer hf_test_token"
+    assert first.url.path.endswith("/intfloat/multilingual-e5-small/pipeline/feature-extraction")
+
+
+def test_cloud_embeddings_retry_rate_limit_then_succeed(hf) -> None:
+    from app.services import embeddings
+
+    hf.replies = [429, "echo"]
+    assert embeddings.try_embed(["chatter"]).shape == (1, 384)
+    assert len(hf.requests) == 2 and len(hf.waits) == 1
+
+
+def test_cloud_outage_gives_up_then_cools_down(hf) -> None:
+    from app.services import embeddings
+
+    hf.replies = [503, 503, 503]
+    assert embeddings.try_embed(["chatter"]) is None
+    assert len(hf.requests) == 3  # first try + 2 retries
+    assert embeddings.try_embed(["chatter"]) is None
+    assert len(hf.requests) == 3  # cooling down: no new request, search goes keyword-only
+
+
+def test_cloud_timeout_is_retried(hf) -> None:
+    import httpx
+
+    from app.services import embeddings
+
+    hf.replies = [httpx.ReadTimeout("slow"), "echo"]
+    assert embeddings.try_embed(["chatter"]).shape == (1, 384)
+
+
+@pytest.mark.parametrize("reply", [401, [[1.0] * 768], [[[1.0] * 384, [1.0] * 384]], [[0.0] * 384]])
+def test_cloud_bad_token_or_wrong_vectors_are_not_retried(hf, reply) -> None:
+    from app.services import embeddings
+
+    hf.replies = [reply]
+    assert embeddings.try_embed(["chatter"]) is None
+    assert len(hf.requests) == 1
+
+
+def test_cloud_without_token_never_calls_the_api(hf, monkeypatch) -> None:
+    from app.config import get_settings
+    from app.services import embeddings
+
+    monkeypatch.setattr(get_settings(), "hf_api_token", None)
+    assert embeddings.try_embed(["chatter"]) is None and hf.requests == []
 
 
 # --- capture endpoints -----------------------------------------------------------------------

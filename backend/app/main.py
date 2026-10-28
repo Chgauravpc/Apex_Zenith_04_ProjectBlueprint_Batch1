@@ -31,7 +31,7 @@ FRONTEND_DIST = Path(__file__).resolve().parents[2] / "frontend" / "dist"
 async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
     """Create tables and the FTS index once at startup, then fill missing card vectors."""
     init_db()
-    if get_settings().enable_embeddings:
+    if get_settings().embedding_provider != "off":
         worker = threading.Thread(target=_backfill_embeddings, name="embedding-backfill")
         worker.daemon = True
         worker.start()
