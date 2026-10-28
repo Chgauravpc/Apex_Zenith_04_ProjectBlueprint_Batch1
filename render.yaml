@@ -1,0 +1,42 @@
+# Render Blueprint: the FastAPI backend on the free plan (see DEPLOYMENT.md).
+# Values marked `sync: false` are secrets: Render asks for them in the dashboard on the first
+# deploy and never reads them from this file. Keep Supabase in the same region (Singapore).
+services:
+  - type: web
+    name: blueprint-api
+    runtime: python
+    plan: free
+    region: singapore
+    rootDir: backend
+    # requirements-base.txt has no torch: embeddings come from Cloudflare (512 MB RAM here).
+    buildCommand: pip install -r requirements-base.txt
+    # One worker keeps memory low; the backfill and video jobs run in background threads.
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT --workers 1
+    healthCheckPath: /api/health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: EMBEDDING_PROVIDER
+        value: cloudflare
+      - key: STORAGE_BACKEND
+        value: supabase
+      - key: STORAGE_DIR
+        value: storage # the same relative path the seed stored in the database
+      - key: DATABASE_URL # Supabase pooler string (the direct one is IPv6-only)
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      - key: OPENROUTER_API_KEY
+        sync: false
+      - key: CF_ACCOUNT_ID
+        sync: false
+      - key: CF_API_TOKEN
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_KEY
+        sync: false
+      - key: FRONTEND_ORIGIN # e.g. https://blueprint.vercel.app (exact, no trailing slash)
+        sync: false
+      - key: PUBLIC_BASE_URL # this service's own URL, e.g. https://blueprint-api.onrender.com
+        sync: false
