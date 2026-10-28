@@ -8,7 +8,7 @@ those names to machine/component IDs, indexes the cards and stores them.
 import logging
 from typing import Dict, Iterable, List, Optional
 
-from sqlalchemy import select
+from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
 from app.database import fts_index
@@ -187,7 +187,7 @@ def save_cards(db: Session, cards: List[ExtractedCard], source_doc_id: int) -> L
 
 
 def backfill_embeddings(db: Session, batch_size: int = BACKFILL_BATCH) -> int:
-    """Embed cards that were saved without a vector (model off or provider down at the time).
+    """Embed cards with no vector (provider down when saved) or one from another model.
 
     Walks the cards by id in batches and commits each batch, so it is safe to stop and run
     again; a second run finds nothing to do. Stops at the first batch the provider cannot
@@ -203,7 +203,13 @@ def backfill_embeddings(db: Session, batch_size: int = BACKFILL_BATCH) -> int:
         rows = (
             db.execute(
                 select(KnowledgeCard)
-                .where(KnowledgeCard.embedding.is_(None), KnowledgeCard.id > after)
+                .where(
+                    or_(
+                        KnowledgeCard.embedding.is_(None),
+                        func.length(KnowledgeCard.embedding) != embeddings.dim() * 4,
+                    ),
+                    KnowledgeCard.id > after,
+                )
                 .order_by(KnowledgeCard.id)
                 .limit(batch_size)
             )

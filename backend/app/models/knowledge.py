@@ -52,7 +52,7 @@ class KnowledgeCard(IdMixin, Base):
     source_doc_id: Mapped[Optional[int]] = fk("documents.id")
     unofficial: Mapped[bool] = mapped_column(Boolean, default=False)  # proven but not in the SOP
     score: Mapped[float] = mapped_column(Float, default=0.0)  # learning-loop feedback
-    # float32 vector from embeddings.embed(); 384 dims = 1.5 KB. Filled on write.
+    # float32 vector from embeddings.embed() (384 dims local, 1024 Cloudflare). Filled on write.
     embedding: Mapped[Optional[bytes]] = mapped_column(LargeBinary)
 
 

@@ -76,6 +76,18 @@ def test_vector_search_finds_meaning_without_shared_words(db, story, monkeypatch
     assert hits[0].record_id == target.id and mode == "semantic"
 
 
+def test_search_ignores_vectors_from_another_model(db, story, monkeypatch) -> None:
+    vmc = story["machines"]["VMC-3"]
+    for c in db.execute(select(KnowledgeCard).filter_by(machine_id=vmc.id)).scalars():
+        c.embedding = embeddings.to_bytes(np.ones(1024, np.float32))  # bge-m3 size
+    db.commit()
+    query_vec = np.zeros((1, 384), np.float32)
+    monkeypatch.setattr(embeddings, "try_embed", lambda texts, kind="passage": query_vec)
+
+    hits, mode = search_with_mode(db, "chatter on SS304", vmc.id, None)
+    assert hits and mode == "keyword"  # no stored vector matches the local model yet
+
+
 def test_search_says_keyword_when_embeddings_are_down(db, story) -> None:
     # story: try_embed returns None, as with EMBEDDING_PROVIDER=off or Hugging Face down
     hits, mode = search_with_mode(db, "chatter on SS304", _vmc(story).id, None)

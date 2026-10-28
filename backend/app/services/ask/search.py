@@ -15,7 +15,7 @@ from pathlib import Path
 from typing import Dict, Iterable, List, Literal, Optional, Tuple
 
 import numpy as np
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.config import get_settings
@@ -46,7 +46,8 @@ def _expanded(query: str) -> str:
 
 def _vector_ranking(db: Session, query: str, machine_id: Optional[int]) -> Optional[List[Ref]]:
     """Cards ranked by cosine similarity; None when there is nothing to compare with."""
-    conds = [KnowledgeCard.embedding.is_not(None)]
+    # Only vectors from the current model: others are stale until the backfill replaces them.
+    conds = [func.length(KnowledgeCard.embedding) == embeddings.dim() * 4]
     if machine_id is not None:
         conds.append(KnowledgeCard.machine_id == machine_id)
     rows = db.execute(
@@ -60,7 +61,7 @@ def _vector_ranking(db: Session, query: str, machine_id: Optional[int]) -> Optio
     qvec = embeddings.try_embed([query], kind="query")
     if qvec is None:
         return None
-    matrix = np.vstack([embeddings.from_bytes(blob) for _, blob in rows])  # (n, 384)
+    matrix = np.vstack([embeddings.from_bytes(blob) for _, blob in rows])  # (n, dim)
     scores = matrix @ qvec[0]  # vectors are unit length, so this is cosine similarity
     top = np.argsort(-scores)[:CANDIDATES]
     return [("card", int(rows[i][0])) for i in top]
