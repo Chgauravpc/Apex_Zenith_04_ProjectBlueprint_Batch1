@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import MachineOptions from '../common/MachineOptions';
 import useRecorder from '../../hooks/useRecorder';
 import { askChatter } from '../../api/ask';
+import { toWav } from '../../utils/audio';
 import { formatBytes } from '../../utils/format';
 
 export default function ChatterDoctor() {
@@ -42,8 +43,10 @@ export default function ChatterDoctor() {
     setError(null);
 
     try {
+      // A recorded clip is WebM/MP4: convert it to a real WAV; an uploaded file goes as-is.
+      const upload = audioBlob ? await toWav(audioBlob) : file;
       const formData = new FormData();
-      formData.append('file', audioToUpload, 'chatter_sample.wav');
+      formData.append('file', upload, audioBlob ? 'chatter_sample.wav' : file.name);
       formData.append('machine_id', machineId.toString());
       formData.append('teeth', teeth.toString());
       formData.append('current_rpm', currentRpm.toString());
@@ -216,14 +219,19 @@ export default function ChatterDoctor() {
                   Acoustic Analysis
                 </span>
                 <div className="text-lg font-bold text-slate-900">
-                  Dominant Frequency: {Math.round(result.fc || 427)} Hz
+                  Dominant Frequency: {Math.round(result.fc)} Hz
                 </div>
               </div>
 
               <div className="text-xs text-slate-600">
-                Current Speed: <span className="font-mono text-rose-600 font-bold">{currentRpm} RPM (Unstable)</span>
+                Current Speed:{' '}
+                <span className={`font-mono font-bold ${result.clear_chatter ? 'text-rose-600' : 'text-slate-700'}`}>
+                  {currentRpm} RPM {result.clear_chatter ? '(chatter heard)' : '(no clear chatter)'}
+                </span>
               </div>
             </div>
+
+            <p className="text-xs text-slate-300 leading-relaxed">{result.explanation}</p>
 
             {/* Candidate Stable RPMs */}
             <div>
@@ -231,16 +239,25 @@ export default function ChatterDoctor() {
                 🎯 Recommended Stable RPM Lobes (Machining Sweet Spots):
               </span>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                {(result.candidate_rpms || [12810, 6405, 4270, 3202]).map((rpmVal, idx) => (
+                {result.candidate_rpms.length === 0 && (
+                  <p className="col-span-full text-xs text-slate-400">
+                    No stable speed fits this machine's RPM range ({result.rpm_min}–{result.rpm_max}).
+                  </p>
+                )}
+                {result.candidate_rpms.map((rpmVal, idx) => (
                   <div
-                    key={idx}
-                    className="bg-slate-50 border border-slate-200/90 rounded-xl p-3 text-center shadow-xs"
+                    key={rpmVal}
+                    className={`bg-slate-50 border rounded-xl p-3 text-center shadow-xs ${
+                      rpmVal === result.nearest_rpm ? 'border-emerald-500' : 'border-slate-200/90'
+                    }`}
                   >
                     <span className="text-[10px] text-slate-500 block">Lobe #{idx + 1}</span>
                     <span className="text-base font-extrabold text-maroon-800 font-mono">
                       {rpmVal}
                     </span>
-                    <span className="text-[10px] text-slate-500 block">RPM</span>
+                    <span className="text-[10px] text-slate-500 block">
+                      {rpmVal === result.nearest_rpm ? 'RPM · closest to now' : 'RPM'}
+                    </span>
                   </div>
                 ))}
               </div>
@@ -251,7 +268,10 @@ export default function ChatterDoctor() {
               <div className="bg-amber-50/70 border border-amber-200/90 rounded-xl p-3.5 space-y-1 text-xs text-amber-950">
                 <div className="font-bold text-amber-900 flex items-center space-x-1.5">
                   <span>💡</span>
-                  <span>Ramesh’s Shop-Floor Rule for Chatter on VMC-3:</span>
+                  <span>
+                    {result.expert_card.author ? `${result.expert_card.author}’s` : 'Recorded'} fix:{' '}
+                    {result.expert_card.title}
+                  </span>
                 </div>
                 <p className="text-slate-800">{result.expert_card.action}</p>
                 {result.expert_card.why && (
