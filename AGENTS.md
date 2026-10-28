@@ -1,7 +1,7 @@
 # AGENTS.md — instructions for AI coding assistants (Gemini, Claude, GPT, Copilot, …)
 
 You are building **Project Blueprint**: knowledge transfer from old employees to new employees in CNC/VMC machining.
-Tech stack is fixed: **Python 3.9+ / FastAPI backend** and **React 18 + Vite frontend**. AI providers: **Groq + OpenRouter free tiers only**, plus the **Hugging Face free Inference API for embeddings only** (`EMBEDDING_PROVIDER=cloud`, same `intfloat/multilingual-e5-small` model as the local one).
+Tech stack is fixed: **Python 3.9+ / FastAPI backend** and **React 18 + Vite frontend**. AI providers: **Groq + OpenRouter free tiers only**, plus **Cloudflare Workers AI (free plan) for embeddings only** (`EMBEDDING_PROVIDER=cloudflare`, model `@cf/baai/bge-m3`).
 
 ## Your scope — AI work only
 3D work (the 3D Machine Knowledge Map: T12 and T21, `services/map3d/`, `routers/map3d.py`, `pages/MachineMap.jsx`, `components/map3d/`) is owned by a **human teammate**. Skip tasks tagged **[3D · teammate]** in `TASKS.md` unless the user explicitly asks you to do one. Never import 3D code from AI-track code; treat `component_id` as optional everywhere.
