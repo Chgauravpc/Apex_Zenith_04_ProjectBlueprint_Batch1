@@ -64,12 +64,26 @@ ANALYTICS_SYSTEM = (
 )
 
 
+# What each table means, so the model counts facts where they are recorded (e.g. breakdowns are
+# maintenance rows, not timeline events, which only mirror them).
+TABLE_NOTES = {
+    "maintenance": "breakdowns and services; kind = 'breakdown' or 'preventive'; date: done_on",
+    "qc_rejects": "rejected parts; count parts with SUM(quantity); defect is the reason",
+    "warnings": "Note Guardian warnings; severity = 'info', 'caution' or 'stop'",
+    "anomalies": "sensor readings far from normal; ts is the reading time",
+    "events": "machine timeline that mirrors other tables; never count breakdowns or rejects here",
+    "knowledge_cards": "know-how cards; verified when verified_by_id is not null",
+    "queries": "questions asked to the assistant; answered is true or false",
+}
+
+
 def _schema_text() -> str:
     lines = []
     for name in ALLOWED_TABLES:
         table = Base.metadata.tables[name]
         cols = ", ".join(c.name for c in table.columns if c.name != "embedding")
-        lines.append(f"- {name}({cols})")
+        note = f"  -- {TABLE_NOTES[name]}" if name in TABLE_NOTES else ""
+        lines.append(f"- {name}({cols}){note}")
     return "\n".join(lines)
 
 
