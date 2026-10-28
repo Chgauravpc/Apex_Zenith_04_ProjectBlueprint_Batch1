@@ -1,3 +1,4 @@
 # Local install: the API plus the multilingual embedding model (pulls in torch).
 -r requirements-base.txt
 sentence-transformers==5.1.0
+huggingface-hub>=0.34.0,<1.0  # transformers 4.x refuses hub 1.x at import time

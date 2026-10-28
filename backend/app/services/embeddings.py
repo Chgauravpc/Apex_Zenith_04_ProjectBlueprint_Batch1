@@ -6,6 +6,7 @@ download), `try_embed` returns None and search falls back to FTS only (PLAN.md).
 """
 
 import logging
+import os
 import threading
 from typing import Any, List, Literal, Optional
 
@@ -36,6 +37,8 @@ def _get_model() -> Any:
     with _lock:
         if _model is None and not _load_failed:
             try:
+                # We only use torch; a stray TensorFlow install can break the transformers import.
+                os.environ.setdefault("USE_TF", "0")
                 from sentence_transformers import SentenceTransformer
 
                 _model = SentenceTransformer(MODEL_NAME, device="cpu")
