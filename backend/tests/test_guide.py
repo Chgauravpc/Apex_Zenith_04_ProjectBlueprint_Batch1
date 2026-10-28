@@ -245,3 +245,30 @@ def test_briefing_path_counts_real_runs(client, story) -> None:
     stages = {s["stage"]: s for s in client.get(f"/api/guide/briefing/{priya.id}").json()["path"]}
     assert stages["do"]["done"] == 1
     assert client.get("/api/guide/briefing/999").status_code == 404
+
+
+def test_checklist_shows_every_step_when_none_is_critical(client, db, story) -> None:
+    for step in db.execute(
+        select(ProcedureStep).filter_by(procedure_id=story["proc"].id)
+    ).scalars():
+        step.critical = False
+    row = db.execute(
+        select(SkillMatrix).filter_by(
+            employee_id=story["people"]["Priya"].id, operation_id=story["face"].id
+        )
+    ).scalar_one()
+    row.level = 3
+    db.commit()
+    run = _start(client, story)
+    assert run["view"] == "checklist" and len(run["procedure"]["steps"]) == 6
+
+
+def test_stopped_run_goes_on_the_machine_timeline(client, db, story) -> None:
+    from app.models.ops import Event
+
+    run = _start(client, story)
+    client.post(
+        f"/api/guide/runs/{run['run_id']}/steps", json={"step_no": 4, "values": {"feed": 0.3}}
+    )
+    event = db.execute(select(Event).filter_by(kind="run", ref_id=run["run_id"])).scalar_one()
+    assert event.machine_id == story["vmc"].id and event.summary.startswith("STOP at step 4")

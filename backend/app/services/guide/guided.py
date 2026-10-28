@@ -17,7 +17,7 @@ from app.errors import NotFound, ValidationFailed
 from app.models.erp import Employee, Part, WorkOrder
 from app.models.guardian import ParamLimit
 from app.models.guide import GuidedRun, Procedure, ProcedureStep, RunStep
-from app.models.ops import Notification
+from app.models.ops import Event, Notification
 from app.models.transfer import KnowledgeBuddy
 from app.schemas.guardian import Evidence, Finding, ParamLimitDTO
 from app.schemas.guide import SKILL_LABELS, GuidedRunOut, RunStartIn, RunStepIn, RunStepOut, StepOut
@@ -32,9 +32,14 @@ def view_for(level: int) -> str:
     return "full" if level <= 1 else "condensed" if level == 2 else "checklist"
 
 
+def _checklist(steps: List[StepOut]) -> List[StepOut]:
+    """Critical steps only; every step when none is marked critical (else nothing to do)."""
+    return [s for s in steps if s.critical] or list(steps)
+
+
 def _visible(steps: List[StepOut], view: str) -> List[StepOut]:
     if view == "checklist":
-        return [s for s in steps if s.critical]
+        return _checklist(steps)
     if view == "condensed":
         return [
             s.model_copy(
@@ -216,7 +221,7 @@ def record_step(db: Session, run_id: int, step_in: RunStepIn) -> RunStepOut:
             )
 
     view = view_for(run.skill_level)
-    order = [s.step_no for s in steps if view != "checklist" or s.critical]
+    order = [s.step_no for s in (_checklist(steps) if view == "checklist" else steps)]
     db.flush()
     done = set(
         db.execute(
@@ -228,6 +233,22 @@ def record_step(db: Session, run_id: int, step_in: RunStepIn) -> RunStepOut:
     remaining = [n for n in order if n not in done]
     if not remaining:
         run.status, run.finished_at = "done", utcnow()
+    if stop or not remaining:
+        who = db.get(Employee, run.employee_id)
+        name = who.name if who else "operator"
+        db.add(
+            Event(
+                machine_id=proc.machine_id,
+                kind="run",
+                ref_type="guided_run",
+                ref_id=run.id,
+                summary=(
+                    f"STOP at step {step.step_no} ({name}): {findings[0].message}"
+                    if stop
+                    else f"{name} finished '{proc.title}'"
+                ),
+            )
+        )
     db.commit()
     later = [n for n in remaining if n > step.step_no]
     return RunStepOut(
