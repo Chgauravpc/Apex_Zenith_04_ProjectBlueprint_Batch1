@@ -195,3 +195,10 @@ def test_half_configured_supabase_fails_at_startup(monkeypatch) -> None:
     monkeypatch.setattr(get_settings(), "supabase_url", None)
     with pytest.raises(ProviderUnavailable):
         storage.check_config()
+
+
+def test_supabase_url_with_rest_path_still_reaches_storage(supa, monkeypatch) -> None:
+    monkeypatch.setattr(get_settings(), "supabase_url", "https://proj.supabase.co/rest/v1/")
+    supa.replies = [{"Key": "ok"}]
+    files.save_upload(_upload(b"RIFF", "a.wav", "audio/wav"), "audio")
+    assert supa.requests[0].url.path.startswith("/storage/v1/object/media/audio/")

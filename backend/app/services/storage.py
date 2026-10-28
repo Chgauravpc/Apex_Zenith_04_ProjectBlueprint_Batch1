@@ -13,6 +13,7 @@ import threading
 import time
 from pathlib import Path
 from typing import Dict, Optional, Tuple
+from urllib.parse import urlsplit
 
 import httpx
 
@@ -81,7 +82,9 @@ def _supabase() -> Tuple[str, str, str]:
     s = get_settings()
     if not s.supabase_url or not s.supabase_service_key:
         raise ProviderUnavailable("SUPABASE_URL or SUPABASE_SERVICE_KEY is not set")
-    return s.supabase_url.rstrip("/"), s.supabase_service_key, s.supabase_bucket
+    # Only scheme + host: the dashboard also shows ".../rest/v1/", which is easy to paste.
+    parts = urlsplit(s.supabase_url)
+    return f"{parts.scheme}://{parts.netloc}", s.supabase_service_key, s.supabase_bucket
 
 
 def check_config() -> None:
