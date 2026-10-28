@@ -88,7 +88,7 @@ export default function MachineMap() {
   const handleSavePin = async (pinData) => {
     const res = await createPin(pinData.component_id, pinData);
     if (res) {
-      // Append new note to the component's expert notes list in local state
+      // Append new note to the component's expert notes & tips list in local state
       setComponents((prev) =>
         prev.map((c) => {
           if (c.id === pinData.component_id || c.mesh_name === pinData.mesh_name) {
@@ -102,11 +102,12 @@ export default function MachineMap() {
                 text: pinData.text,
                 verified: pinData.verified,
               },
-              ...(c.expert_notes || []),
+              ...(c.expert_tips || c.expert_notes || []),
             ];
             return {
               ...c,
               expert_notes: updatedNotes,
+              expert_tips: updatedNotes,
             };
           }
           return c;
@@ -222,6 +223,17 @@ export default function MachineMap() {
                     <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
                   )}
                   <span>{c.display_name}</span>
+                  <span
+                    className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${
+                      isSelected
+                        ? 'bg-slate-950/30 text-slate-950 font-bold'
+                        : 'bg-slate-900 text-cyan-400 border border-slate-700/60'
+                    }`}
+                  >
+                    {(c.expert_tips || c.expert_notes || []).length +
+                      (c.past_incidents || []).length +
+                      (c.troubleshooting || []).length}
+                  </span>
                 </button>
               );
             })}
