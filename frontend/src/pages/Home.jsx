@@ -1,9 +1,88 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { getReviewQueue } from '../api/capture';
+import { getBriefing } from '../api/guide';
+import { getHandoverPlan, getMetrics, getRisk, getRoutedQuestions } from '../api/transfer';
+import useApi from '../hooks/useApi';
 import { useAuthStore } from '../store/useAuthStore';
+
+// Each role's cards come from its own endpoints; a failed call only blanks its card.
+const LOADERS = {
+  new_employee: (user, signal) => ({ briefing: getBriefing(user.id, signal) }),
+  old_employee: (user, signal) => ({
+    plan: getHandoverPlan(user.id, signal),
+    review: getReviewQueue({ limit: 1 }, signal),
+    routed: getRoutedQuestions({ employee_id: user.id }, signal),
+  }),
+  supervisor: (user, signal) => ({ risk: getRisk(signal), metrics: getMetrics(signal) }),
+};
+
+async function loadHome(user, signal) {
+  const calls = (LOADERS[user.role] || (() => ({})))(user, signal);
+  const keys = Object.keys(calls);
+  const settled = await Promise.allSettled(keys.map((k) => calls[k]));
+  return Object.fromEntries(keys.map((k, i) => [k, settled[i].value || null]));
+}
+
+const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
 
 export default function Home() {
   const { currentUser } = useAuthStore();
+  const home = useApi((signal) => loadHome(currentUser, signal), [currentUser.id]);
+  const d = home.data || {};
+  const loadingText = home.loading ? 'Loading…' : null;
+
+  const briefing = d.briefing;
+  const briefingText =
+    loadingText ||
+    (briefing
+      ? `${briefing.jobs.length ? `${plural(briefing.jobs.length, 'job')} today on ` : 'Your machines: '}` +
+        `${briefing.machines.join(', ') || 'none assigned'}. ` +
+        `${plural(briefing.open_warnings.length, 'open warning')} and ` +
+        `${plural(briefing.known_issues.length, 'recent reject')} to know before you start.`
+      : 'Briefing not available right now.');
+  const guardText =
+    loadingText ||
+    (briefing
+      ? briefing.open_warnings.length
+        ? `${plural(briefing.open_warnings.length, 'open warning')}: ${briefing.open_warnings[0]}`
+        : 'No open warnings on your machines. Every note you save is checked against history.'
+      : 'Note Guardian checks every note you save against machine history.');
+
+  const plan = d.plan;
+  const tasksLeft = plan ? plan.tasks.filter((task) => task.status !== 'done').length : 0;
+  const planText =
+    loadingText ||
+    (plan
+      ? `Exit in ${plan.days_left} days: ${plural(tasksLeft, 'task')} left, handover ${plan.progress}% done.`
+      : 'No handover plan: you are not leaving soon.');
+  const reviewText =
+    loadingText ||
+    (d.review
+      ? `${plural(d.review.total, 'captured card')} await your review and sign-off.`
+      : 'Review queue not available right now.');
+  const firstRouted = d.routed && d.routed.items[0];
+  const routedText =
+    loadingText ||
+    (firstRouted
+      ? `${firstRouted.asked_by || 'A new employee'} asked: “${firstRouted.question}”`
+      : 'No questions waiting for you.');
+
+  const critical = (d.risk || []).filter((c) => c.component_id !== null && c.status === 'critical');
+  const experts = [...new Set(critical.map((c) => c.expert).filter(Boolean))];
+  const riskText =
+    loadingText ||
+    (d.risk
+      ? critical.length
+        ? `${plural(critical.length, 'machine part')} depend on ${experts.join(', ')} alone.`
+        : 'No machine part depends on one leaving person.'
+      : 'Risk data not available right now.');
+  const metricsText =
+    loadingText ||
+    (d.metrics
+      ? `Coverage ${d.metrics.coverage}% • ${d.metrics.guardian_stops} Guardian stops • ` +
+        `${d.metrics.questions_answered}/${d.metrics.questions_routed} routed questions answered.`
+      : 'Metrics not available right now.');
 
   return (
     <div className="space-y-6">
@@ -51,7 +130,7 @@ export default function Home() {
               <span className="text-2xl" aria-hidden="true">📋</span>
               <h2 className="text-lg font-bold text-white mt-2">Daily Briefing</h2>
               <p className="text-slate-400 text-xs mt-1">
-                3 critical tips recorded by Ramesh for VMC-3 operation today.
+                {briefingText}
               </p>
               <Link
                 to="/guide"
@@ -64,7 +143,7 @@ export default function Home() {
               <span className="text-2xl" aria-hidden="true">🛡️</span>
               <h2 className="text-lg font-bold text-white mt-2">Active Guardrails</h2>
               <p className="text-slate-400 text-xs mt-1">
-                Note Guardian is monitoring spindle feed limits and chatter precursors.
+                {guardText}
               </p>
               <Link
                 to="/capture"
@@ -95,7 +174,7 @@ export default function Home() {
               <span className="text-2xl" aria-hidden="true">🤝</span>
               <h2 className="text-lg font-bold text-white mt-2">Handover Plan</h2>
               <p className="text-slate-400 text-xs mt-1">
-                Exit in 7 months: 4 uncovered VMC-3 components require knowledge capture.
+                {planText}
               </p>
               <Link
                 to="/handover"
@@ -108,7 +187,7 @@ export default function Home() {
               <span className="text-2xl" aria-hidden="true">✅</span>
               <h2 className="text-lg font-bold text-white mt-2">Verification Queue</h2>
               <p className="text-slate-400 text-xs mt-1">
-                2 new AI-extracted procedure drafts await your review and sign-off.
+                {reviewText}
               </p>
               <Link
                 to="/review"
@@ -121,7 +200,7 @@ export default function Home() {
               <span className="text-2xl" aria-hidden="true">❓</span>
               <h2 className="text-lg font-bold text-white mt-2">Questions for You</h2>
               <p className="text-slate-400 text-xs mt-1">
-                Priya asked about chatter on SS304 roughing. Leave a quick voice reply.
+                {routedText}
               </p>
               <Link
                 to="/handover"
@@ -139,7 +218,7 @@ export default function Home() {
               <span className="text-2xl" aria-hidden="true">📊</span>
               <h2 className="text-lg font-bold text-white mt-2">Knowledge-at-Risk</h2>
               <p className="text-slate-400 text-xs mt-1">
-                Heatmap shows bus factor = 1 on VMC-3 Spindle and Lathe-2 Turret.
+                {riskText}
               </p>
               <Link
                 to="/dashboard"
@@ -165,7 +244,7 @@ export default function Home() {
               <span className="text-2xl" aria-hidden="true">📈</span>
               <h2 className="text-lg font-bold text-white mt-2">Transfer Metrics</h2>
               <p className="text-slate-400 text-xs mt-1">
-                Track time-to-independence and reject rates as handover progresses.
+                {metricsText}
               </p>
               <Link
                 to="/dashboard"

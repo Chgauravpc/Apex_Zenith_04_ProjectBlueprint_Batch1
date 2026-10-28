@@ -4,115 +4,128 @@ import StepList from '../components/guide/StepList';
 import SkillBadge from '../components/guide/SkillBadge';
 import ShadowTracePlayer from '../components/guide/ShadowTracePlayer';
 import TroubleshootTree from '../components/guide/TroubleshootTree';
+import LoadState from '../components/common/LoadState';
+import { getProcedures, getShadowTrace, getTroubleshoot, recordStep, startRun } from '../api/guide';
+import useApi from '../hooks/useApi';
 import { useAuthStore } from '../store/useAuthStore';
+import { useMachineStore } from '../store/useMachineStore';
 import { t } from '../utils/i18n';
 
-const DEMO_PROCEDURE = {
-  id: 1,
-  title: 'VMC-3 SS304 Flange Face & Bore Setup',
-  machine: 'VMC-3',
-  version: 2,
-  steps: [
-    {
-      id: 101,
-      title: 'Wipe vise jaws and set work stop',
-      instruction: 'Thoroughly wipe machine vise jaws with a clean rag. Verify no chips are trapped beneath parallel bars. Set work stop at 45.0 mm.',
-      param_name: 'Work Stop Distance',
-      param_unit: 'mm',
-      target_value: 45.0,
-      tolerance: 0.2,
-      expert_tip: 'Trapped chips under the parallel bar cause a 0.08 mm tilt that will ruin flange perpendicularity. Always feel the underside by hand.',
-      keyframe_url: null,
-      clip_start: 5,
-      clip_end: 25,
-      component: 'Machine Vise',
-    },
-    {
-      id: 102,
-      title: 'Clamp workpiece and verify torque',
-      instruction: 'Place SS304 raw billet into jaws against the work stop. Tighten vise with torque handle to 85 Nm.',
-      param_name: 'Vise Torque',
-      param_unit: 'Nm',
-      target_value: 85.0,
-      tolerance: 5.0,
-      expert_tip: 'Never hammer the vise handle with a steel mallet; use brass only to prevent lead-screw backlash.',
-      clip_start: 26,
-      clip_end: 50,
-      component: 'Hydraulic Vise Handle',
-    },
-    {
-      id: 103,
-      title: 'Check tool stick-out on 12mm endmill',
-      instruction: 'Verify gauge length of Tool #4 (12mm 4-flute rougher) in ER32 holder is less than 35 mm stick-out.',
-      param_name: 'Tool Overhang',
-      param_unit: 'mm',
-      target_value: 32.0,
-      tolerance: 3.0,
-      expert_tip: 'Any overhang above 36 mm creates severe chatter at 3200 RPM. Choke it up as tight as the fixture allows.',
-      clip_start: 51,
-      clip_end: 80,
-      component: 'Spindle Toolholder',
-    },
-    {
-      id: 104,
-      title: 'Zero Z-axis with 2.0 mm touch probe',
-      instruction: 'Jog Z-axis carefully towards top face of raw material with 2.0 mm reference block until slide drag is felt. Set G54 Z0.0.',
-      param_name: 'Touch Block Height',
-      param_unit: 'mm',
-      target_value: 2.0,
-      tolerance: 0.005,
-      expert_tip: 'Wipe the touch block with solvent before probing. A film of oil gives a +0.02 mm false zero.',
-      clip_start: 81,
-      clip_end: 110,
-      component: 'Z-Axis Way',
-    },
-  ],
-};
+const SEVERITY_RANK = { info: 0, caution: 1, stop: 2 };
 
-const DEMO_TRACE = [
-  { step_no: 1, clip_start: 5, clip_end: 25, components_checked: ['Parallel Bars', 'Vise Bed'] },
-  { step_no: 2, clip_start: 26, clip_end: 50, components_checked: ['Vise Jaw Lead Screw'] },
-  { step_no: 3, clip_start: 51, clip_end: 80, components_checked: ['ER32 Collet Nut', '12mm Endmill'] },
-  { step_no: 4, clip_start: 81, clip_end: 110, components_checked: ['Z Touch Block', 'Billet Top Face'] },
-];
+/** Backend findings → the shape WarningBanner shows (worst severity first). */
+const toBannerResult = (findings) => ({
+  severity: findings.reduce(
+    (worst, f) => (SEVERITY_RANK[f.severity] > SEVERITY_RANK[worst] ? f.severity : worst),
+    'info'
+  ),
+  warnings: findings,
+});
 
 export default function GuidedJob() {
   const { currentUser, language } = useAuthStore();
+  const { selectedMachineId, setActiveRunId } = useMachineStore();
+  const procedures = useApi(
+    (signal) => getProcedures({ machine_id: selectedMachineId, status: 'approved' }, signal),
+    [selectedMachineId]
+  );
+
+  const [procedureId, setProcedureId] = useState(null);
+  const [run, setRun] = useState(null);
+  const [isStarting, setIsStarting] = useState(false);
+  const [startError, setStartError] = useState(null);
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [completedSteps, setCompletedSteps] = useState([]);
+  const [stepResult, setStepResult] = useState(null);
+  const [warningCount, setWarningCount] = useState(0);
   const [showShadowTrace, setShowShadowTrace] = useState(false);
   const [showTroubleshoot, setShowTroubleshoot] = useState(false);
   const [isFinished, setIsFinished] = useState(false);
 
-  // Skill level: Priya = L1, Ramesh = L4, Suresh = L3
-  const skillLevel = currentUser.role === 'old_employee' ? 4 : currentUser.role === 'supervisor' ? 3 : 1;
-  const isChecklistMode = skillLevel >= 3;
+  const procedure = run ? run.procedure : null;
+  const steps = procedure ? procedure.steps : [];
+  const currentStep = steps[currentStepIndex];
+  const chosenId = procedureId || (procedures.data && procedures.data[0] && procedures.data[0].id);
 
-  const currentStep = DEMO_PROCEDURE.steps[currentStepIndex];
+  const trace = useApi(
+    (signal) => (showShadowTrace && procedure ? getShadowTrace(procedure.id, signal) : null),
+    [showShadowTrace, procedure && procedure.id]
+  );
+  const tree = useApi(
+    (signal) =>
+      showTroubleshoot && procedure && procedure.machine_id
+        ? getTroubleshoot(procedure.machine_id, signal)
+        : null,
+    [showTroubleshoot, procedure && procedure.machine_id]
+  );
 
-  const handleCompleteStep = (_stepData) => {
+  const handleStart = async () => {
+    setIsStarting(true);
+    setStartError(null);
+    try {
+      const started = await startRun({ employee_id: currentUser.id, procedure_id: chosenId });
+      setRun(started);
+      setActiveRunId(started.run_id);
+      setCurrentStepIndex(0);
+      setCompletedSteps([]);
+      setStepResult(null);
+      setWarningCount(0);
+      setIsFinished(false);
+    } catch (err) {
+      setStartError(err.message || 'Could not start the guided run.');
+    } finally {
+      setIsStarting(false);
+    }
+  };
+
+  // Every step is checked by the backend (Note Guardian rules); a stop keeps you on the step.
+  const handleCompleteStep = async (stepData) => {
+    let res;
+    try {
+      res = await recordStep(run.run_id, {
+        step_no: currentStep.step_no,
+        value: stepData.value,
+        notes: stepData.notes || null,
+      });
+    } catch (err) {
+      setStepResult({ severity: 'caution', warnings: [{ message: `Step not saved: ${err.message}` }] });
+      return false;
+    }
+    setWarningCount((n) => n + res.warnings.length);
+    if (!res.can_continue) {
+      setStepResult(toBannerResult(res.warnings));
+      return false;
+    }
+    setStepResult(res.warnings.length ? toBannerResult(res.warnings) : null);
     if (!completedSteps.includes(currentStepIndex)) {
       setCompletedSteps([...completedSteps, currentStepIndex]);
     }
-
-    if (currentStepIndex + 1 < DEMO_PROCEDURE.steps.length) {
-      setCurrentStepIndex(currentStepIndex + 1);
-    } else {
+    if (res.run_status === 'done' || res.next_step_no === null) {
       setIsFinished(true);
+    } else {
+      const next = steps.findIndex((s) => s.step_no === res.next_step_no);
+      setCurrentStepIndex(next >= 0 ? next : currentStepIndex + 1);
     }
+    return true;
   };
 
   const handlePrevious = () => {
     if (currentStepIndex > 0) {
       setCurrentStepIndex(currentStepIndex - 1);
+      setStepResult(null);
     }
   };
 
   const handleRestart = () => {
-    setCurrentStepIndex(0);
-    setCompletedSteps([]);
+    setRun(null);
+    setActiveRunId(null);
     setIsFinished(false);
   };
+
+  const treeData = (tree.data || []).map((node) => ({
+    symptom: `${node.label} (${node.incidents} past incidents)`,
+    causes: node.causes,
+  }));
 
   return (
     <div className="space-y-6">
@@ -121,58 +134,112 @@ export default function GuidedJob() {
         <div>
           <div className="flex items-center space-x-2 mb-1">
             <span className="text-xl" aria-hidden="true">📋</span>
-            <h1 className="text-2xl font-extrabold text-white tracking-tight">
-              {t('navGuide', language)}
-            </h1>
-            <span className="text-slate-500">•</span>
-            <SkillBadge level={skillLevel} showDetails />
+            <h1 className="text-2xl font-extrabold text-white tracking-tight">{t('navGuide', language)}</h1>
+            {run && (
+              <>
+                <span className="text-slate-500">•</span>
+                <SkillBadge level={run.skill_level} showDetails />
+              </>
+            )}
           </div>
           <p className="text-slate-400 text-xs sm:text-sm">
-            {DEMO_PROCEDURE.title} (v{DEMO_PROCEDURE.version}) on {DEMO_PROCEDURE.machine}
+            {procedure
+              ? `${procedure.title} (v${procedure.version}) on ${procedure.machine}`
+              : 'Pick an approved procedure and start a guided run.'}
           </p>
         </div>
 
-        <div className="flex items-center space-x-2">
-          <button
-            type="button"
-            onClick={() => setShowShadowTrace(!showShadowTrace)}
-            className={`btn-touch px-3 py-1.5 rounded-xl text-xs font-semibold border transition flex items-center space-x-1.5 ${
-              showShadowTrace
-                ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40'
-                : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border-slate-700'
-            }`}
-          >
-            <span>🎬</span>
-            <span>ShadowTrace™</span>
-          </button>
+        {run && (
+          <div className="flex items-center space-x-2">
+            <button
+              type="button"
+              onClick={() => setShowShadowTrace(!showShadowTrace)}
+              className={`btn-touch px-3 py-1.5 rounded-xl text-xs font-semibold border transition flex items-center space-x-1.5 ${
+                showShadowTrace
+                  ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40'
+                  : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border-slate-700'
+              }`}
+            >
+              <span>🎬</span>
+              <span>ShadowTrace™</span>
+            </button>
 
-          <button
-            type="button"
-            onClick={() => setShowTroubleshoot(!showTroubleshoot)}
-            className={`btn-touch px-3 py-1.5 rounded-xl text-xs font-semibold border transition flex items-center space-x-1.5 ${
-              showTroubleshoot
-                ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
-                : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border-slate-700'
-            }`}
-          >
-            <span>🌳</span>
-            <span>Troubleshoot</span>
-          </button>
-        </div>
+            <button
+              type="button"
+              onClick={() => setShowTroubleshoot(!showTroubleshoot)}
+              className={`btn-touch px-3 py-1.5 rounded-xl text-xs font-semibold border transition flex items-center space-x-1.5 ${
+                showTroubleshoot
+                  ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                  : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border-slate-700'
+              }`}
+            >
+              <span>🌳</span>
+              <span>Troubleshoot</span>
+            </button>
+          </div>
+        )}
       </div>
 
+      {!run && (
+        <div className="bg-slate-800/90 border border-slate-700/80 rounded-2xl p-6 shadow-xl space-y-4">
+          <LoadState
+            loading={procedures.loading}
+            error={procedures.error}
+            onRetry={procedures.reload}
+            label="Loading procedures…"
+          />
+          {procedures.data && procedures.data.length === 0 && (
+            <p className="text-xs text-slate-400">
+              No approved procedure for this machine yet. Record a setup video on Capture.
+            </p>
+          )}
+          {procedures.data && procedures.data.length > 0 && (
+            <>
+              <label htmlFor="procedure-select" className="block text-xs font-semibold text-slate-300">
+                Procedure:
+              </label>
+              <select
+                id="procedure-select"
+                value={chosenId || ''}
+                onChange={(e) => setProcedureId(Number(e.target.value))}
+                className="w-full bg-slate-900 border border-slate-700 text-slate-200 py-2 px-3 rounded-xl text-sm"
+              >
+                {procedures.data.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.title} (v{p.version}, {p.steps_count} steps, by {p.author || 'unknown'})
+                  </option>
+                ))}
+              </select>
+              <button
+                type="button"
+                disabled={isStarting || !chosenId}
+                onClick={handleStart}
+                className="btn-touch px-6 py-2.5 bg-cyan-500 hover:bg-cyan-400 disabled:opacity-50 text-slate-950 font-bold rounded-xl text-sm shadow"
+              >
+                {isStarting ? 'Starting…' : 'Start Guided Run →'}
+              </button>
+            </>
+          )}
+          {startError && (
+            <div role="alert" className="p-3 bg-red-950/80 border border-red-500/50 rounded-xl text-red-200 text-xs">
+              {startError}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Completion Banner */}
-      {isFinished ? (
+      {run && isFinished && (
         <div className="bg-slate-800 border border-emerald-500/40 rounded-2xl p-8 text-center space-y-4 shadow-xl">
           <div className="w-16 h-16 bg-emerald-500/20 text-emerald-400 rounded-full flex items-center justify-center text-3xl mx-auto border border-emerald-500/30">
             ✓
           </div>
-          <h2 className="text-2xl font-extrabold text-white">
-            Setup Run Completed Successfully!
-          </h2>
+          <h2 className="text-2xl font-extrabold text-white">Setup Run Completed Successfully!</h2>
           <p className="text-slate-300 text-sm max-w-lg mx-auto">
-            All 4 setup steps for {DEMO_PROCEDURE.title} have been verified within tolerance.
-            Zero Guardian warnings raised. Great run, {currentUser.name}!
+            All {steps.length} steps of {procedure.title} are recorded.{' '}
+            {warningCount === 0
+              ? `Zero Guardian warnings raised. Great run, ${currentUser.name}!`
+              : `${warningCount} Guardian warning(s) were raised; go through them with your knowledge buddy.`}
           </p>
           <div className="pt-2">
             <button
@@ -184,41 +251,62 @@ export default function GuidedJob() {
             </button>
           </div>
         </div>
-      ) : (
-        /* Main Layout */
+      )}
+
+      {/* Main Layout */}
+      {run && !isFinished && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left Column: Step List */}
           <div className="space-y-4">
             <StepList
-              steps={DEMO_PROCEDURE.steps}
+              steps={steps}
               currentStepIndex={currentStepIndex}
               completedStepIndices={completedSteps}
-              onSelectStep={(idx) => setCurrentStepIndex(idx)}
-              isChecklistMode={isChecklistMode}
+              onSelectStep={(idx) => {
+                setCurrentStepIndex(idx);
+                setStepResult(null);
+              }}
+              isChecklistMode={run.view === 'checklist'}
             />
 
-            {/* Optional ShadowTrace Player */}
             {showShadowTrace && (
-              <ShadowTracePlayer
-                traceSteps={DEMO_TRACE}
-                currentStepNo={currentStepIndex + 1}
-              />
+              <>
+                <LoadState loading={trace.loading} error={trace.error} label="Loading recorded run…" />
+                {trace.data && (
+                  <ShadowTracePlayer
+                    traceSteps={trace.data.steps}
+                    currentStepNo={currentStep ? currentStep.step_no : 1}
+                    videoUrl={trace.data.video_url}
+                    author={trace.data.author}
+                  />
+                )}
+              </>
             )}
           </div>
 
           {/* Center & Right Column: Step View or Troubleshoot Tree */}
           <div className="lg:col-span-2 space-y-6">
             <StepView
+              key={currentStep ? currentStep.id : 'none'}
               step={currentStep}
               stepIndex={currentStepIndex}
-              totalSteps={DEMO_PROCEDURE.steps.length}
-              skillLevel={skillLevel}
+              totalSteps={steps.length}
+              skillLevel={run.skill_level}
               onCompleteStep={handleCompleteStep}
               onPreviousStep={handlePrevious}
+              serverResult={stepResult}
             />
 
             {showTroubleshoot && (
-              <TroubleshootTree />
+              <>
+                <LoadState loading={tree.loading} error={tree.error} label="Loading troubleshooting tree…" />
+                {tree.data &&
+                  (treeData.length ? (
+                    <TroubleshootTree treeData={treeData} />
+                  ) : (
+                    <p className="text-xs text-slate-400">No past incidents recorded for this machine yet.</p>
+                  ))}
+              </>
             )}
           </div>
         </div>

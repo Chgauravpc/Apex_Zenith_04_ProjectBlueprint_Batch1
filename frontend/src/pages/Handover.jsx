@@ -1,13 +1,41 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { getHandoverPlan, getRisk } from '../api/transfer';
+import LoadState from '../components/common/LoadState';
 import HandoverPlan from '../components/transfer/HandoverPlan';
 import InterviewSession from '../components/transfer/InterviewSession';
 import RoutedQuestions from '../components/transfer/RoutedQuestions';
+import useApi from '../hooks/useApi';
 import { useAuthStore } from '../store/useAuthStore';
 import { t } from '../utils/i18n';
 
+// Pages a handover task is done on; interviews happen in the tab next door.
+const TASK_PAGES = { record_setup: '/capture', validate: '/review' };
+
 export default function Handover() {
-  const { language } = useAuthStore();
+  const { currentUser, language } = useAuthStore();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('plan');
+
+  const risk = useApi((signal) => getRisk(signal), []);
+  const isOld = currentUser.role === 'old_employee';
+  // An old employee sees their own plan; others see the plan of whoever is leaving.
+  const leaving = (risk.data || []).find((c) => c.expert_leaving_on);
+  const planEmployeeId = isOld ? currentUser.id : leaving ? leaving.expert_id : null;
+  const plan = useApi(
+    (signal) => (planEmployeeId ? getHandoverPlan(planEmployeeId, signal) : Promise.resolve(null)),
+    [planEmployeeId]
+  );
+
+  const handleStartTask = (task) => {
+    if (TASK_PAGES[task.category]) navigate(TASK_PAGES[task.category]);
+    else setActiveTab('interview');
+  };
+
+  const refresh = () => {
+    plan.reload();
+    risk.reload();
+  };
 
   const tabs = [
     { id: 'plan', label: 'Handover Plan & Countdown', icon: '🤝' },
@@ -48,9 +76,31 @@ export default function Handover() {
       </div>
 
       <div>
-        {activeTab === 'plan' && <HandoverPlan onStartTask={() => setActiveTab('interview')} />}
-        {activeTab === 'interview' && <InterviewSession />}
-        {activeTab === 'questions' && <RoutedQuestions />}
+        {activeTab !== 'questions' && (
+          <LoadState
+            loading={risk.loading || plan.loading}
+            error={risk.error || plan.error}
+            onRetry={refresh}
+            label="Loading handover plan…"
+          />
+        )}
+        {activeTab !== 'questions' && !risk.loading && !plan.loading && !plan.error && !plan.data && (
+          <div className="p-6 text-center text-slate-400 text-xs bg-slate-800/60 border border-slate-800 rounded-2xl">
+            Nobody with know-how is leaving soon, so there is no handover plan.
+          </div>
+        )}
+        {activeTab === 'plan' && plan.data && (
+          <HandoverPlan plan={plan.data} riskCells={risk.data || []} onStartTask={handleStartTask} />
+        )}
+        {activeTab === 'interview' && plan.data && (
+          <InterviewSession
+            employeeId={plan.data.employee_id}
+            employeeName={plan.data.employee}
+            language={language}
+            onCardCreated={refresh}
+          />
+        )}
+        {activeTab === 'questions' && <RoutedQuestions employeeId={isOld ? currentUser.id : null} />}
       </div>
     </div>
   );

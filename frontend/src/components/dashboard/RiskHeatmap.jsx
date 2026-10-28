@@ -1,95 +1,43 @@
 import React, { useState } from 'react';
+import { getRisk } from '../../api/transfer';
+import useApi from '../../hooks/useApi';
+import LoadState from '../common/LoadState';
+
+const STATUS = {
+  critical: { label: 'Critical Risk', color: 'bg-red-950/80 text-red-300 border-red-500/60' },
+  at_risk: { label: 'Moderate Risk', color: 'bg-amber-950/80 text-amber-300 border-amber-500/60' },
+  ok: { label: 'Safe', color: 'bg-emerald-950/80 text-emerald-300 border-emerald-500/60' },
+};
+
+const partName = (cell) => cell.name.split(' · ').slice(1).join(' · ') || cell.name;
+
+const gapText = (cell) => {
+  if (cell.cards === 0) return 'Nothing recorded about this part yet.';
+  if (cell.bus === 0 && cell.expert_leaving_on)
+    return `Only ${cell.expert} has recorded know-how here, and leaves on ${cell.expert_leaving_on}.`;
+  if (cell.bus === 0) return 'Nobody who recorded know-how here is still on the shop floor.';
+  if (cell.bus === 1) return `Only one person still here knows this part (${cell.expert}).`;
+  return `${cell.bus} people still here have recorded know-how on this part.`;
+};
 
 /**
  * RiskHeatmap component.
- * Displays bus-factor knowledge risks across machines and components.
- * Reference: PRD.md §5.7 and TASKS.md T24.
+ * Bus factor per machine part from GET /transfer/risk: how many people who know it stay
+ * after planned exits. Reference: PRD.md §5.7 and TASKS.md T24.
  */
 export default function RiskHeatmap({ onSelectCell }) {
   const [selectedCell, setSelectedCell] = useState(null);
+  const risk = useApi((signal) => getRisk(signal), []);
 
-  const heatmapData = [
-    {
-      machine: 'VMC-3',
-      components: [
-        {
-          name: 'Spindle & Bearings',
-          busFactor: 1,
-          expert: 'Ramesh Sharma',
-          coverage: '65%',
-          cardsCount: 14,
-          status: 'Critical Risk',
-          statusColor: 'bg-red-950/80 text-red-300 border-red-500/60',
-          gap: 'High-speed bearing thermal expansion and preload tuning undocumented.',
-        },
-        {
-          name: 'Tool Changer Arm',
-          busFactor: 1,
-          expert: 'Ramesh Sharma',
-          coverage: '45%',
-          cardsCount: 7,
-          status: 'Critical Risk',
-          statusColor: 'bg-red-950/80 text-red-300 border-red-500/60',
-          gap: 'Pneumatic unclamp sensor stroke timing adjustment uncaptured.',
-        },
-        {
-          name: 'Coolant Delivery Manifold',
-          busFactor: 2,
-          expert: 'Ramesh, Suresh',
-          coverage: '82%',
-          cardsCount: 18,
-          status: 'Moderate Risk',
-          statusColor: 'bg-amber-950/80 text-amber-300 border-amber-500/60',
-          gap: 'Filter bleeding sequence known by supervisor.',
-        },
-        {
-          name: 'X/Y Linear Guideways',
-          busFactor: 3,
-          expert: 'Ramesh, Suresh, Priya',
-          coverage: '95%',
-          cardsCount: 22,
-          status: 'Safe',
-          statusColor: 'bg-emerald-950/80 text-emerald-300 border-emerald-500/60',
-          gap: 'Full daily lubrication routine documented and verified.',
-        },
-      ],
-    },
-    {
-      machine: 'Lathe-2',
-      components: [
-        {
-          name: 'Turret Index Cam',
-          busFactor: 1,
-          expert: 'Ramesh Sharma',
-          coverage: '50%',
-          cardsCount: 6,
-          status: 'Critical Risk',
-          statusColor: 'bg-red-950/80 text-red-300 border-red-500/60',
-          gap: 'Backlash compensation tuning by auditory feedback.',
-        },
-        {
-          name: 'Hydraulic Chuck & Collet',
-          busFactor: 2,
-          expert: 'Ramesh, Suresh',
-          coverage: '75%',
-          cardsCount: 12,
-          status: 'Moderate Risk',
-          statusColor: 'bg-amber-950/80 text-amber-300 border-amber-500/60',
-          gap: 'Pressure relief valve adjustment for thin-wall sleeves.',
-        },
-        {
-          name: 'Tailstock Quill',
-          busFactor: 3,
-          expert: 'Ramesh, Priya, Suresh',
-          coverage: '90%',
-          cardsCount: 15,
-          status: 'Safe',
-          statusColor: 'bg-emerald-950/80 text-emerald-300 border-emerald-500/60',
-          gap: 'Dead-center alignment procedure verified by all operators.',
-        },
-      ],
-    },
-  ];
+  const heatmapData = (risk.data || [])
+    .filter((c) => c.component_id === null)
+    .map((machine) => ({
+      machine: machine.name,
+      summary: machine,
+      components: risk.data
+        .filter((c) => c.machine_id === machine.machine_id && c.component_id !== null)
+        .map((c) => ({ ...c, part: partName(c), ...STATUS[c.status] })),
+    }));
 
   const handleCellClick = (cell, machine) => {
     const fullCell = { ...cell, machine };
@@ -109,25 +57,28 @@ export default function RiskHeatmap({ onSelectCell }) {
             <span>Bus Factor Heatmap (Machines × Components)</span>
           </h2>
           <p className="text-slate-400 text-xs mt-1">
-            Red cells indicate knowledge residing exclusively in 1 retiring employee (Bus Factor = 1).
+            Bus factor = people who know the part and are still here after planned exits. Red cells lose
+            their know-how when the expert leaves.
           </p>
         </div>
 
         <div className="flex items-center space-x-3 text-[11px]">
           <span className="flex items-center space-x-1">
             <span className="w-2.5 h-2.5 rounded-full bg-red-500" />
-            <span className="text-slate-300">BF = 1 (Critical)</span>
+            <span className="text-slate-300">BF = 0 (Critical)</span>
           </span>
           <span className="flex items-center space-x-1">
             <span className="w-2.5 h-2.5 rounded-full bg-amber-500" />
-            <span className="text-slate-300">BF = 2 (Medium)</span>
+            <span className="text-slate-300">BF = 1 (Medium)</span>
           </span>
           <span className="flex items-center space-x-1">
             <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
-            <span className="text-slate-300">BF ≥ 3 (Safe)</span>
+            <span className="text-slate-300">BF ≥ 2 (Safe)</span>
           </span>
         </div>
       </div>
+
+      <LoadState loading={risk.loading} error={risk.error} onRetry={risk.reload} label="Loading knowledge risk…" />
 
       {/* Heatmap Grid */}
       <div className="space-y-5">
@@ -137,29 +88,35 @@ export default function RiskHeatmap({ onSelectCell }) {
               <span className="font-bold text-white text-xs bg-slate-900 border border-slate-700 px-2 py-0.5 rounded">
                 Machine: {row.machine}
               </span>
+              <span className="text-[11px] text-slate-400">
+                {row.summary.coverage}% of parts covered • {row.summary.cards} verified cards
+              </span>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
               {row.components.map((c) => (
                 <button
-                  key={c.name}
+                  key={c.component_id}
                   type="button"
                   onClick={() => handleCellClick(c, row.machine)}
-                  className={`text-left p-3.5 rounded-xl border transition shadow-sm hover:scale-[1.02] flex flex-col justify-between space-y-2 ${c.statusColor}`}
+                  className={`text-left p-3.5 rounded-xl border transition shadow-sm hover:scale-[1.02] flex flex-col justify-between space-y-2 ${c.color}`}
                 >
                   <div className="flex items-center justify-between">
                     <span className="font-bold text-xs truncate text-slate-100">
-                      {c.name}
+                      {c.part}
                     </span>
                     <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-black/40">
-                      BF: {c.busFactor}
+                      BF: {c.bus}
                     </span>
                   </div>
 
                   <div className="text-[11px] text-slate-300">
-                    <div>Coverage: <strong>{c.coverage}</strong> ({c.cardsCount} cards)</div>
+                    <div>
+                      <strong>{c.cards}</strong> {c.cards === 1 ? 'card' : 'cards'} • {c.holders}{' '}
+                      {c.holders === 1 ? 'person' : 'people'}
+                    </div>
                     <div className="text-[10px] text-slate-400 truncate">
-                      Expert: {c.expert}
+                      Expert: {c.expert || 'nobody yet'}
                     </div>
                   </div>
                 </button>
@@ -176,10 +133,10 @@ export default function RiskHeatmap({ onSelectCell }) {
             <div className="flex items-center space-x-2">
               <span className="text-base" aria-hidden="true">🔍</span>
               <span className="text-sm font-bold text-white">
-                {selectedCell.machine} • {selectedCell.name}
+                {selectedCell.machine} • {selectedCell.part}
               </span>
-              <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${selectedCell.statusColor}`}>
-                {selectedCell.status}
+              <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${selectedCell.color}`}>
+                {selectedCell.label}
               </span>
             </div>
 
@@ -196,17 +153,18 @@ export default function RiskHeatmap({ onSelectCell }) {
             <div>
               <span className="text-slate-400 block font-semibold mb-1">Identified Knowledge Gap:</span>
               <p className="text-slate-200 bg-slate-950 p-2.5 rounded-lg border border-slate-800 leading-relaxed">
-                {selectedCell.gap}
+                {gapText(selectedCell)}
               </p>
             </div>
 
             <div className="space-y-1">
               <span className="text-slate-400 block font-semibold mb-1">Knowledge Custody:</span>
               <p className="text-slate-200">
-                Primary Expert: <strong className="text-cyan-300">{selectedCell.expert}</strong>
+                Primary Expert: <strong className="text-cyan-300">{selectedCell.expert || 'nobody yet'}</strong>
+                {selectedCell.expert_leaving_on && ` (leaves ${selectedCell.expert_leaving_on})`}
               </p>
               <p className="text-slate-300">
-                Verified Cards in Index: <strong>{selectedCell.cardsCount}</strong>
+                Verified Cards in Index: <strong>{selectedCell.cards}</strong>
               </p>
               <p className="text-slate-400 text-[11px] pt-1">
                 Recommendation: Trigger targeted AI interview questions to close this gap before exit.

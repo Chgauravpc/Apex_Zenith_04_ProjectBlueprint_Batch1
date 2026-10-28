@@ -1,29 +1,33 @@
 import { create } from 'zustand';
 
+// Same people, ids and roles as backend/seed/seed.py, so every API call acts as them.
 export const DEMO_USERS = [
   {
     id: 1,
-    name: 'Ramesh Sharma',
+    name: 'Ramesh Patil',
     role: 'old_employee',
     roleLabel: 'Old Employee (Retiring in 7 mos)',
     machine: 'VMC-3',
+    machineId: 1,
     experience: '28 years',
   },
   {
     id: 2,
-    name: 'Priya Patel',
+    name: 'Priya Shinde',
     role: 'new_employee',
     roleLabel: 'New Employee (Onboarding)',
     machine: 'VMC-3',
-    experience: '3 months',
+    machineId: 1,
+    experience: '1 month',
   },
   {
-    id: 3,
-    name: 'Suresh Rao',
+    id: 4,
+    name: 'Anil Kulkarni',
     role: 'supervisor',
     roleLabel: 'Shop-Floor Supervisor',
     machine: 'All Shop Machines',
-    experience: '15 years',
+    machineId: null,
+    experience: '16 years',
   },
 ];
 

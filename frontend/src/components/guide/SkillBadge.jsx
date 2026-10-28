@@ -1,11 +1,12 @@
 import React from 'react';
 
+// Same levels as the backend skill matrix (backend/app/models/guide.py).
 const SKILL_LEVELS = {
-  0: { label: 'L0 Novice', badge: 'bg-slate-700 text-slate-300', desc: 'Guided training with all video clips & safety tips' },
-  1: { label: 'L1 Supervised', badge: 'bg-blue-600 text-white', desc: 'Step-by-step guidance with parameter limits' },
-  2: { label: 'L2 Independent', badge: 'bg-emerald-600 text-white', desc: 'Standard guidance with safety guardrails' },
-  3: { label: 'L3 Expert', badge: 'bg-purple-600 text-white', desc: 'Checklist mode with critical alerts only' },
-  4: { label: 'L4 Master', badge: 'bg-amber-500 text-slate-950 font-black', desc: 'Authoring and verification authority' },
+  0: { label: 'L0 Not Trained', badge: 'bg-slate-700 text-slate-300', desc: 'Full guidance with every clip and safety tip' },
+  1: { label: 'L1 Guided', badge: 'bg-blue-600 text-white', desc: 'Every step with media and confirmations' },
+  2: { label: 'L2 Supervised', badge: 'bg-emerald-600 text-white', desc: 'Condensed steps, critical checks mandatory' },
+  3: { label: 'L3 Independent', badge: 'bg-purple-600 text-white', desc: 'Checklist mode with critical alerts only' },
+  4: { label: 'L4 Can Teach', badge: 'bg-amber-500 text-slate-950 font-black', desc: 'Authoring and verification authority' },
 };
 
 export default function SkillBadge({ level = 1, showDetails = false }) {

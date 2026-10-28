@@ -1,15 +1,83 @@
-import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import GuidedJob from '../../pages/GuidedJob';
 import StepView from './StepView';
+import * as guideApi from '../../api/guide';
+import { DEMO_USERS, useAuthStore } from '../../store/useAuthStore';
+
+vi.mock('../../api/guide', () => ({
+  getProcedures: vi.fn(),
+  startRun: vi.fn(),
+  recordStep: vi.fn(),
+  getShadowTrace: vi.fn(),
+  getTroubleshoot: vi.fn(),
+}));
+
+// Shapes match backend ProcedureSummary / GuidedRunOut / RunStepOut.
+const STEPS = [
+  {
+    id: 11, step_no: 1, title: 'Clamp the flange', instruction: 'Clamp FL-101 in the vise.',
+    component: 'Vise', param_name: null, target_value: null, tolerance: null,
+    expert_tip: 'Feel under the parallels for chips.', expert_tip_author: 'Ramesh Patil', critical: false,
+  },
+  {
+    id: 12, step_no: 2, title: 'Check stick-out', instruction: 'Measure tool stick-out.',
+    component: 'Spindle', param_name: 'stick-out', param_unit: 'mm', target_value: 12, tolerance: 0.5,
+    critical: true,
+  },
+];
+const RUN = {
+  run_id: 5, employee_id: 2, skill_level: 1, skill_label: 'Guided', view: 'full',
+  procedure: {
+    id: 1, key: 'vmc3-fl101-face', title: 'Face milling FL-101 flange on VMC-3', machine_id: 1,
+    machine: 'VMC-3', version: 1, status: 'approved', steps_count: 2, author: 'Ramesh Patil', steps: STEPS,
+  },
+};
+
+const startGuidedRun = async () => {
+  render(<GuidedJob />);
+  fireEvent.click(await screen.findByText(/Start Guided Run/i));
+  await screen.findByText(/Clamp FL-101 in the vise/i);
+};
 
 describe('GuidedJob page and components (T22)', () => {
-  it('renders procedure title, step 1 instructions, and skill badge', () => {
-    render(<GuidedJob />);
+  beforeEach(() => {
+    vi.clearAllMocks();
+    useAuthStore.setState({ currentUser: DEMO_USERS[1] });
+    guideApi.getProcedures.mockResolvedValue([
+      { id: 1, title: 'Face milling FL-101 flange on VMC-3', version: 1, steps_count: 2, author: 'Ramesh Patil' },
+    ]);
+    guideApi.startRun.mockResolvedValue(RUN);
+  });
 
-    expect(screen.getByText(/VMC-3 SS304 Flange Face & Bore Setup/i)).toBeDefined();
-    expect(screen.getAllByText(/Wipe vise jaws and set work stop/i).length).toBeGreaterThan(0);
-    expect(screen.getByText(/L4 Master/i)).toBeDefined(); // Ramesh is default user (old_employee = L4)
+  it('starts a real run: procedure, steps, skill badge and the old employee’s tip', async () => {
+    await startGuidedRun();
+
+    expect(guideApi.startRun).toHaveBeenCalledWith({ employee_id: 2, procedure_id: 1 });
+    expect(screen.getByText(/Face milling FL-101 flange on VMC-3 \(v1\) on VMC-3/i)).toBeDefined();
+    expect(screen.getByText(/L1 Guided/i)).toBeDefined();
+    expect(screen.getByText(/Ramesh Patil’s Shop-Floor Tip/i)).toBeDefined();
+  });
+
+  it('a stop from the backend keeps the operator on the step', async () => {
+    guideApi.recordStep
+      .mockResolvedValueOnce({ run_id: 5, step_no: 1, passed: true, warnings: [], can_continue: true, next_step_no: 2, run_status: 'running' })
+      .mockResolvedValueOnce({
+        run_id: 5, step_no: 2, passed: false, can_continue: false, next_step_no: null, run_status: 'running',
+        warnings: [{ rule: 'param_limit', severity: 'stop', message: 'Feed 0.3 is above the SS304 limit 0.2', evidence: [] }],
+      });
+    await startGuidedRun();
+
+    fireEvent.click(screen.getByText(/Complete Step & Next/i));
+    expect(await screen.findByText(/Measure tool stick-out/i)).toBeDefined();
+
+    fireEvent.change(screen.getByPlaceholderText(/Target 12 ±0.5/i), { target: { value: '12.2' } });
+    fireEvent.click(screen.getByText(/Complete Run/i));
+
+    expect(await screen.findByText(/Feed 0.3 is above the SS304 limit/i)).toBeDefined();
+    expect(guideApi.recordStep).toHaveBeenLastCalledWith(5, { step_no: 2, value: 12.2, notes: null });
+    expect(screen.getByText(/Measure tool stick-out/i)).toBeDefined();
+    expect(screen.getByPlaceholderText(/Target 12 ±0.5/i).value).toBe('12.2');
   });
 
   it('triggers STOP warning and blocks Next button when measurement is out of tolerance', () => {
@@ -69,17 +137,31 @@ describe('GuidedJob page and components (T22)', () => {
     );
   });
 
-  it('toggles ShadowTrace and Troubleshoot panels on the page', () => {
-    render(<GuidedJob />);
+  it('loads ShadowTrace and the troubleshooting tree from the API', async () => {
+    guideApi.getShadowTrace.mockResolvedValue({
+      procedure_id: 1, title: 'Face milling', author: 'Ramesh Patil', video_url: null,
+      steps: [{ step_no: 1, instruction: 'Clamp FL-101 in the vise.', components_checked: ['Vise'] }],
+    });
+    guideApi.getTroubleshoot.mockResolvedValue([
+      {
+        symptom: 'chatter', label: 'Chatter', incidents: 4,
+        causes: [{ cause: 'Worn spindle bearing', count: 3, share: 0.75, frequency: '75% of past incidents', fix: 'Reduce feed to 0.15', fix_author: 'Ramesh Patil' }],
+      },
+    ]);
+    await startGuidedRun();
 
-    // Click ShadowTrace toggle
-    const shadowBtn = screen.getByText(/ShadowTrace™/i);
-    fireEvent.click(shadowBtn);
-    expect(screen.getByText(/ShadowTrace™ Reference Player/i)).toBeDefined();
+    fireEvent.click(screen.getByText(/ShadowTrace™/i));
+    expect(await screen.findByText(/Ramesh Patil’s Gold-Standard Run/i)).toBeDefined();
 
-    // Click Troubleshoot toggle
-    const troubleBtn = screen.getByText(/Troubleshoot/i);
-    fireEvent.click(troubleBtn);
-    expect(screen.getByText(/Diagnostic Decision Tree/i)).toBeDefined();
+    fireEvent.click(screen.getByText('Troubleshoot'));
+    fireEvent.click(await screen.findByText(/Chatter \(4 past incidents\)/i));
+    expect(screen.getByText(/Reduce feed to 0.15/i)).toBeDefined();
+    await waitFor(() => expect(guideApi.getTroubleshoot).toHaveBeenCalledWith(1, expect.anything()));
+  });
+
+  it('a step without a measurement never raises a false STOP', () => {
+    render(<StepView step={STEPS[0]} stepIndex={0} totalSteps={2} skillLevel={1} />);
+    expect(screen.queryByText(/STOP/)).toBeNull();
+    expect(screen.getByText(/Complete Step & Next/i).closest('button').disabled).toBe(false);
   });
 });

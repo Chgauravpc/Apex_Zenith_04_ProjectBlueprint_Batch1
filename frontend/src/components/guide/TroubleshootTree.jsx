@@ -8,49 +8,10 @@ export default function TroubleshootTree({
   treeData = null,
   onApplyFix,
 }) {
+  // treeData: [{ symptom, causes: [{ cause, frequency, fix, fix_author }] }] from GET /guide/troubleshoot.
   const [selectedSymptom, setSelectedSymptom] = useState(null);
 
-  const fallbackTree = [
-    {
-      symptom: 'Spindle Chatter / High-Pitched Screech',
-      component: 'Spindle Bearing',
-      causes: [
-        {
-          cause: 'Tool overhang exceeds 3x diameter',
-          frequency: '65% of historical incidents',
-          fix: 'Choke tool holder clamp to shortest possible stick-out (≤ 35 mm for 12 mm endmill).',
-        },
-        {
-          cause: 'Spindle speed coincides with structural resonance',
-          frequency: '25% of incidents',
-          fix: 'Shift RPM by +8% or -12% to jump to adjacent stable lobe.',
-        },
-        {
-          cause: 'ER32 collet torque below 85 Nm',
-          frequency: '10% of incidents',
-          fix: 'Re-torque with dedicated torque spanner.',
-        },
-      ],
-    },
-    {
-      symptom: 'Surface Roughness (Ra > 1.6 μm) on SS304',
-      component: 'Cutting Insert',
-      causes: [
-        {
-          cause: 'Built-up edge (BUE) on carbide insert rake face',
-          frequency: '70% of incidents',
-          fix: 'Increase cutting speed by 15% and verify high-pressure coolant wash.',
-        },
-        {
-          cause: 'Insert flank wear (VB > 0.3 mm)',
-          frequency: '30% of incidents',
-          fix: 'Index insert to a fresh corner.',
-        },
-      ],
-    },
-  ];
-
-  const data = treeData || fallbackTree;
+  const data = treeData || [];
 
   return (
     <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-4">
@@ -105,10 +66,17 @@ export default function TroubleshootTree({
                             {c.frequency}
                           </span>
                         </div>
-                        <p className="text-cyan-300 font-medium">
-                          <strong>Fix: </strong>
-                          {c.fix}
-                        </p>
+                        {c.fix ? (
+                          <p className="text-cyan-300 font-medium">
+                            <strong>Fix: </strong>
+                            {c.fix}
+                            {c.fix_author && (
+                              <span className="text-slate-400 font-normal"> — {c.fix_author}</span>
+                            )}
+                          </p>
+                        ) : (
+                          <p className="text-slate-400">No fix recorded yet. Ask your knowledge buddy.</p>
+                        )}
                         {onApplyFix && (
                           <div className="pt-2 flex justify-end">
                             <button

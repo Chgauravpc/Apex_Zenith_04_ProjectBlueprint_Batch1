@@ -62,6 +62,14 @@ export const getTroubleshoot = (machineId, signal) =>
 export const getShadowTrace = (procedureId, signal) =>
   client.get(`/guide/shadowtrace/${procedureId}`, { signal }).then((r) => r.data);
 
+/**
+ * Fetch a new employee's daily briefing (jobs, known issues, quiz, learning path).
+ * @param {number|string} employeeId
+ * @param {AbortSignal} [signal]
+ */
+export const getBriefing = (employeeId, signal) =>
+  client.get(`/guide/briefing/${employeeId}`, { signal }).then((r) => r.data);
+
 export default {
   getProcedures,
   getProcedure,
@@ -70,4 +78,5 @@ export default {
   getSkills,
   getTroubleshoot,
   getShadowTrace,
+  getBriefing,
 };
