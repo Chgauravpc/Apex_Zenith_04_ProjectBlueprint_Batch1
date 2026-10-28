@@ -73,6 +73,7 @@ export default function ComponentPanel({
   const expertTips = component.expert_tips || component.expert_notes || [];
   const incidents = component.past_incidents || [];
   const troubleshootingList = component.troubleshooting || [];
+  const procedures = component.procedures || [];
 
   const getRiskBadge = (risk) => {
     switch (risk) {
@@ -272,7 +273,7 @@ export default function ComponentPanel({
               onClick={() => onOpenPinForm(component)}
               className="mt-2.5 text-xs font-semibold px-3 py-1.5 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 transition flex items-center space-x-1.5 shadow"
             >
-              <span>📌 Pin New Know-How Card</span>
+              <span>➕ Attach Expert Knowledge / Pin New Know-How Card</span>
             </button>
           </div>
         </div>
@@ -462,7 +463,47 @@ export default function ComponentPanel({
         </div>
       </div>
 
-      {/* SECTION 3: Past Failure Incidents */}
+      {/* SECTION 3: Operating Procedures (SOPs) */}
+      {procedures.length > 0 && (
+        <div>
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-xs font-semibold text-slate-200 uppercase tracking-wider flex items-center space-x-1.5">
+              <span>Operating Procedures (SOPs)</span>
+              <span className="px-1.5 py-0.2 rounded text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                Attached SOP
+              </span>
+            </h3>
+            <span className="text-[11px] text-slate-400 font-mono font-medium">
+              {procedures.length} procedures
+            </span>
+          </div>
+
+          <div className="space-y-2">
+            {procedures.map((proc) => (
+              <div
+                key={proc.id || proc.title}
+                className="bg-slate-950/80 border border-emerald-500/30 rounded-xl p-3 text-xs space-y-1.5"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <h4 className="text-xs font-bold text-emerald-300 leading-tight">
+                    📋 {proc.title}
+                  </h4>
+                  <span className="text-[10px] text-slate-500 font-mono">{proc.date}</span>
+                </div>
+                <p className="text-slate-300 text-xs leading-relaxed">
+                  {proc.description || proc.text}
+                </p>
+                <div className="text-[11px] text-slate-400 pt-1 border-t border-slate-800 flex justify-between items-center">
+                  <span className="text-cyan-400">👤 {proc.author}</span>
+                  <span className="text-[10px] font-mono text-emerald-400">Attached SOP</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* SECTION 4: Past Failure Incidents */}
       {incidents.length > 0 && (
         <div>
           <div className="flex items-center justify-between mb-2">
