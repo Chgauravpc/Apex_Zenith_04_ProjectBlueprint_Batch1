@@ -241,7 +241,7 @@ export default function ChatterDoctor() {
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
                 {result.candidate_rpms.length === 0 && (
                   <p className="col-span-full text-xs text-slate-400">
-                    No stable speed fits this machine's RPM range ({result.rpm_min}–{result.rpm_max}).
+                    No stable speed fits this machine’s RPM range ({result.rpm_min}–{result.rpm_max}).
                   </p>
                 )}
                 {result.candidate_rpms.map((rpmVal, idx) => (
