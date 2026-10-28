@@ -1,12 +1,12 @@
 # Render Blueprint: the FastAPI backend on the free plan (see DEPLOYMENT.md).
 # Values marked `sync: false` are secrets: Render asks for them in the dashboard on the first
-# deploy and never reads them from this file. Keep Supabase in the same region (Singapore).
+# deploy and never reads them from this file. Keep it next to the Supabase project (eu-north-1, Stockholm): Frankfurt is closest.
 services:
   - type: web
     name: blueprint-api
     runtime: python
     plan: free
-    region: singapore
+    region: frankfurt
     rootDir: backend
     # requirements-base.txt has no torch: embeddings come from Cloudflare (512 MB RAM here).
     buildCommand: pip install -r requirements-base.txt

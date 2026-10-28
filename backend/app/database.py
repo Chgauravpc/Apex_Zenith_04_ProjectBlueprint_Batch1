@@ -107,7 +107,7 @@ def get_db() -> Iterator[Session]:
 
 
 def init_db(bind: Optional[Engine] = None) -> None:
-    """Create all tables and the full-text index if they do not exist."""
+    """Create all tables and the full-text index if they do not exist (RLS on, on Postgres)."""
     import app.models  # noqa: F401  (registers every model on Base.metadata)
 
     target = bind or engine
@@ -116,6 +116,11 @@ def init_db(bind: Optional[Engine] = None) -> None:
         if is_postgres(conn):
             for statement in _PG_FTS_DDL:
                 conn.execute(text(statement))
+            # Hosted Postgres (Supabase) also exposes tables through a public REST API. Row-level
+            # security with no policies closes that door; this app connects as the table owner,
+            # which RLS does not restrict. Idempotent, and covers tables added later.
+            for table in [*Base.metadata.tables, "chunks_fts"]:
+                conn.execute(text(f'ALTER TABLE "{table}" ENABLE ROW LEVEL SECURITY'))
             return
         conn.execute(
             text(

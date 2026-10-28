@@ -98,3 +98,20 @@ def test_analytics_transaction_is_read_only_past_the_guard(seeded: Session) -> N
 def test_analytics_long_query_is_cancelled(seeded: Session) -> None:
     with pytest.raises(ValidationFailed, match="too long"):
         analytics.run_sql("SELECT count(*) FROM generate_series(1, 2000000000)")
+
+
+def test_every_table_has_row_level_security(pgdb: Session) -> None:
+    open_tables = (
+        pgdb.execute(
+            text(
+                "SELECT relname FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace "
+                "WHERE n.nspname = 'public' AND c.relkind = 'r' AND NOT c.relrowsecurity"
+            )
+        )
+        .scalars()
+        .all()
+    )
+    assert open_tables == []
+    assert (
+        pgdb.execute(text("SELECT count(*) FROM machines")).scalar_one() == 0
+    )  # owner still reads
