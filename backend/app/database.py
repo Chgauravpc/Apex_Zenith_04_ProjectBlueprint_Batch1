@@ -29,6 +29,9 @@ logger = logging.getLogger(__name__)
 # which splits Hindi/Marathi words apart. Keep marks (M*) as token characters.
 FTS_TOKENIZER = "unicode61 remove_diacritics 2 categories 'L* N* Co M*'"
 FTS_MAX_LIMIT = 100
+PG_RECYCLE_SECONDS = 60
+PG_POOL_SIZE = 3
+PG_MAX_OVERFLOW = 5  # 8 connections at most per process
 # Characters that have meaning in FTS5 query syntax; user text is split on them.
 _FTS_SPLIT = re.compile(r"[\s\"'(){}\[\]*^:+\-.,;!?/\\|<>=&%$#@~`]+")
 
@@ -89,8 +92,23 @@ def make_engine(url: str) -> Engine:
     """Create an engine; SQLite gets thread-safe settings and foreign keys on."""
     url = normalize_url(url)
     if not url.startswith("sqlite"):
-        # Free hosted Postgres closes idle connections: test before use, recycle often.
-        return create_engine(url, pool_pre_ping=True, pool_recycle=300)
+        # Hosted Postgres sits behind a pooler and NAT that silently drop idle TCP connections.
+        # Keepalives detect a dead socket in seconds instead of a hung query, connections are
+        # replaced after a minute idle, and a small pool stays inside the free connection limit.
+        return create_engine(
+            url,
+            pool_pre_ping=True,
+            pool_recycle=PG_RECYCLE_SECONDS,
+            pool_size=PG_POOL_SIZE,
+            max_overflow=PG_MAX_OVERFLOW,
+            connect_args={
+                "connect_timeout": 10,
+                "keepalives": 1,
+                "keepalives_idle": 30,
+                "keepalives_interval": 10,
+                "keepalives_count": 3,
+            },
+        )
     kwargs = {"connect_args": {"check_same_thread": False}}
     # In-memory DB: one shared connection, else each session would see an empty DB.
     if url in ("sqlite://", "sqlite:///:memory:"):
