@@ -27,7 +27,8 @@ from app.prompts import wrap_records
 from app.prompts.video import VIDEO_PROMPT
 from app.schemas.capture import DraftStep, VideoProcedureDraft
 from app.services import jobs, llm, storage, stt
-from app.services.capture.voice import check_refs
+from app.services.ask.search import media_url
+from app.services.capture.voice import check_refs, on_note_saved
 from app.utils.audit import audit
 from app.utils.files import save_upload
 
@@ -274,6 +275,25 @@ def start_video_job(
 
     def work(job_db: Session) -> Dict[str, Any]:
         proc = draft_procedure(job_db, path, author_id, machine_id)
-        return {"procedure_id": proc.id, "title": proc.title}
+        steps = job_db.execute(
+            select(ProcedureStep).filter_by(procedure_id=proc.id).order_by(ProcedureStep.step_no)
+        ).scalars()
+        # The narration is checked like any note (parameters, known failure signs).
+        doc = job_db.get(Document, proc.source_doc_id)
+        return {
+            "procedure_id": proc.id,
+            "title": proc.title,
+            "steps": [
+                {
+                    "step_no": s.step_no,
+                    "instruction": s.instruction,
+                    "keyframe_url": media_url(s.media_path),
+                    "clip_start": s.clip_start,
+                    "caution": s.safety,
+                }
+                for s in steps
+            ],
+            "guardian": on_note_saved(job_db, doc) if doc is not None else None,
+        }
 
     return job, work

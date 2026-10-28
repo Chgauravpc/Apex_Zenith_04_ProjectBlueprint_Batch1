@@ -24,7 +24,7 @@ from app.models.ops import Event, Job
 from app.prompts.handwritten import HANDWRITTEN_PROMPT
 from app.schemas.capture import ActionItemIn, HandwrittenResult
 from app.services import jobs, llm
-from app.services.capture.voice import check_refs
+from app.services.capture.voice import check_refs, on_note_saved
 from app.utils import lexicon
 from app.utils.audit import audit
 from app.utils.files import save_upload
@@ -161,7 +161,13 @@ def process_handwritten(
         review,
     )
     return result.model_copy(
-        update={"document_id": doc.id, "meeting_id": meeting.id, "needs_review": review}
+        update={
+            "document_id": doc.id,
+            "meeting_id": meeting.id,
+            "needs_review": review,
+            # Every note is checked against the machine's history, handwritten ones too.
+            "guardian": on_note_saved(db, doc),
+        }
     )
 
 
@@ -175,11 +181,6 @@ def start_handwritten_job(
 
     def work(job_db: Session) -> Dict[str, Any]:
         out = process_handwritten(job_db, path, uploader_id, machine_id)
-        return {
-            "meeting_id": out.meeting_id,
-            "document_id": out.document_id,
-            "action_items": len(out.action_items),
-            "needs_review": out.needs_review,
-        }
+        return out.model_dump(mode="json")
 
     return job, work

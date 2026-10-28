@@ -152,6 +152,7 @@ class HandwrittenResult(BaseModel):
     document_id: Optional[int] = Field(None, description="Set by the server")
     meeting_id: Optional[int] = Field(None, description="Set by the server")
     needs_review: int = Field(0, description="Set by the server: low-confidence items")
+    guardian: Optional[Dict[str, Any]] = Field(None, description="Set by the server")
 
 
 class Reading(BaseModel):

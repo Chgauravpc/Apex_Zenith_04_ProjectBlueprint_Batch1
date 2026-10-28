@@ -743,6 +743,10 @@ def test_video_endpoint_runs_job_to_done(api, shop, job_db, setup_video, monkeyp
 
     assert job["status"] == "done" and job["error"] is None
     assert job["result"]["procedure_id"] > 0
+    steps = job["result"]["steps"]
+    assert steps and steps[0]["step_no"] == 1 and steps[0]["instruction"]
+    assert steps[0]["keyframe_url"].startswith("/media/keyframes/")
+    assert "guardian" in job["result"]  # the narration went through Note Guardian
 
 
 def test_video_job_failure_is_reported(api, shop, job_db, setup_video, monkeypatch) -> None:
@@ -883,7 +887,9 @@ def test_handwritten_job_done(api, shop, job_db, page_photo, fake_llm) -> None:
             data={"uploader_id": str(shop["ramesh"].id)},
         ).json()["job_id"]
     job = api.get(f"/api/jobs/{job_id}").json()
-    assert job["status"] == "done" and job["result"]["action_items"] == 2
+    assert job["status"] == "done" and len(job["result"]["action_items"]) == 2
+    assert job["result"]["action_items"][0]["text"]  # full items for the result screen
+    assert "guardian" in job["result"]
 
 
 def test_handwritten_rejects_unreadable_image(db, shop, tmp_path, fake_llm) -> None:
