@@ -1,0 +1,20 @@
+# Everything the API needs. Cloud builds install this file only (no torch).
+fastapi==0.115.11
+uvicorn[standard]==0.32.1
+pydantic==2.10.6
+pydantic-settings==2.7.1
+sqlalchemy==2.0.36
+psycopg2-binary==2.9.10  # Postgres driver for the hosted database
+python-multipart==0.0.20
+openai==2.20.0
+groq==1.0.0
+numpy==1.26.4
+soundfile==0.13.1  # reads WAV/MP3/OGG/FLAC for the chatter check (bundled libsndfile)
+opencv-python-headless==4.10.0.84
+edge-tts==7.3.1
+aiohttp>=3.8,<4  # imported directly by services/tts.py for error handling
+jinja2==3.1.5
+httpx==0.28.1
+pytest==8.3.4
+ruff==0.8.4
+black==24.10.0
