@@ -93,7 +93,11 @@ describe('Transfer & Review components (T23)', () => {
 
     expect(await screen.findByText('Spindle bearing sound')).toBeDefined();
     expect(screen.queryByText(/STOP — CRITICAL WARNING/i)).toBeNull(); // no warnings: no banner
-    expect(transferApi.answerInterview).toHaveBeenCalledWith(9, { question_id: 0, answer_text: 'Growl at 3000 rpm' });
+    expect(transferApi.answerInterview).toHaveBeenCalledWith(9, {
+      question_id: 0,
+      answer_text: 'Growl at 3000 rpm',
+      author_id: 1,
+    });
     expect(screen.getByText(/Verified by Ramesh/i)).toBeDefined();
   });
 
@@ -189,5 +193,14 @@ describe('Transfer & Review components (T23)', () => {
     const approve = (await screen.findByText(/Approve & Verify/i)).closest('button');
     expect(approve.disabled).toBe(true);
     expect(screen.getByText(/Only an old employee or a supervisor can verify/i)).toBeDefined();
+  });
+
+  it('only the interviewed old employee can start their interview', async () => {
+    useAuthStore.setState({ currentUser: PRIYA });
+    renderHandover();
+    fireEvent.click(await screen.findByText(/AI Tacit Interview/i));
+
+    expect(await screen.findByText(/Only Ramesh Patil can answer this interview/i)).toBeDefined();
+    expect(screen.getByText(/Start Interview/i).closest('button').disabled).toBe(true);
   });
 });

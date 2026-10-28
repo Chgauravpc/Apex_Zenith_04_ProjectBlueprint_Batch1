@@ -2,12 +2,16 @@ import React, { useState } from 'react';
 import useDictation from '../../hooks/useDictation';
 import { answerInterview, startInterview } from '../../api/transfer';
 import WarningBanner from '../guardian/WarningBanner';
+import { useAuthStore } from '../../store/useAuthStore';
 
 /**
  * AI interview with a leaving old employee. Questions come from real gaps
  * (POST /transfer/interview/start); each answer becomes a card they verify.
  */
 export default function InterviewSession({ employeeId, employeeName, language, onCardCreated }) {
+  const { currentUser } = useAuthStore();
+  // Answers are saved as the interviewed person's verified know-how, so only they can answer.
+  const isInterviewee = currentUser?.id === employeeId;
   const [session, setSession] = useState(null);
   const [isStarting, setIsStarting] = useState(false);
   const [textAnswer, setTextAnswer] = useState('');
@@ -44,6 +48,7 @@ export default function InterviewSession({ employeeId, employeeName, language, o
       const response = await answerInterview(session.id, {
         question_id: currentQ.id,
         answer_text: textAnswer.trim(),
+        author_id: currentUser.id,
       });
       setCreatedCard(response.card);
       setGuardian(response.guardian || null);
@@ -72,9 +77,15 @@ export default function InterviewSession({ employeeId, employeeName, language, o
           answered, and machine parts with nothing recorded. Every answer becomes a card verified by{' '}
           {firstName}.
         </p>
+        {!isInterviewee && (
+          <p className="text-xs text-amber-300">
+            Only {employeeName || 'the old employee'} can answer this interview. Switch to their
+            account to start it.
+          </p>
+        )}
         <button
           type="button"
-          disabled={isStarting || !employeeId}
+          disabled={isStarting || !employeeId || !isInterviewee}
           onClick={handleStart}
           className="btn-touch px-6 py-2 bg-maroon-700 hover:bg-maroon-800 active:scale-[0.98] disabled:opacity-50 text-white font-bold rounded-xl text-xs shadow-xs transition"
         >
