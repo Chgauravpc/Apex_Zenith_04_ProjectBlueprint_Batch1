@@ -1,9 +1,15 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
+import { getKnowledgeCounts } from '../../api/map3d';
 
 /**
- * Slide-out / Side Panel displaying detailed know-how, verified old employee notes,
- * short description, expert knowledge placeholder, specs, and past failure incidents.
+ * Slide-out / Side Panel displaying detailed component-specific know-how:
+ * - Knowledge counts summary (expert tips, past incidents, troubleshooting)
+ * - Associated expert tips authored by Ramesh (Old Employee)
+ * - Historical failure incidents with root cause and resolutions
+ * - Component-specific troubleshooting guidance with step-by-step diagnostic checks
+ * - Engineering specifications and quick action links
+ *
  * Reference: PRD.md §9.4 and TASKS.md T21.
  */
 export default function ComponentPanel({
@@ -14,6 +20,8 @@ export default function ComponentPanel({
   onFocusComponent,
   onSelectComponent,
 }) {
+  const [activeTroubleshootTab, setActiveTroubleshootTab] = useState(null);
+
   // Empty / Reset state when no component is selected
   if (!component) {
     return (
@@ -26,7 +34,7 @@ export default function ComponentPanel({
             3D Machine Knowledge Explorer
           </h3>
           <p className="text-xs text-slate-400 mt-1.5 max-w-xs mx-auto leading-relaxed">
-            Click on any part of the 3D VMC model to inspect its engineering specifications, historical failure incidents, and expert tacit know-how.
+            Click on any part of the 3D VMC model to inspect its engineering specifications, historical failure incidents, troubleshooting guidance, and Ramesh&apos;s tacit know-how.
           </p>
         </div>
 
@@ -60,6 +68,11 @@ export default function ComponentPanel({
     );
   }
 
+  const counts = getKnowledgeCounts(component);
+  const expertTips = component.expert_tips || component.expert_notes || [];
+  const incidents = component.past_incidents || [];
+  const troubleshootingList = component.troubleshooting || [];
+
   const getRiskBadge = (risk) => {
     switch (risk) {
       case 'high':
@@ -89,7 +102,7 @@ export default function ComponentPanel({
   const handleReset = onResetSelection || onClose;
 
   return (
-    <div className="bg-slate-900/95 border border-slate-800 rounded-2xl p-5 shadow-2xl flex flex-col space-y-4">
+    <div className="bg-slate-900/95 border border-slate-800 rounded-2xl p-5 shadow-2xl flex flex-col space-y-4 max-h-[85vh] overflow-y-auto">
       {/* Panel Header */}
       <div className="flex items-start justify-between border-b border-slate-800 pb-3">
         <div>
@@ -99,9 +112,15 @@ export default function ComponentPanel({
             </h2>
             {getRiskBadge(component.risk)}
           </div>
-          <p className="text-xs text-slate-400 mt-0.5">
-            {component.category} • Mesh ID: <code className="text-cyan-400 font-mono">{component.mesh_name}</code>
-          </p>
+          <div className="flex items-center space-x-2 mt-1 flex-wrap gap-1 text-xs text-slate-400">
+            <span>{component.category}</span>
+            <span>•</span>
+            <span>Mesh: <code className="text-cyan-400 font-mono">{component.mesh_name}</code></span>
+            <span>•</span>
+            <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-cyan-500/15 text-cyan-300 border border-cyan-500/30">
+              Knowledge Count: {counts.total} items
+            </span>
+          </div>
         </div>
 
         {/* Reset Selection Button */}
@@ -116,6 +135,22 @@ export default function ComponentPanel({
         </button>
       </div>
 
+      {/* Knowledge Count Metric Counters */}
+      <div className="grid grid-cols-3 gap-2 text-center">
+        <div className="bg-slate-950/70 border border-slate-800 rounded-xl p-2.5">
+          <div className="text-base font-black text-cyan-400">{counts.tips}</div>
+          <div className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Expert Tips</div>
+        </div>
+        <div className="bg-slate-950/70 border border-slate-800 rounded-xl p-2.5">
+          <div className="text-base font-black text-amber-400">{counts.troubleshooting}</div>
+          <div className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Guides</div>
+        </div>
+        <div className="bg-slate-950/70 border border-slate-800 rounded-xl p-2.5">
+          <div className="text-base font-black text-rose-400">{counts.incidents}</div>
+          <div className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Incidents</div>
+        </div>
+      </div>
+
       {/* Component Short Description */}
       <div className="bg-slate-950/70 border border-slate-800/80 rounded-xl p-3.5">
         <h3 className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
@@ -126,7 +161,7 @@ export default function ComponentPanel({
         </p>
       </div>
 
-      {/* Placeholder for Expert Knowledge */}
+      {/* Placeholder / Action for Expert Knowledge */}
       <div className="bg-gradient-to-br from-indigo-950/40 via-slate-900 to-slate-950 border border-indigo-500/30 rounded-xl p-4 shadow-sm">
         <div className="flex items-start space-x-3">
           <div className="w-8 h-8 rounded-lg bg-indigo-500/20 border border-indigo-500/40 flex items-center justify-center text-lg text-indigo-300 shrink-0">
@@ -137,7 +172,7 @@ export default function ComponentPanel({
               Expert Knowledge & Tacit Know-How
             </h3>
             <p className="text-xs text-slate-300 mt-1 leading-relaxed">
-              Unwritten machinist tips, vibration audio cues, and setup secrets captured from senior machinists (Ramesh & Suresh).
+              Unwritten machinist tips, vibration audio cues, and setup secrets captured from old employee Ramesh (Master Machinist, 18 yrs exp).
             </p>
             <button
               type="button"
@@ -183,40 +218,23 @@ export default function ComponentPanel({
         </NavLink>
       </div>
 
-      {/* Specifications Grid */}
-      {component.specs && Object.keys(component.specs).length > 0 && (
-        <div className="bg-slate-950/60 rounded-xl p-3 border border-slate-800/80">
-          <h3 className="text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
-            Engineering Parameters
-          </h3>
-          <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-1.5 text-xs">
-            {Object.entries(component.specs).map(([key, val]) => (
-              <div key={key} className="flex justify-between border-b border-slate-800/50 pb-1">
-                <dt className="text-slate-400">{key}:</dt>
-                <dd className="font-mono font-medium text-slate-200 text-right">{val}</dd>
-              </div>
-            ))}
-          </dl>
-        </div>
-      )}
-
-      {/* Old Employee Verified Know-How Section */}
+      {/* SECTION 1: Associated Expert Tips (Authored by Ramesh) */}
       <div>
         <div className="flex items-center justify-between mb-2">
           <h3 className="text-xs font-semibold text-slate-200 uppercase tracking-wider flex items-center space-x-1.5">
-            <span>Verified Knowledge Cards</span>
+            <span>Expert Tips (Ramesh)</span>
             <span className="px-1.5 py-0.2 rounded text-[10px] bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
-              Old Employee Advice
+              Verified Advice
             </span>
           </h3>
-          <span className="text-[11px] text-slate-500">
-            {component.expert_notes?.length || 0} cards
+          <span className="text-[11px] text-slate-400 font-mono font-medium">
+            {expertTips.length} tips
           </span>
         </div>
 
-        <div className="space-y-2.5 max-h-52 overflow-y-auto pr-1">
-          {component.expert_notes && component.expert_notes.length > 0 ? (
-            component.expert_notes.map((note) => (
+        <div className="space-y-2.5">
+          {expertTips.length > 0 ? (
+            expertTips.map((note) => (
               <div
                 key={note.id || note.title}
                 className="bg-slate-800/70 border border-slate-700/80 rounded-xl p-3 shadow-sm hover:border-slate-600 transition"
@@ -235,11 +253,22 @@ export default function ComponentPanel({
                       WATCH
                     </span>
                   )}
+                  {note.severity === 'info' && (
+                    <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-500/20 text-blue-300 border border-blue-500/40">
+                      INFO
+                    </span>
+                  )}
                 </div>
 
                 <p className="text-xs text-slate-300 mt-1.5 leading-relaxed">
                   {note.text}
                 </p>
+
+                {note.cue && (
+                  <div className="mt-2 text-[11px] bg-slate-900/80 text-amber-200 px-2 py-1 rounded border border-amber-500/20">
+                    <span className="font-semibold text-amber-300">Sensory Cue:</span> {note.cue}
+                  </div>
+                )}
 
                 <div className="flex items-center justify-between text-[11px] text-slate-400 mt-2.5 pt-2 border-t border-slate-700/50">
                   <span className="font-medium text-cyan-400">
@@ -251,24 +280,112 @@ export default function ComponentPanel({
             ))
           ) : (
             <div className="text-center py-4 bg-slate-950/40 rounded-xl border border-dashed border-slate-800 text-xs text-slate-500">
-              No verified cards pinned yet. Click &quot;Pin New Know-How Card&quot; to add one.
+              No expert tips pinned yet for this component.
             </div>
           )}
         </div>
       </div>
 
-      {/* Past Failure Incidents Section */}
-      {component.past_incidents && component.past_incidents.length > 0 && (
-        <div>
-          <h3 className="text-xs font-semibold text-slate-200 uppercase tracking-wider mb-2 flex items-center space-x-1.5">
-            <span>Historical Incidents</span>
-            <span className="text-[10px] px-1.5 py-0.2 rounded bg-slate-800 text-slate-400">
-              ERP / QC Log
+      {/* SECTION 2: Troubleshooting Guidance (Ramesh's Diagnostic Checklist) */}
+      <div>
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="text-xs font-semibold text-slate-200 uppercase tracking-wider flex items-center space-x-1.5">
+            <span>Troubleshooting Guidance</span>
+            <span className="px-1.5 py-0.2 rounded text-[10px] bg-amber-500/20 text-amber-300 border border-amber-500/30">
+              Diagnostic Guide
             </span>
           </h3>
+          <span className="text-[11px] text-slate-400 font-mono font-medium">
+            {troubleshootingList.length} guides
+          </span>
+        </div>
+
+        <div className="space-y-2.5">
+          {troubleshootingList.length > 0 ? (
+            troubleshootingList.map((tb, idx) => {
+              const isExpanded = activeTroubleshootTab === tb.id || (activeTroubleshootTab === null && idx === 0);
+              return (
+                <div
+                  key={tb.id || idx}
+                  className="bg-slate-950/80 border border-slate-800 rounded-xl overflow-hidden"
+                >
+                  <button
+                    type="button"
+                    onClick={() => setActiveTroubleshootTab(isExpanded ? false : tb.id)}
+                    className="w-full text-left p-3 flex items-center justify-between hover:bg-slate-900/60 transition"
+                  >
+                    <div>
+                      <div className="text-xs font-bold text-amber-300 flex items-center space-x-1.5">
+                        <span>🛠️</span>
+                        <span>{tb.title}</span>
+                      </div>
+                      <div className="text-[11px] text-slate-400 mt-0.5 line-clamp-1">
+                        Symptom: {tb.symptom}
+                      </div>
+                    </div>
+                    <span className="text-slate-500 text-xs font-mono">
+                      {isExpanded ? '▲' : '▼'}
+                    </span>
+                  </button>
+
+                  {isExpanded && (
+                    <div className="p-3 pt-0 border-t border-slate-800/80 space-y-2.5 text-xs">
+                      <div className="mt-2.5">
+                        <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                          Probable Cause:
+                        </span>
+                        <p className="text-slate-200 mt-0.5">{tb.probable_cause}</p>
+                      </div>
+
+                      <div>
+                        <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                          Step-by-Step Diagnostic Checks:
+                        </span>
+                        <ul className="mt-1 space-y-1 pl-1">
+                          {tb.steps?.map((step, sIdx) => (
+                            <li key={sIdx} className="text-slate-300 flex items-start space-x-1.5">
+                              <span className="text-cyan-400 font-bold shrink-0">›</span>
+                              <span>{step}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+
+                      {tb.ramesh_tip && (
+                        <div className="bg-amber-950/30 border border-amber-500/30 rounded-lg p-2.5 text-amber-200 text-xs italic">
+                          {tb.ramesh_tip}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })
+          ) : (
+            <div className="text-center py-3 bg-slate-950/40 rounded-xl border border-dashed border-slate-800 text-xs text-slate-500">
+              No troubleshooting checklist documented yet.
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* SECTION 3: Past Failure Incidents */}
+      {incidents.length > 0 && (
+        <div>
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-xs font-semibold text-slate-200 uppercase tracking-wider flex items-center space-x-1.5">
+              <span>Past Incidents</span>
+              <span className="text-[10px] px-1.5 py-0.2 rounded bg-slate-800 text-slate-400">
+                ERP Log
+              </span>
+            </h3>
+            <span className="text-[11px] text-slate-400 font-mono font-medium">
+              {incidents.length} logs
+            </span>
+          </div>
 
           <div className="space-y-2">
-            {component.past_incidents.map((inc) => (
+            {incidents.map((inc) => (
               <div
                 key={inc.id}
                 className="bg-slate-950/70 border border-slate-800/80 rounded-lg p-2.5 text-xs"
@@ -277,10 +394,43 @@ export default function ComponentPanel({
                   <span className="font-mono text-cyan-300 font-semibold">{inc.id}</span>
                   <span>{inc.date}</span>
                 </div>
-                <p className="text-slate-300 text-[11px] leading-tight">{inc.summary}</p>
+                <div className="font-semibold text-slate-200 text-xs">{inc.type}</div>
+                <p className="text-slate-300 text-[11px] mt-0.5 leading-snug">{inc.summary}</p>
+                {inc.root_cause && (
+                  <div className="mt-1 text-[11px] text-slate-400">
+                    <span className="text-slate-500">Root Cause:</span> {inc.root_cause}
+                  </div>
+                )}
+                {inc.resolution && (
+                  <div className="mt-0.5 text-[11px] text-emerald-400/90 font-medium">
+                    <span className="text-slate-500">Resolution:</span> {inc.resolution}
+                  </div>
+                )}
+                {inc.downtime && (
+                  <div className="mt-0.5 text-[10px] text-slate-500 font-mono">
+                    Downtime: {inc.downtime}
+                  </div>
+                )}
               </div>
             ))}
           </div>
+        </div>
+      )}
+
+      {/* SECTION 4: Engineering Specifications */}
+      {component.specs && Object.keys(component.specs).length > 0 && (
+        <div className="bg-slate-950/60 rounded-xl p-3 border border-slate-800/80">
+          <h3 className="text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
+            Engineering Parameters
+          </h3>
+          <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-1.5 text-xs">
+            {Object.entries(component.specs).map(([key, val]) => (
+              <div key={key} className="flex justify-between border-b border-slate-800/50 pb-1">
+                <dt className="text-slate-400">{key}:</dt>
+                <dd className="font-mono font-medium text-slate-200 text-right">{val}</dd>
+              </div>
+            ))}
+          </dl>
         </div>
       )}
     </div>
