@@ -5,16 +5,23 @@ replaces only the network boundary to Groq/OpenRouter so tests stay offline
 and deterministic.
 """
 
+import os
 from typing import Any, Dict, Iterator, List, Tuple, Type, Union
 
 import pytest
 from fastapi.testclient import TestClient
 from pydantic import BaseModel
+from sqlalchemy import text
+from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session, sessionmaker
 
-from app.database import get_db, init_db, make_engine
+from app.database import Base, get_db, init_db, make_engine
 from app.errors import ProviderUnavailable
 from app.main import create_app
+
+# Optional: run the suite on Postgres, e.g. TEST_DATABASE_URL=postgresql://user:pw@localhost/db.
+# Every table is dropped and recreated there, so never point it at a database you care about.
+TEST_DATABASE_URL = os.environ.get("TEST_DATABASE_URL")
 
 
 @pytest.fixture(autouse=True)
@@ -30,17 +37,44 @@ def _no_real_provider_keys(request: pytest.FixtureRequest, monkeypatch: pytest.M
         monkeypatch.setattr(get_settings(), "openrouter_api_key", None)
 
 
-@pytest.fixture()
-def db() -> Iterator[Session]:
-    """Fresh in-memory database with all tables and the FTS index."""
-    engine = make_engine("sqlite://")
+@pytest.fixture(scope="session")
+def pg_engine() -> Iterator[Engine]:
+    """Postgres engine for TEST_DATABASE_URL with a freshly created schema."""
+    if not TEST_DATABASE_URL:
+        raise RuntimeError("set TEST_DATABASE_URL to a throwaway Postgres database")
+    import app.models  # noqa: F401  (registers every model on Base.metadata)
+
+    engine = make_engine(TEST_DATABASE_URL)
+    with engine.begin() as conn:
+        conn.execute(text("DROP TABLE IF EXISTS chunks_fts"))
+    Base.metadata.drop_all(bind=engine)
     init_db(bind=engine)
+    yield engine
+    engine.dispose()
+
+
+def _empty_postgres(engine: Engine) -> None:
+    tables = ", ".join(t.name for t in Base.metadata.sorted_tables)
+    with engine.begin() as conn:
+        conn.execute(text(f"TRUNCATE {tables}, chunks_fts RESTART IDENTITY CASCADE"))
+
+
+@pytest.fixture()
+def db(request: pytest.FixtureRequest) -> Iterator[Session]:
+    """Fresh database with all tables and the FTS index (in-memory SQLite by default)."""
+    if TEST_DATABASE_URL:
+        engine = request.getfixturevalue("pg_engine")
+        _empty_postgres(engine)
+    else:
+        engine = make_engine("sqlite://")
+        init_db(bind=engine)
     session = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False)()
     try:
         yield session
     finally:
         session.close()
-        engine.dispose()
+        if not TEST_DATABASE_URL:
+            engine.dispose()
 
 
 @pytest.fixture()

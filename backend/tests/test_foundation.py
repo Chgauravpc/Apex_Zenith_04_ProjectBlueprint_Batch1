@@ -6,7 +6,7 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
-from app.database import build_match_query, fts_index, fts_search
+from app.database import build_match_query, fts_index, fts_search, fts_tokens, normalize_url
 from app.errors import NotFound, PayloadTooLarge, register_handlers
 
 
@@ -78,6 +78,27 @@ def test_fts_search_ignores_empty_or_operator_only_queries(db: Session, query: s
 
 def test_match_query_quotes_user_operators() -> None:
     assert build_match_query('chatter NEAR "spindle"') == '"chatter" OR "NEAR" OR "spindle"'
+
+
+@pytest.mark.parametrize(
+    "url,expected",
+    [
+        ("postgres://u:p@h:5432/db", "postgresql+psycopg2://u:p@h:5432/db"),
+        ("postgresql://u:p@h/db?sslmode=require", "postgresql+psycopg2://u:p@h/db?sslmode=require"),
+        ("postgresql+psycopg2://u:p@h/db", "postgresql+psycopg2://u:p@h/db"),
+        ("sqlite:///./blueprint.db", "sqlite:///./blueprint.db"),
+    ],
+)
+def test_hosted_postgres_urls_get_the_driver(url: str, expected: str) -> None:
+    assert normalize_url(url) == expected
+
+
+def test_postgres_tokens_keep_devanagari_marks_and_drop_punctuation() -> None:
+    assert fts_tokens("स्पिंडल में आवाज़, फीड कम!") == ["स्पिंडल", "में", "आवाज़", "फीड", "कम"]
+    assert fts_tokens("मशीनचा आवाज वाढला") == ["मशीनचा", "आवाज", "वाढला"]
+    assert fts_tokens("VMC-3 Spindle: 9000rpm") == ["vmc", "3", "spindle", "9000rpm"]
+    assert fts_tokens("'; DROP TABLE x --") == ["drop", "table", "x"]
+    assert fts_tokens("") == [] and len(fts_tokens("a" * 500)[0]) == 64
 
 
 def test_core_tables_created_and_linked(db: Session) -> None:
