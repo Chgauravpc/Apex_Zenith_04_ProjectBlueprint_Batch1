@@ -75,7 +75,7 @@ describe('GuidedJob page and components (T22)', () => {
     fireEvent.click(screen.getByText(/Complete Run/i));
 
     expect(await screen.findByText(/Feed 0.3 is above the SS304 limit/i)).toBeDefined();
-    expect(guideApi.recordStep).toHaveBeenLastCalledWith(5, { step_no: 2, value: 12.2, notes: null });
+    expect(guideApi.recordStep).toHaveBeenLastCalledWith(5, { step_no: 2, value: 12.2, values: {}, notes: null });
     expect(screen.getByText(/Measure tool stick-out/i)).toBeDefined();
     expect(screen.getByPlaceholderText(/Target 12 ±0.5/i).value).toBe('12.2');
   });
@@ -107,15 +107,14 @@ describe('GuidedJob page and components (T22)', () => {
     // Enter out-of-tolerance value: 40 mm (> 35)
     fireEvent.change(input, { target: { value: '40.0' } });
 
-    // Confirm STOP alert is shown
+    // Confirm STOP alert is shown, without made-up repair advice
     expect(screen.getByText(/STOP — CRITICAL WARNING/i)).toBeDefined();
-    expect(screen.getByText(/Measurement 40 is out of tolerance/i)).toBeDefined();
+    expect(screen.getByText(/Measurement 40 is out of tolerance \[29 – 35\]/i)).toBeDefined();
+    expect(screen.queryByText(/re-align clamp/i)).toBeNull();
 
     // Confirm next button is blocked
     const nextBtn = screen.getByText(/Blocked by STOP Warning/i).closest('button');
-    expect(nextBtn).toBeDefined();
     expect(nextBtn.disabled).toBe(true);
-
     fireEvent.click(nextBtn);
     expect(onCompleteStep).not.toHaveBeenCalled();
 
@@ -134,6 +133,28 @@ describe('GuidedJob page and components (T22)', () => {
         step_no: 3,
         value: 31.5,
       })
+    );
+  });
+
+  it('sends the machine settings used at a step for the limit check', async () => {
+    const onCompleteStep = vi.fn().mockResolvedValue(true);
+    render(
+      <StepView
+        step={{ step_no: 4, title: 'Rough face', instruction: 'Rough face at 0.15', params: { feed: 0.15, depth: 1 } }}
+        stepIndex={3}
+        totalSteps={6}
+        onCompleteStep={onCompleteStep}
+      />
+    );
+    const feed = screen.getByLabelText('Setting feed');
+    expect(feed.value).toBe('0.15'); // prefilled from the procedure
+    fireEvent.change(feed, { target: { value: '0.3' } });
+    fireEvent.click(screen.getByText(/Complete Step & Next/i));
+
+    await waitFor(() =>
+      expect(onCompleteStep).toHaveBeenCalledWith(
+        expect.objectContaining({ step_no: 4, values: { feed: 0.3, depth: 1 } })
+      )
     );
   });
 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import WarningBanner from '../guardian/WarningBanner';
 import { LightbulbIcon } from '../common/Icons';
 
@@ -19,6 +19,14 @@ export default function StepView({
   const [operatorNotes, setOperatorNotes] = useState('');
   const [warning, setWarning] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
+  // Machine settings actually used at this step, prefilled with the procedure's values.
+  const [settings, setSettings] = useState({});
+
+  useEffect(() => {
+    setSettings(
+      Object.fromEntries(Object.entries(step?.params || {}).map(([k, v]) => [k, String(v)]))
+    );
+  }, [step]);
 
   if (!step) return null;
 
@@ -33,14 +41,15 @@ export default function StepView({
     setMeasuredValue(val);
     const num = parseFloat(val);
 
-    // Instant tolerance preview; the backend check on "next" is the one that counts.
+    // A measured value outside its tolerance blocks the step at once (safer than the backend,
+    // which only cautions when the value is just outside); the backend check still runs on save.
     if (!isNaN(num) && minVal != null && maxVal != null) {
       if (num < minVal || num > maxVal) {
         setWarning({
           severity: 'stop',
           warnings: [
             {
-              message: `Measurement ${num} is out of tolerance [${minVal.toFixed(2)} – ${maxVal.toFixed(2)}]. Stop and re-align clamp before proceeding.`,
+              message: `Measurement ${num} is out of tolerance [${minVal} – ${maxVal}]. Measure again; do not continue until it is within limits.`,
             },
           ],
         });
@@ -60,6 +69,11 @@ export default function StepView({
       const ok = await onCompleteStep({
         step_no: step.step_no != null ? step.step_no : stepIndex + 1,
         value: measuredValue ? parseFloat(measuredValue) : null,
+        values: Object.fromEntries(
+          Object.entries(settings)
+            .filter(([, v]) => v !== '' && !isNaN(parseFloat(v)))
+            .map(([k, v]) => [k, parseFloat(v)])
+        ),
         notes: operatorNotes,
       });
       setIsSaving(false);
@@ -160,6 +174,30 @@ export default function StepView({
             placeholder={hasTarget ? `Target ${step.target_value} ±${step.tolerance}` : 'Measured value'}
             className="w-full bg-white border border-slate-300 rounded-xl p-3 text-sm text-slate-900 font-mono focus:border-maroon-600 focus:ring-2 focus:ring-maroon-500/20 outline-none shadow-xs"
           />
+        </div>
+      )}
+
+      {/* Settings used at this step: checked against the machine's approved limits */}
+      {Object.keys(settings).length > 0 && (
+        <div className="bg-slate-900/70 p-4 rounded-2xl border border-slate-800 space-y-2">
+          <span className="text-xs font-semibold text-slate-300 block">
+            Machine settings used at this step (change them if you used different values):
+          </span>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            {Object.entries(settings).map(([name, val]) => (
+              <label key={name} className="text-[11px] text-slate-400 space-y-1">
+                <span className="capitalize">{name.replace('_', ' ')}</span>
+                <input
+                  type="number"
+                  step="any"
+                  value={val}
+                  aria-label={`Setting ${name}`}
+                  onChange={(e) => setSettings((prev) => ({ ...prev, [name]: e.target.value }))}
+                  className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-slate-100 font-mono"
+                />
+              </label>
+            ))}
+          </div>
         </div>
       )}
 

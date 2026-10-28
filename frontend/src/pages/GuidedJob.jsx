@@ -21,6 +21,7 @@ const toBannerResult = (findings) => ({
     'info'
   ),
   warnings: findings,
+  evidence: findings.flatMap((f) => f.evidence || []), // the records behind each warning
 });
 
 export default function GuidedJob() {
@@ -86,6 +87,7 @@ export default function GuidedJob() {
       res = await recordStep(run.run_id, {
         step_no: currentStep.step_no,
         value: stepData.value,
+        values: stepData.values || {},
         notes: stepData.notes || null,
       });
     } catch (err) {
