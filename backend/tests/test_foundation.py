@@ -87,6 +87,12 @@ def test_match_query_quotes_user_operators() -> None:
         ("postgresql://u:p@h/db?sslmode=require", "postgresql+psycopg2://u:p@h/db?sslmode=require"),
         ("postgresql+psycopg2://u:p@h/db", "postgresql+psycopg2://u:p@h/db"),
         ("sqlite:///./blueprint.db", "sqlite:///./blueprint.db"),
+        # password with @ : / as pasted from a dashboard, and one already encoded
+        (
+            "postgresql://u.ref:p@ss:w/rd@01@h.pooler.com:5432/postgres",
+            "postgresql+psycopg2://u.ref:p%40ss%3Aw%2Frd%4001@h.pooler.com:5432/postgres",
+        ),
+        ("postgresql://u:p%40ss@h:6543/db", "postgresql+psycopg2://u:p%40ss@h:6543/db"),
     ],
 )
 def test_hosted_postgres_urls_get_the_driver(url: str, expected: str) -> None:

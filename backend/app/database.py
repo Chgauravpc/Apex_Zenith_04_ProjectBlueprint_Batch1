@@ -14,6 +14,7 @@ import re
 import unicodedata
 from datetime import datetime, timezone
 from typing import Any, Iterator, List, Optional, Tuple
+from urllib.parse import quote, unquote
 
 from sqlalchemy import DateTime, ForeignKey, Integer, create_engine, event, text
 from sqlalchemy.engine import Engine
@@ -58,10 +59,23 @@ def fk(target: str, nullable: bool = True, ondelete: str = "SET NULL") -> Any:
 
 
 def normalize_url(url: str) -> str:
-    """Give hosted-Postgres URLs (`postgres://`, `postgresql://`) the psycopg2 driver name."""
-    for prefix in ("postgres://", "postgresql://"):
+    """Give hosted-Postgres URLs the psycopg2 driver and a safely encoded password.
+
+    Dashboards hand out `postgres://user:pass@host/db` with the password pasted in as typed;
+    a password with `@`, `:` or `/` would otherwise be read as part of the host.
+    """
+    for prefix in ("postgres://", "postgresql://", "postgresql+psycopg2://"):
         if url.startswith(prefix):
-            return "postgresql+psycopg2://" + url[len(prefix) :]
+            rest = url[len(prefix) :]
+            slash = rest.find("/", rest.rfind("@") + 1)
+            netloc, path = (rest, "") if slash < 0 else (rest[:slash], rest[slash:])
+            if "@" in netloc:
+                userinfo, host = netloc.rsplit("@", 1)  # the host never contains "@"
+                user, sep, password = userinfo.partition(":")
+                # unquote first so an already encoded password is not encoded twice
+                password = quote(unquote(password), safe="")
+                netloc = f"{user}{sep}{password}@{host}"
+            return "postgresql+psycopg2://" + netloc + path
     return url
 
 
