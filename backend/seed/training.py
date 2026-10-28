@@ -24,6 +24,7 @@ from app.models.guide import SKILL_CAN_TEACH, SKILL_GUIDED, Procedure, Procedure
 from app.models.knowledge import ChipSample, KnowledgeCard, SoundClip
 from app.models.map3d import Component
 from app.models.transfer import KnowledgeBuddy
+from app.services import storage
 
 SAMPLE_RATE = 44100
 CLIP_SECONDS = 3
@@ -214,6 +215,7 @@ def _seed_samples(db: Session, mc: Dict[str, Any], people: Dict[str, Any]) -> No
     for i, (name, label, freqs, card_id) in enumerate(clips):
         path = out / name
         write_wav(path, freqs, seed=i)
+        storage.persist(path)
         _get_or_add(
             db,
             SoundClip,
@@ -234,6 +236,7 @@ def _seed_samples(db: Session, mc: Dict[str, Any], people: Dict[str, Any]) -> No
     for i, (name, colour, bgr, tool_mat) in enumerate(CHIPS):
         path = out / name
         draw_chips(path, bgr, seed=i)
+        storage.persist(path)
         _get_or_add(
             db,
             ChipSample,

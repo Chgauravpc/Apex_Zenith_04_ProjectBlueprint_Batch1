@@ -26,7 +26,7 @@ from app.models.ops import Job
 from app.prompts import wrap_records
 from app.prompts.video import VIDEO_PROMPT
 from app.schemas.capture import DraftStep, VideoProcedureDraft
-from app.services import jobs, llm, stt
+from app.services import jobs, llm, storage, stt
 from app.services.capture.voice import check_refs
 from app.utils.audit import audit
 from app.utils.files import save_upload
@@ -177,6 +177,7 @@ def _save_frame(doc_id: int, i: int, frame: Keyframe) -> str:
     folder.mkdir(parents=True, exist_ok=True)
     path = folder / f"{doc_id}_{i}.jpg"
     path.write_bytes(frame.jpeg_bytes)
+    storage.persist(path)
     return str(path)
 
 

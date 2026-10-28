@@ -13,7 +13,8 @@ from uuid import uuid4
 from fastapi import UploadFile
 
 from app.config import get_settings
-from app.errors import PayloadTooLarge, ValidationFailed
+from app.errors import PayloadTooLarge, ProviderUnavailable, ValidationFailed
+from app.services import storage
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +22,8 @@ Kind = Literal["audio", "image", "video"]
 
 CHUNK_BYTES = 1024 * 1024
 MB = 1024 * 1024
-MAX_BYTES: Dict[str, int] = {"audio": 25 * MB, "image": 10 * MB, "video": 100 * MB}
+# Video: Supabase's free plan stores at most 50 MB per file.
+MAX_BYTES: Dict[str, int] = {"audio": 25 * MB, "image": 10 * MB, "video": 50 * MB}
 
 ALLOWED_EXT: Dict[str, FrozenSet[str]] = {
     "audio": frozenset({".wav", ".mp3", ".m4a", ".webm", ".ogg", ".mp4", ".flac"}),
@@ -98,6 +100,7 @@ def save_upload(file: UploadFile, kind: Kind) -> Path:
     Raises:
         ValidationFailed: wrong MIME type or extension, or empty file.
         PayloadTooLarge: larger than MAX_BYTES[kind].
+        ProviderUnavailable: hosted file storage refused it (the local copy is removed too).
 
     Complexity: O(size) time, O(1) memory.
     """
@@ -112,5 +115,10 @@ def save_upload(file: UploadFile, kind: Kind) -> Path:
     folder.mkdir(parents=True, exist_ok=True)
     dest = folder / f"{uuid4().hex}{ext}"
     size = _copy_limited(file.file, dest, MAX_BYTES[kind])
+    try:
+        storage.persist(dest)
+    except ProviderUnavailable:
+        dest.unlink(missing_ok=True)  # a file that vanishes on the next restart is worse
+        raise
     logger.info("saved %s upload %s (%d bytes)", kind, dest.name, size)
     return dest

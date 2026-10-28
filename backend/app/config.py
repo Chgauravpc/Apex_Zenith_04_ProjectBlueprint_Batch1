@@ -32,6 +32,15 @@ class Settings(BaseSettings):
 
     database_url: str = "sqlite:///./blueprint.db"
     storage_dir: str = "storage"
+    # "supabase" also keeps every upload in a private Supabase Storage bucket, for hosts whose
+    # disk is wiped on restart (Render free). The service key is server-only: never ship it.
+    storage_backend: Literal["local", "supabase"] = "local"
+    supabase_url: Optional[str] = None
+    supabase_service_key: Optional[str] = None
+    supabase_bucket: str = "media"
+    # Public address of this API (e.g. https://blueprint-api.onrender.com). When set, media
+    # links are absolute, so a frontend on another domain (Vercel) can load them.
+    public_base_url: str = ""
     # Where card vectors come from: "cloudflare" (Workers AI bge-m3, free plan, no torch),
     # "local" (e5-small in-process, needs torch, ~500 MB RAM) or "off" (keyword search only).
     # Changing it makes stored vectors stale; the startup backfill re-embeds them.
