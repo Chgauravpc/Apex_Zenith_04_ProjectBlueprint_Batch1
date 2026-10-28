@@ -14,7 +14,7 @@ from app.models.transfer import KnowledgeGap
 from app.schemas.ask import AnswerLLM, AskRequest, FeedbackIn
 from app.services import embeddings
 from app.services.ask import qa
-from app.services.ask.search import hybrid_search
+from app.services.ask.search import hybrid_search, search_with_mode
 
 
 @pytest.fixture()
@@ -72,8 +72,14 @@ def test_vector_search_finds_meaning_without_shared_words(db, story, monkeypatch
     query_vec[0, 0] = 1.0
     monkeypatch.setattr(embeddings, "try_embed", lambda texts, kind="passage": query_vec)
 
-    hits = hybrid_search(db, "machine cold in the morning", vmc.id, None, k=3)
-    assert hits[0].record_id == target.id
+    hits, mode = search_with_mode(db, "machine cold in the morning", vmc.id, None, k=3)
+    assert hits[0].record_id == target.id and mode == "semantic"
+
+
+def test_search_says_keyword_when_embeddings_are_down(db, story) -> None:
+    # story: try_embed returns None, as with EMBEDDING_PROVIDER=off or Hugging Face down
+    hits, mode = search_with_mode(db, "chatter on SS304", _vmc(story).id, None)
+    assert hits and mode == "keyword"
 
 
 def test_card_source_links_its_recording(db, story) -> None:
@@ -131,6 +137,7 @@ def test_answer_keeps_only_retrieved_citations(db, story, fake_llm) -> None:
 
     assert [s.id for s in out.sources] == [real]  # invented id dropped
     assert not out.not_enough_data and out.mode == "live" and out.steps[0] == "Feed 0.12 mm/rev"
+    assert out.search_mode == "keyword"  # no vectors in this test: full-text search only
     assert out.suggested_expert == "Ramesh Patil"
     saved = db.get(Query, out.query_id)
     assert saved.answered and saved.sources == [

@@ -31,7 +31,7 @@ from app.schemas.ask import (
     SourceOut,
 )
 from app.services import llm, stt, tts
-from app.services.ask.search import hybrid_search, media_url
+from app.services.ask.search import media_url, search_with_mode
 from app.utils import lexicon
 from app.utils.audit import audit
 from app.utils.files import save_upload
@@ -181,7 +181,9 @@ def answer(db: Session, req: AskRequest, transcript: Optional[str] = None) -> As
     machine = db.get(Machine, req.machine_id) if req.machine_id is not None else None
     if req.machine_id is not None and machine is None:
         raise NotFound(f"machine {req.machine_id} not found")
-    hits = hybrid_search(db, req.question, req.machine_id, req.component_id, k=TOP_K)
+    hits, search_mode = search_with_mode(
+        db, req.question, req.machine_id, req.component_id, k=TOP_K
+    )
     out, mode = (
         _ask_llm(req, hits, machine.name if machine else None)
         if hits
@@ -235,6 +237,7 @@ def answer(db: Session, req: AskRequest, transcript: Optional[str] = None) -> As
         confidence=0.0 if not_enough else out.confidence,
         not_enough_data=not_enough,
         mode=mode,
+        search_mode=search_mode,
     )
 
 

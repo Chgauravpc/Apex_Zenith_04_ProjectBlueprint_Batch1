@@ -92,6 +92,8 @@ class AskAnswer(BaseModel):
     confidence: float = 0.0
     not_enough_data: bool = False
     mode: Literal["live", "offline"] = "live"
+    # "keyword" = embeddings were unavailable, so only full-text search ran
+    search_mode: Literal["semantic", "keyword"] = "keyword"
     audio_url: Optional[str] = None
 
 

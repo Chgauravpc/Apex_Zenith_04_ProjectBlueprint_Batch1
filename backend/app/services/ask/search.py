@@ -5,11 +5,14 @@
 3. Vector top 50 over the machine's cards (when the embedding model is available).
 4. Reciprocal-rank fusion (RRF), boost cards an old employee verified, keep k.
 5. Load details for the k winners only, one query per record type.
+
+The search mode says which retrievers ran: "semantic" (full-text + vectors) or "keyword"
+(full-text only, because embeddings are off, failing, or no card has a vector yet).
 """
 
 import logging
 from pathlib import Path
-from typing import Dict, Iterable, List, Optional, Tuple
+from typing import Dict, Iterable, List, Literal, Optional, Tuple
 
 import numpy as np
 from sqlalchemy import select
@@ -34,14 +37,15 @@ VERIFIED_BOOST = 1.3
 SNIPPET_CHARS = 220
 
 Ref = Tuple[str, int]
+SearchMode = Literal["semantic", "keyword"]
 
 
 def _expanded(query: str) -> str:
     return " ".join([query] + lexicon.expand_query(query))
 
 
-def _vector_ranking(db: Session, query: str, machine_id: Optional[int]) -> List[Ref]:
-    """Cards ranked by cosine similarity; empty when embeddings are unavailable."""
+def _vector_ranking(db: Session, query: str, machine_id: Optional[int]) -> Optional[List[Ref]]:
+    """Cards ranked by cosine similarity; None when there is nothing to compare with."""
     conds = [KnowledgeCard.embedding.is_not(None)]
     if machine_id is not None:
         conds.append(KnowledgeCard.machine_id == machine_id)
@@ -52,10 +56,10 @@ def _vector_ranking(db: Session, query: str, machine_id: Optional[int]) -> List[
         .limit(MAX_VECTOR_ROWS)
     ).all()
     if not rows:
-        return []
+        return None
     qvec = embeddings.try_embed([query], kind="query")
     if qvec is None:
-        return []
+        return None
     matrix = np.vstack([embeddings.from_bytes(blob) for _, blob in rows])  # (n, 384)
     scores = matrix @ qvec[0]  # vectors are unit length, so this is cosine similarity
     top = np.argsort(-scores)[:CANDIDATES]
@@ -223,21 +227,29 @@ def _add_names(db: Session, hits: List[Hit]) -> None:
 def hybrid_search(
     db: Session, query: str, machine_id: Optional[int], component_id: Optional[int], k: int = 6
 ) -> List[Hit]:
-    """Best k records for a question, any language.
+    """Best k records for a question, any language (see `search_with_mode`)."""
+    return search_with_mode(db, query, machine_id, component_id, k)[0]
+
+
+def search_with_mode(
+    db: Session, query: str, machine_id: Optional[int], component_id: Optional[int], k: int = 6
+) -> Tuple[List[Hit], SearchMode]:
+    """Best k records for a question, plus whether meaning (vectors) was used.
 
     Complexity: FTS O(log n) + vectors O(m·384) for m ≤ MAX_VECTOR_ROWS cards of the machine,
     then O(k) detail loading.
     """
     if not query.strip():
-        return []
+        return [], "keyword"
     fts = [
         (t, i)
         for t, i, _ in fts_search(db, _expanded(query), machine_id=machine_id, limit=CANDIDATES)
     ]
     vectors = _vector_ranking(db, query, machine_id)
-    scores = _fuse([fts, vectors])
+    mode: SearchMode = "keyword" if vectors is None else "semantic"
+    scores = _fuse([fts, vectors or []])
     if not scores:
-        return []
+        return [], mode
     # Load a few more than k: the verified boost and the component filter re-order them.
     shortlist = sorted(scores, key=scores.get, reverse=True)[: k * 3]
     loaded = _load_by_type(db, shortlist)
@@ -253,5 +265,7 @@ def hybrid_search(
     hits.sort(key=lambda h: h.score, reverse=True)
     hits = hits[:k]
     _add_names(db, hits)
-    logger.info("search fts=%d vector=%d hits=%d", len(fts), len(vectors), len(hits))
-    return hits
+    logger.info(
+        "search mode=%s fts=%d vector=%d hits=%d", mode, len(fts), len(vectors or []), len(hits)
+    )
+    return hits, mode
