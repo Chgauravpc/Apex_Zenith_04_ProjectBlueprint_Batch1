@@ -109,17 +109,33 @@ def test_interview_answers_become_verified_cards_and_tick_tasks(db, story, fake_
             question_id=q.id,
             answer_text="Spindle ki awaaz badal jaye to temp check karo, 55 se "
             "upar ho to machine roko",
+            author_id=ramesh.id,
         ),
     )
 
     card = db.get(KnowledgeCard, out.card.id)
     assert card.verified_by_id == ramesh.id and card.author_id == ramesh.id
+    assert card.title == q.text[:80] or card.context == q.text  # the question asked, not why
     assert db.get(HandoverTask, q.task_id).status == "done"
     db.refresh(plan)
     assert 0 < plan.progress < 1 and out.remaining == len(session.questions) - 1
     with pytest.raises(ValidationFailed):
         interview.answer_interview(
-            db, session.id, InterviewAnswerIn(question_id=q.id, answer_text="again")
+            db,
+            session.id,
+            InterviewAnswerIn(question_id=q.id, answer_text="again", author_id=ramesh.id),
+        )
+
+
+def test_only_the_interviewed_employee_can_answer(db, story, fake_llm) -> None:
+    ramesh, priya = story["people"]["Ramesh"], story["people"]["Priya"]
+    session = interview.start_interview(db, InterviewStartIn(employee_id=ramesh.id))
+    q = session.questions[0]
+    with pytest.raises(ValidationFailed, match="only Ramesh Patil can answer"):
+        interview.answer_interview(
+            db,
+            session.id,
+            InterviewAnswerIn(question_id=q.id, answer_text="feed 0.12", author_id=priya.id),
         )
 
 

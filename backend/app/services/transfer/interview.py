@@ -282,6 +282,12 @@ def answer_interview(
     session = db.get(InterviewSession, session_id)
     if session is None:
         raise NotFound(f"interview {session_id} not found")
+    if payload.author_id != session.employee_id:
+        owner = db.get(Employee, session.employee_id)
+        raise ValidationFailed(
+            f"only {owner.name if owner else 'the interviewed employee'} can answer this "
+            "interview: the answer is saved as their verified know-how"
+        )
     questions = [dict(q) for q in session.questions or []]
     q = next((x for x in questions if x["id"] == payload.question_id), None)
     if q is None:
@@ -294,7 +300,7 @@ def answer_interview(
         session.employee_id,
         session.machine_id,
         q.get("component_id"),
-        q["reason"],
+        q["text"],
     )
     q["answered"] = True
     session.questions = questions  # reassign so the JSON column change is saved

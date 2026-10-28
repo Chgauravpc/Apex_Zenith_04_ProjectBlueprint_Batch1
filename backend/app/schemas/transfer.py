@@ -82,6 +82,8 @@ class InterviewQuestionsLLM(BaseModel):
 class InterviewAnswerIn(BaseModel):
     question_id: int
     answer_text: str = Field(min_length=1, max_length=8000)
+    # Who is answering: must be the interviewed old employee (the card is verified as theirs).
+    author_id: int
 
 
 class InterviewAnswerOut(BaseModel):
