@@ -9,7 +9,7 @@ describe('3D Machine Knowledge Map Components (T21)', () => {
   const spindleComponent = VMC_COMPONENTS_DATA.find((c) => c.mesh_name === 'spindle');
   const viseComponent = VMC_COMPONENTS_DATA.find((c) => c.mesh_name === 'vise');
 
-  it('renders ComponentPanel with component name, short description, and expert knowledge placeholder', () => {
+  it('renders ComponentPanel with component name, description, knowledge counts, expert tips, and troubleshooting', () => {
     const handleReset = vi.fn();
     const handleOpenPinForm = vi.fn();
     const handleFocus = vi.fn();
@@ -30,26 +30,39 @@ describe('3D Machine Knowledge Map Components (T21)', () => {
     expect(screen.getByText('Spindle Assembly')).toBeDefined();
     expect(screen.getByText(/High Risk/i)).toBeDefined();
 
+    // Knowledge Count summary badge and counters
+    expect(screen.getByText(/Knowledge Count:/i)).toBeDefined();
+    expect(screen.getAllByText(/Expert Tips/i).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText(/Guides/i).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText(/Incidents/i).length).toBeGreaterThanOrEqual(1);
+
     // Short description
     expect(screen.getByText(/Component Description/i)).toBeDefined();
     expect(screen.getByText(/High-speed precision cartridge spindle/i)).toBeDefined();
 
     // Placeholder for expert knowledge
     expect(screen.getByText(/Expert Knowledge & Tacit Know-How/i)).toBeDefined();
-    expect(screen.getByText(/Unwritten machinist tips/i)).toBeDefined();
 
     // Engineering parameters
     expect(screen.getByText(/Engineering Parameters/i)).toBeDefined();
     expect(screen.getByText('12,000 RPM')).toBeDefined();
     expect(screen.getByText('BT40 / CAT40')).toBeDefined();
 
-    // Old employee verified know-how
+    // Associated expert tips authored by Ramesh (Old Employee)
     expect(screen.getByText(/SS304 Flange Chatter Precedes Bearing Overheat/i)).toBeDefined();
     expect(screen.getAllByText(/Ramesh \(Old Employee\)/i).length).toBeGreaterThanOrEqual(1);
+
+    // Dedicated Troubleshooting guidance section
+    expect(screen.getByText(/Troubleshooting Guidance/i)).toBeDefined();
+    expect(screen.getByText(/Headstock Chatter & Vibration/i)).toBeDefined();
+    expect(screen.getByText(/Probable Cause:/i)).toBeDefined();
+    expect(screen.getByText(/Step-by-Step Diagnostic Checks:/i)).toBeDefined();
+    expect(screen.getByText(/Ramesh: "Don’t just crank down feed override blindly/i)).toBeDefined();
 
     // Historical failure incidents
     expect(screen.getByText('INC-881')).toBeDefined();
     expect(screen.getByText(/Severe 427 Hz chatter spike/i)).toBeDefined();
+    expect(screen.getByText(/Chatter Harmonic Spike/i)).toBeDefined();
 
     // Action buttons & Reset Selection
     const pinBtn = screen.getByRole('button', { name: /Pin New Know-How Card/i });
@@ -65,6 +78,25 @@ describe('3D Machine Knowledge Map Components (T21)', () => {
     expect(resetBtns.length).toBeGreaterThanOrEqual(1);
     fireEvent.click(resetBtns[0]);
     expect(handleReset).toHaveBeenCalled();
+  });
+
+  it('toggles troubleshooting guidance items accordion for a component', () => {
+    render(
+      <BrowserRouter>
+        <ComponentPanel component={spindleComponent} />
+      </BrowserRouter>
+    );
+
+    expect(screen.getByText(/Troubleshooting Guidance/i)).toBeDefined();
+    expect(screen.getByText(/Headstock Chatter & Vibration/i)).toBeDefined();
+
+    // Second troubleshooting guide button
+    const secondGuideBtn = screen.getByText(/Spindle Taper Tool Sticking/i);
+    expect(secondGuideBtn).toBeDefined();
+    fireEvent.click(secondGuideBtn);
+
+    expect(screen.getByText(/Thermal expansion vacuum or dry bellville washer/i)).toBeDefined();
+    expect(screen.getByText(/Never strike a stuck tool holder with a mallet/i)).toBeDefined();
   });
 
   it('renders empty prompt when no component is selected, with assembly shortcuts', () => {
