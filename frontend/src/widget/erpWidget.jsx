@@ -1,60 +1,51 @@
 import React, { useState } from 'react';
 import WarningBanner from '../components/guardian/WarningBanner';
+import useApi from '../hooks/useApi';
+import { getWarnings } from '../api/guardian';
+import { getBriefing } from '../api/guide';
+
+const SEVERITY_RANK = { info: 0, caution: 1, stop: 2 };
+const MAX_TIPS = 3;
 
 /**
  * Embeddable ERP Widget for shop-floor MES/ERP work order screens.
  * Reference: PRD.md §9.7 and TASKS.md T25.
+ *
+ * The host ERP passes the work order; the Guardian warnings (GET /guardian/warnings) and the
+ * things to know (GET /guide/briefing/{employee}) come from Blueprint for that machine/operator.
  */
 export default function ErpWidget({
   workOrder = {
     id: 'WO-8842',
     part: 'SS304 Precision Flange',
     machine: 'VMC-3',
+    machineId: 1,
     quantity: 50,
-    operator: 'Priya Patel',
+    operator: 'Priya Shinde',
+    operatorId: 2,
   },
   onLaunchGuide,
   onLaunchAsk,
 }) {
   const [activeTab, setActiveTab] = useState('context');
+  const warnings = useApi((signal) => getWarnings(workOrder.machineId, signal), [workOrder.machineId]);
+  const briefing = useApi(
+    (signal) => (workOrder.operatorId ? getBriefing(workOrder.operatorId, signal) : Promise.resolve(null)),
+    [workOrder.operatorId]
+  );
 
-  const guardianCheck = {
-    severity: 'caution',
-    warnings: [
-      {
-        message: 'Prior setup on VMC-3 had chatter on SS304 with feed > 0.25 mm/rev.',
-      },
-    ],
-    expert_fix: 'Keep roughing pass feed under 0.20 mm/rev and torque ER32 collet to 90 Nm.',
-    evidence: [
-      {
-        id: 12,
-        kind: 'QC Reject',
-        title: '3 Flanges rejected due to bore chatter marks on Nov 14',
-      },
-    ],
+  // The most serious open warning on this machine, shown before the job starts.
+  const open = (warnings.data?.items || []).filter((w) => w.status === 'open');
+  const worst = open.reduce(
+    (top, w) => (!top || SEVERITY_RANK[w.severity] > SEVERITY_RANK[top.severity] ? w : top),
+    null
+  );
+  const guardianCheck = worst && {
+    severity: worst.severity,
+    warnings: [{ message: worst.message }, ...(open.length > 1 ? [{ message: `${open.length - 1} more open warning(s) on this machine.` }] : [])],
+    evidence: worst.evidence || [],
   };
-
-  const thingsToKnow = [
-    {
-      icon: '💡',
-      title: 'Vise parallel bar chip trap',
-      tip: 'Wipe vise bed thoroughly by hand before placing raw billet; trapped chips cause 0.08 mm tilt.',
-      author: 'Ramesh Sharma (Old Employee)',
-    },
-    {
-      icon: '⚙️',
-      title: 'Tool stick-out tolerance',
-      tip: 'Tool #4 overhang must not exceed 35 mm to avoid resonance at 3200 RPM.',
-      author: 'Ramesh Sharma',
-    },
-    {
-      icon: '🚿',
-      title: 'Coolant nozzle alignment',
-      tip: 'Ensure nozzle #2 points directly at tool trailing edge to prevent stainless work-hardening.',
-      author: 'Ramesh Sharma',
-    },
-  ];
+  const thingsToKnow = (briefing.data?.known_issues || []).slice(0, MAX_TIPS);
 
   return (
     <div className="bg-slate-900 border border-slate-700/80 rounded-2xl p-5 shadow-2xl text-slate-100 max-w-xl mx-auto space-y-4 font-sans">
@@ -80,7 +71,15 @@ export default function ErpWidget({
       </div>
 
       {/* Pre-Job Guardian Warning */}
-      <WarningBanner result={guardianCheck} />
+      {warnings.error && (
+        <p className="text-xs text-amber-300">Guardian warnings not loaded: {warnings.error}</p>
+      )}
+      {guardianCheck ? (
+        <WarningBanner result={guardianCheck} />
+      ) : (
+        !warnings.loading &&
+        !warnings.error && <p className="text-xs text-emerald-300">No open Guardian warnings on this machine.</p>
+      )}
 
       {/* Tab Controls */}
       <div className="flex space-x-2 border-b border-slate-800 pb-1">
@@ -93,26 +92,26 @@ export default function ErpWidget({
               : 'text-slate-400 hover:text-slate-200'
           }`}
         >
-          3 Things to Know Before Job
+          Things to Know Before Job
         </button>
       </div>
 
       {/* Things to Know Cards */}
       {activeTab === 'context' && (
         <div className="space-y-2.5">
-          {thingsToKnow.map((item, idx) => (
+          {briefing.loading && <p className="text-xs text-slate-400">Loading…</p>}
+          {briefing.error && (
+            <p className="text-xs text-amber-300">Briefing not loaded: {briefing.error}</p>
+          )}
+          {!briefing.loading && !briefing.error && thingsToKnow.length === 0 && (
+            <p className="text-xs text-slate-400">Nothing recorded for this job yet.</p>
+          )}
+          {thingsToKnow.map((tip) => (
             <div
-              key={idx}
-              className="bg-slate-950/70 border border-slate-800 rounded-xl p-3 space-y-1 text-xs"
+              key={tip}
+              className="bg-slate-950/70 border border-slate-800 rounded-xl p-3 text-xs text-slate-300 leading-relaxed"
             >
-              <div className="flex items-center space-x-2">
-                <span>{item.icon}</span>
-                <span className="font-bold text-slate-200">{item.title}</span>
-              </div>
-              <p className="text-slate-300 pl-5 leading-relaxed">{item.tip}</p>
-              <span className="text-[10px] text-cyan-400/80 pl-5 block">
-                Source: {item.author}
-              </span>
+              💡 {tip}
             </div>
           ))}
         </div>
