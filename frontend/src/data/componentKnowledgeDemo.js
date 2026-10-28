@@ -581,15 +581,17 @@ export const COMPONENT_KNOWLEDGE_DEMO = {
  * @returns {{ tips: number, incidents: number, troubleshooting: number, total: number }}
  */
 export const getKnowledgeCounts = (comp) => {
-  if (!comp) return { tips: 0, incidents: 0, troubleshooting: 0, total: 0 };
+  if (!comp) return { tips: 0, incidents: 0, troubleshooting: 0, procedures: 0, total: 0 };
   const tips = (comp.expert_tips || comp.expert_notes || []).length;
   const incidents = (comp.past_incidents || []).length;
   const troubleshooting = (comp.troubleshooting || []).length;
+  const procedures = (comp.procedures || []).length;
   return {
     tips,
     incidents,
     troubleshooting,
-    total: tips + incidents + troubleshooting,
+    procedures,
+    total: tips + incidents + troubleshooting + procedures,
   };
 };
 
