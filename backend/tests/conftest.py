@@ -35,6 +35,10 @@ def _no_real_provider_keys(request: pytest.FixtureRequest, monkeypatch: pytest.M
 
         monkeypatch.setattr(get_settings(), "groq_api_key", None)
         monkeypatch.setattr(get_settings(), "openrouter_api_key", None)
+        # Same for embeddings: tests use the local provider's 384-dim vectors, never Cloudflare.
+        monkeypatch.setattr(get_settings(), "embedding_provider", "local")
+        monkeypatch.setattr(get_settings(), "cf_account_id", None)
+        monkeypatch.setattr(get_settings(), "cf_api_token", None)
 
 
 @pytest.fixture(scope="session")

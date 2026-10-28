@@ -292,12 +292,12 @@ def test_embeddings_switched_off_never_loads_the_model(monkeypatch) -> None:
     assert embeddings._load_failed is False  # flag is checked before any import or download
 
 
-# --- cloud embeddings (Hugging Face API, mocked HTTP) ----------------------------------------
+# --- Cloudflare embeddings (Workers AI bge-m3, mocked HTTP) ----------------------------------
 
 
 @pytest.fixture()
-def hf(monkeypatch):
-    """Cloud provider pointed at a mock transport; `hf.replies` are served in order."""
+def cf(monkeypatch):
+    """Cloudflare provider pointed at a mock transport; `cf.replies` are served in order."""
     import json
 
     import httpx
@@ -305,91 +305,118 @@ def hf(monkeypatch):
     from app.config import get_settings
     from app.services import embeddings
 
-    class HF:
+    class CF:
         replies: list = []
         requests: list = []
         waits: list = []
 
     def handler(request: httpx.Request) -> httpx.Response:
-        HF.requests.append(request)
-        reply = HF.replies.pop(0)
+        CF.requests.append(request)
+        reply = CF.replies.pop(0)
         if isinstance(reply, Exception):
             raise reply
         if isinstance(reply, int):
-            return httpx.Response(reply, json={"error": "nope"})
+            return httpx.Response(reply, json={"success": False, "errors": [{"message": "no"}]})
         if reply == "echo":  # one vector per input, length 2 before normalising
-            n = len(json.loads(request.content)["inputs"])
-            return httpx.Response(200, json=[[2.0] + [0.0] * 383] * n)
+            n = len(json.loads(request.content)["text"])
+            data = [[2.0] + [0.0] * 1023] * n
+            return httpx.Response(200, json={"result": {"shape": [n, 1024], "data": data}})
         return httpx.Response(200, json=reply)
 
-    HF.replies, HF.requests, HF.waits = [], [], []
-    monkeypatch.setattr(get_settings(), "embedding_provider", "cloud")
-    monkeypatch.setattr(get_settings(), "hf_api_token", "hf_test_token")
+    CF.replies, CF.requests, CF.waits = [], [], []
+    monkeypatch.setattr(get_settings(), "embedding_provider", "cloudflare")
+    monkeypatch.setattr(get_settings(), "cf_account_id", "acc123")
+    monkeypatch.setattr(get_settings(), "cf_api_token", "cf_test_token")
     monkeypatch.setattr(embeddings, "_cloud_down_until", 0.0)
     monkeypatch.setattr(embeddings, "_client", httpx.Client(transport=httpx.MockTransport(handler)))
-    monkeypatch.setattr(embeddings.time, "sleep", HF.waits.append)
-    return HF
+    monkeypatch.setattr(embeddings.time, "sleep", CF.waits.append)
+    return CF
 
 
-def test_cloud_embeddings_batch_prefix_and_normalise(hf) -> None:
+def test_cloudflare_embeddings_batch_and_normalise(cf) -> None:
     import json
 
     from app.services import embeddings
 
-    hf.replies = ["echo", "echo"]
+    cf.replies = ["echo", "echo"]
     vectors = embeddings.try_embed([f"chatter {i}" for i in range(40)], kind="query")
 
-    assert vectors.shape == (40, 384) and vectors[0][0] == pytest.approx(1.0)
-    sizes = [len(json.loads(r.content)["inputs"]) for r in hf.requests]
-    assert sizes == [32, 8]
-    first = hf.requests[0]
-    assert json.loads(first.content)["inputs"][0] == "query: chatter 0"
-    assert first.headers["authorization"] == "Bearer hf_test_token"
-    assert first.url.path.endswith("/intfloat/multilingual-e5-small/pipeline/feature-extraction")
+    assert vectors.shape == (40, 1024) and vectors[0][0] == pytest.approx(1.0)
+    assert [len(json.loads(r.content)["text"]) for r in cf.requests] == [32, 8]
+    first = cf.requests[0]
+    assert json.loads(first.content)["text"][0] == "chatter 0"  # bge-m3 takes no e5 prefix
+    assert first.headers["authorization"] == "Bearer cf_test_token"
+    assert first.url.path == "/client/v4/accounts/acc123/ai/run/@cf/baai/bge-m3"
 
 
-def test_cloud_embeddings_retry_rate_limit_then_succeed(hf) -> None:
+def test_cloudflare_retry_rate_limit_then_succeed(cf) -> None:
     from app.services import embeddings
 
-    hf.replies = [429, "echo"]
-    assert embeddings.try_embed(["chatter"]).shape == (1, 384)
-    assert len(hf.requests) == 2 and len(hf.waits) == 1
+    cf.replies = [429, "echo"]
+    assert embeddings.try_embed(["chatter"]).shape == (1, 1024)
+    assert len(cf.requests) == 2 and len(cf.waits) == 1
 
 
-def test_cloud_outage_gives_up_then_cools_down(hf) -> None:
+def test_cloudflare_outage_gives_up_then_cools_down(cf) -> None:
     from app.services import embeddings
 
-    hf.replies = [503, 503, 503]
+    cf.replies = [503, 503, 503]
     assert embeddings.try_embed(["chatter"]) is None
-    assert len(hf.requests) == 3  # first try + 2 retries
+    assert len(cf.requests) == 3  # first try + 2 retries
     assert embeddings.try_embed(["chatter"]) is None
-    assert len(hf.requests) == 3  # cooling down: no new request, search goes keyword-only
+    assert len(cf.requests) == 3  # cooling down: no new request, search goes keyword-only
 
 
-def test_cloud_timeout_is_retried(hf) -> None:
+def test_cloudflare_timeout_is_retried(cf) -> None:
     import httpx
 
     from app.services import embeddings
 
-    hf.replies = [httpx.ReadTimeout("slow"), "echo"]
-    assert embeddings.try_embed(["chatter"]).shape == (1, 384)
+    cf.replies = [httpx.ReadTimeout("slow"), "echo"]
+    assert embeddings.try_embed(["chatter"]).shape == (1, 1024)
 
 
-@pytest.mark.parametrize("reply", [401, [[1.0] * 768], [[[1.0] * 384, [1.0] * 384]], [[0.0] * 384]])
-def test_cloud_bad_token_or_wrong_vectors_are_not_retried(hf, reply) -> None:
+@pytest.mark.parametrize(
+    "reply",
+    [
+        401,
+        {"result": {"data": [[1.0] * 384]}},  # wrong size
+        {"result": {"data": [[1.0] * 1024, [1.0] * 512]}},  # ragged
+        {"result": {"data": [[0.0] * 1024]}},  # empty vector
+        {"errors": []},  # no result
+    ],
+)
+def test_cloudflare_bad_token_or_wrong_vectors_are_not_retried(cf, reply) -> None:
     from app.services import embeddings
 
-    hf.replies = [reply]
+    cf.replies = [reply]
     assert embeddings.try_embed(["chatter"]) is None
-    assert len(hf.requests) == 1
+    assert len(cf.requests) == 1
 
 
-def test_cloud_without_token_never_calls_the_api(hf, monkeypatch) -> None:
+def test_cloudflare_without_credentials_never_calls_the_api(cf, monkeypatch) -> None:
     from app.config import get_settings
     from app.services import embeddings
 
-    monkeypatch.setattr(get_settings(), "hf_api_token", None)
-    assert embeddings.try_embed(["chatter"]) is None and hf.requests == []
+    monkeypatch.setattr(get_settings(), "cf_api_token", None)
+    assert embeddings.try_embed(["chatter"]) is None and cf.requests == []
+
+
+def test_switching_model_reembeds_old_vectors(db, shop, cf) -> None:
+    import numpy as np
+
+    from app.services import embeddings
+    from app.services.capture.extractor import backfill_embeddings
+
+    rows = _cards_without_vectors(db, shop, 3)
+    rows[0].embedding = embeddings.to_bytes(np.ones(384, np.float32))  # from the local model
+    rows[1].embedding = embeddings.to_bytes(np.ones(1024, np.float32))  # already bge-m3
+    db.commit()
+    cf.replies = ["echo"]
+
+    assert backfill_embeddings(db) == 2  # the e5 vector and the missing one
+    assert [len(r.embedding) for r in rows] == [4096, 4096, 4096]
+    assert len(cf.requests) == 1
 
 
 # --- capture endpoints -----------------------------------------------------------------------

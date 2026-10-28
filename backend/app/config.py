@@ -32,12 +32,12 @@ class Settings(BaseSettings):
 
     database_url: str = "sqlite:///./blueprint.db"
     storage_dir: str = "storage"
-    # Where card vectors come from: "local" model (needs torch, ~500 MB RAM), "cloud"
-    # (Hugging Face Inference API, for small hosts) or "off" (keyword search only).
-    embedding_provider: Literal["local", "cloud", "off"] = "local"
-    hf_api_token: Optional[str] = None
-    # Must give 384-dim vectors: stored vectors and new ones have to come from the same model.
-    embedding_model: str = "intfloat/multilingual-e5-small"
+    # Where card vectors come from: "cloudflare" (Workers AI bge-m3, free plan, no torch),
+    # "local" (e5-small in-process, needs torch, ~500 MB RAM) or "off" (keyword search only).
+    # Changing it makes stored vectors stale; the startup backfill re-embeds them.
+    embedding_provider: Literal["cloudflare", "local", "off"] = "local"
+    cf_account_id: Optional[str] = None
+    cf_api_token: Optional[str] = None  # needs the "Workers AI" permission
     frontend_origin: str = "http://localhost:5173"
     erp_base_url: str = "http://localhost:8001"
 
