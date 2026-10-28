@@ -116,33 +116,73 @@ export default function MachineMap() {
   const handleSavePin = async (pinData) => {
     const res = await createPin(pinData.component_id, pinData);
     if (res) {
-      // Append new note to the component's expert notes & tips list in local state
+      const type = pinData.knowledge_type || pinData.type || 'tip';
+      // Append new entry to the corresponding collection in local component state
       setComponents((prev) =>
         prev.map((c) => {
           if (c.id === pinData.component_id || c.mesh_name === pinData.mesh_name) {
-            const updatedNotes = [
-              {
+            let updatedTips = [...(c.expert_tips || c.expert_notes || [])];
+            let updatedIncidents = [...(c.past_incidents || [])];
+            let updatedProcedures = [...(c.procedures || [])];
+
+            if (type === 'tip') {
+              const newTip = {
                 id: res.id || Date.now(),
                 author: pinData.author,
                 date: pinData.date,
-                severity: pinData.severity,
+                severity: pinData.severity || 'watch',
                 title: pinData.title,
-                text: pinData.text,
-                verified: pinData.verified,
-              },
-              ...(c.expert_tips || c.expert_notes || []),
-            ];
+                text: pinData.description || pinData.text,
+                verified: Boolean(pinData.verified),
+              };
+              updatedTips = [newTip, ...updatedTips];
+            } else if (type === 'incident') {
+              const newInc = {
+                id: `INC-${String(res.id || Date.now()).slice(-3)}`,
+                date: pinData.date,
+                type: pinData.title,
+                summary: pinData.description || pinData.text,
+                root_cause: `Reported by ${pinData.author}`,
+                resolution: 'Logged for review by senior team',
+              };
+              updatedIncidents = [newInc, ...updatedIncidents];
+            } else if (type === 'procedure') {
+              const newProc = {
+                id: `SOP-${String(res.id || Date.now()).slice(-3)}`,
+                title: pinData.title,
+                description: pinData.description || pinData.text,
+                author: pinData.author,
+                date: pinData.date,
+              };
+              updatedProcedures = [newProc, ...updatedProcedures];
+            }
+
+            const updatedKnowledgeCount = {
+              tips: updatedTips.length,
+              incidents: updatedIncidents.length,
+              troubleshooting: (c.troubleshooting || []).length,
+              procedures: updatedProcedures.length,
+              total:
+                updatedTips.length +
+                updatedIncidents.length +
+                (c.troubleshooting || []).length +
+                updatedProcedures.length,
+            };
+
             return {
               ...c,
-              expert_notes: updatedNotes,
-              expert_tips: updatedNotes,
+              expert_notes: updatedTips,
+              expert_tips: updatedTips,
+              past_incidents: updatedIncidents,
+              procedures: updatedProcedures,
+              knowledge_count: updatedKnowledgeCount,
             };
           }
           return c;
         })
       );
 
-      setToastMessage(`Pinned new know-how to ${pinData.title}!`);
+      setToastMessage(`Attached new ${type}: "${pinData.title}"!`);
       setTimeout(() => setToastMessage(null), 4000);
     }
   };
