@@ -1,8 +1,12 @@
 import React, { useState } from 'react';
+import MachineOptions from '../common/MachineOptions';
 import { captureVideo, pollJob } from '../../api/capture';
 import { useAuthStore } from '../../store/useAuthStore';
 import { formatBytes } from '../../utils/format';
 import WarningBanner from '../guardian/WarningBanner';
+
+// The job API reports a stage, not a percentage: the bar shows which stage it is in.
+const STAGE_WIDTH = { uploading: '15%', queued: '35%', running: '70%', done: '100%' };
 
 export default function VideoUpload({ onComplete }) {
   const { currentUser } = useAuthStore();
@@ -16,8 +20,8 @@ export default function VideoUpload({ onComplete }) {
     const selected = e.target.files?.[0];
     if (!selected) return;
 
-    if (selected.size > 100 * 1024 * 1024) {
-      setError('Video exceeds maximum size of 100 MB.');
+    if (selected.size > 50 * 1024 * 1024) {
+      setError('Video exceeds maximum size of 50 MB.');
       return;
     }
 
@@ -63,7 +67,7 @@ export default function VideoUpload({ onComplete }) {
             <span>Video-to-Procedure Drafter</span>
           </h2>
           <p className="text-slate-500 text-xs mt-1">
-            Upload setup videos (up to 100 MB). AI extracts scene keyframes and transcribes audio to draft step-by-step SOPs.
+            Upload setup videos (up to 50 MB). AI extracts scene keyframes and transcribes audio to draft step-by-step SOPs.
           </p>
         </div>
 
@@ -74,8 +78,7 @@ export default function VideoUpload({ onComplete }) {
             onChange={(e) => setMachineId(Number(e.target.value))}
             className="bg-white border border-slate-300 text-slate-800 py-1.5 px-3 rounded-lg font-semibold focus:outline-none focus:ring-2 focus:ring-maroon-500/20 focus:border-maroon-600 shadow-xs"
           >
-            <option value={1}>VMC-3</option>
-            <option value={2}>Lathe-2</option>
+            <MachineOptions />
           </select>
         </div>
       </div>
@@ -95,7 +98,7 @@ export default function VideoUpload({ onComplete }) {
         >
           <span className="text-4xl" aria-hidden="true">🎬</span>
           <span className="font-semibold text-maroon-800 text-sm">Select Setup Video File</span>
-          <span className="text-slate-500">MP4, WebM or MOV up to 100 MB</span>
+          <span className="text-slate-500">MP4, WebM or MOV up to 50 MB</span>
         </label>
       </div>
 
@@ -139,13 +142,12 @@ export default function VideoUpload({ onComplete }) {
             <div className="text-xs text-slate-800">
               <strong>Drafting Procedure:</strong>{' '}
               <span className="text-maroon-800 capitalize font-semibold">{jobStatus.status}</span>
-              {jobStatus.progress ? ` (${Math.round(jobStatus.progress * 100)}%)` : ''}
             </div>
           </div>
           <div className="w-full bg-slate-200 rounded-full h-1.5 overflow-hidden">
             <div
               className="bg-maroon-700 h-1.5 rounded-full transition-all duration-300"
-              style={{ width: `${Math.max(10, Math.round((jobStatus.progress || 0.1) * 100))}%` }}
+              style={{ width: STAGE_WIDTH[jobStatus.status] || '15%' }}
             />
           </div>
         </div>

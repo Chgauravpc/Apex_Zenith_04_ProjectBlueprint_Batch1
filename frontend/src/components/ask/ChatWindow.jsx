@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import MachineOptions from '../common/MachineOptions';
 import { askQuestion, askVoice } from '../../api/ask';
 import { useAuthStore } from '../../store/useAuthStore';
 import AnswerCard from './AnswerCard';
@@ -99,8 +100,7 @@ export default function ChatWindow() {
                 onChange={(e) => setMachineId(Number(e.target.value))}
                 className="bg-white border border-slate-200 text-slate-800 py-1 px-2.5 rounded-lg focus:border-maroon-700 outline-none"
               >
-                <option value={1}>VMC-3</option>
-                <option value={2}>Lathe-2</option>
+                <MachineOptions />
               </select>
             </label>
 

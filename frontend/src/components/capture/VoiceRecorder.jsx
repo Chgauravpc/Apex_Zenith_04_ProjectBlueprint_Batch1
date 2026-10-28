@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import MachineOptions from '../common/MachineOptions';
 import useRecorder from '../../hooks/useRecorder';
 import { captureVoice } from '../../api/capture';
 import { useAuthStore } from '../../store/useAuthStore';
@@ -74,8 +75,7 @@ export default function VoiceRecorder({ onSaved }) {
               onChange={(e) => setMachineId(Number(e.target.value))}
               className="bg-white border border-slate-300 text-slate-800 py-1.5 pl-2.5 pr-7 rounded-lg font-semibold focus:outline-none focus:ring-2 focus:ring-maroon-500/20 focus:border-maroon-600 shadow-xs"
             >
-              <option value={1}>VMC-3</option>
-              <option value={2}>Lathe-2</option>
+              <MachineOptions />
             </select>
           </label>
 
@@ -212,7 +212,7 @@ export default function VoiceRecorder({ onSaved }) {
 
             {(!result.cards || result.cards.length === 0) ? (
               <p className="text-slate-500 text-xs italic">
-                No actionable know-how identified in this recording.
+                {result.message || 'No actionable know-how identified in this recording.'}
               </p>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

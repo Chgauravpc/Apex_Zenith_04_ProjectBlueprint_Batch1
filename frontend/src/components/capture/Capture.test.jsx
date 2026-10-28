@@ -13,6 +13,14 @@ vi.mock('../../api/capture', () => ({
   pollJob: vi.fn(),
 }));
 
+vi.mock('../../api/machines', () => ({
+  getMachines: vi.fn().mockResolvedValue([
+    { id: 3, name: 'Lathe-2', rpm_min: 50, rpm_max: 3000 },
+    { id: 2, name: 'VMC-1', rpm_min: 500, rpm_max: 10000 },
+    { id: 1, name: 'VMC-3', rpm_min: 500, rpm_max: 12000 },
+  ]),
+}));
+
 describe('Capture page and components (T18)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -97,5 +105,22 @@ describe('Capture page and components (T18)', () => {
     expect(screen.getByText(/feed 0.3 is above the 0.2 limit/i)).toBeDefined();
     expect(screen.getByText(/VMC-3 chatter on SS304/i)).toBeDefined();
     expect(screen.getByText(/Check spindle bearing/i)).toBeDefined();
+  });
+
+  it('sends the real machine id and typed settings with a note', async () => {
+    captureApi.captureText.mockResolvedValueOnce({ cards: [], guardian_result: null });
+    render(<NoteEditor />);
+
+    const machine = await screen.findByRole('option', { name: 'Lathe-2' });
+    fireEvent.change(machine.closest('select'), { target: { value: '3' } });
+    fireEvent.change(screen.getByPlaceholderText(/VMC-3 pe roughing/i), { target: { value: 'Turning shaft' } });
+    fireEvent.change(screen.getByPlaceholderText('e.g. 1800'), { target: { value: '900' } });
+    fireEvent.change(screen.getByPlaceholderText('e.g. 0.22'), { target: { value: '0.3' } });
+    fireEvent.click(screen.getByText('Save & Check Note'));
+
+    await waitFor(() => expect(captureApi.captureText).toHaveBeenCalledTimes(1));
+    expect(captureApi.captureText).toHaveBeenCalledWith(
+      expect.objectContaining({ machine_id: 3, params: { speed: 900, feed: 0.3 } })
+    );
   });
 });

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import MachineOptions from '../common/MachineOptions';
 import { captureText } from '../../api/capture';
 import { useAuthStore } from '../../store/useAuthStore';
 import WarningBanner from '../guardian/WarningBanner';
@@ -21,7 +22,7 @@ export default function NoteEditor({ onSaved }) {
     setError(null);
 
     const params = {};
-    if (rpm) params.rpm = parseFloat(rpm);
+    if (rpm) params.speed = parseFloat(rpm); // the backend calls spindle RPM "speed"
     if (feed) params.feed = parseFloat(feed);
 
     try {
@@ -61,8 +62,7 @@ export default function NoteEditor({ onSaved }) {
             onChange={(e) => setMachineId(Number(e.target.value))}
             className="bg-white border border-slate-300 text-slate-800 py-1.5 px-3 rounded-lg font-semibold focus:outline-none focus:ring-2 focus:ring-maroon-500/20 focus:border-maroon-600 shadow-xs"
           >
-            <option value={1}>VMC-3</option>
-            <option value={2}>Lathe-2</option>
+            <MachineOptions />
           </select>
         </div>
       </div>

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import MachineOptions from '../common/MachineOptions';
 import { captureHandwritten, pollJob } from '../../api/capture';
 import { useAuthStore } from '../../store/useAuthStore';
 import useCamera from '../../hooks/useCamera';
@@ -102,8 +103,7 @@ export default function PhotoUpload({ onComplete }) {
             onChange={(e) => setMachineId(Number(e.target.value))}
             className="bg-white border border-slate-300 text-slate-800 py-1.5 px-3 rounded-lg font-semibold focus:outline-none focus:ring-2 focus:ring-maroon-500/20 focus:border-maroon-600 shadow-xs"
           >
-            <option value={1}>VMC-3</option>
-            <option value={2}>Lathe-2</option>
+            <MachineOptions />
           </select>
         </div>
       </div>
@@ -225,7 +225,6 @@ export default function PhotoUpload({ onComplete }) {
           <div className="text-xs text-slate-800">
             <strong>Processing Handwritten Document:</strong>{' '}
             <span className="text-maroon-800 capitalize font-semibold">{jobStatus.status}</span>
-            {jobStatus.progress ? ` (${Math.round(jobStatus.progress * 100)}%)` : ''}
           </div>
         </div>
       )}

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import MachineOptions from '../common/MachineOptions';
 import useRecorder from '../../hooks/useRecorder';
 import { askChatter } from '../../api/ask';
 import { formatBytes } from '../../utils/format';
@@ -77,8 +78,7 @@ export default function ChatterDoctor() {
               onChange={(e) => setMachineId(Number(e.target.value))}
               className="bg-white border border-slate-200/90 text-slate-800 py-1 px-2.5 rounded-lg text-xs focus:outline-hidden focus:ring-2 focus:ring-maroon-500/20"
             >
-              <option value={1}>VMC-3 (500-12000 RPM)</option>
-              <option value={2}>Lathe-2 (100-3500 RPM)</option>
+              <MachineOptions withRpm />
             </select>
           </label>
         </div>
