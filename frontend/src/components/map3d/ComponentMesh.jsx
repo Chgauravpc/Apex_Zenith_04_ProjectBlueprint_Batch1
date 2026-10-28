@@ -3,7 +3,8 @@ import React, { useState, useRef, useEffect } from 'react';
 
 /**
  * Interactive 3D component mesh container.
- * Handles hover states, click selection, cursor feedback, and risk highlights.
+ * Handles independent raycast clicks, hover states, cursor feedback,
+ * and high-visibility 3D selection/hover bounding highlights.
  * Reference: PRD.md §9.4 and TASKS.md T21.
  */
 export default function ComponentMesh({
@@ -12,6 +13,7 @@ export default function ComponentMesh({
   risk = 'none',
   isSelected = false,
   isHighlighted = false,
+  bounds = null,
   onClick,
   onHover,
   children,
@@ -53,15 +55,17 @@ export default function ComponentMesh({
     }
   };
 
-  // Determine highlight ring/halo color based on risk or selection
-  let haloColor = null;
+  // Determine highlight colors based on selection, risk or hover
+  let highlightColor = '#38bdf8'; // Default cyan hover
   if (isSelected) {
-    haloColor = '#38bdf8'; // Cyan
+    highlightColor = '#00f0ff'; // Bright electric cyan for active selection
   } else if (isHighlighted) {
-    haloColor = '#ef4444'; // Guardian Red
+    highlightColor = '#ef4444'; // Red for Guardian risk alerts
   } else if (hovered) {
-    haloColor = risk === 'high' ? '#f87171' : risk === 'medium' ? '#fbbf24' : '#67e8f9';
+    highlightColor = risk === 'high' ? '#f87171' : risk === 'medium' ? '#fbbf24' : '#67e8f9';
   }
+
+  const isVisualActive = isSelected || hovered || isHighlighted;
 
   return (
     <group
@@ -73,14 +77,38 @@ export default function ComponentMesh({
     >
       {children}
 
-      {/* Visual selection / hover boundary ring */}
-      {(isSelected || hovered || isHighlighted) && (
-        <group>
-          {/* Subtle bounding accent glow */}
+      {/* 3D Visual Bounding Highlight Box & Illumination */}
+      {isVisualActive && bounds && (
+        <group position={bounds.center}>
+          {/* Glowing wireframe bounding box */}
+          <mesh>
+            <boxGeometry args={bounds.size} />
+            <meshBasicMaterial
+              color={highlightColor}
+              wireframe
+              transparent
+              opacity={isSelected ? 0.95 : 0.65}
+            />
+          </mesh>
+
+          {/* Additional accent corner bracket / inner ring for selected parts */}
+          {isSelected && (
+            <mesh scale={[1.02, 1.02, 1.02]}>
+              <boxGeometry args={bounds.size} />
+              <meshBasicMaterial
+                color="#ffffff"
+                wireframe
+                transparent
+                opacity={0.35}
+              />
+            </mesh>
+          )}
+
+          {/* Focused local spotlight / pointlight to brighten the hovered/selected component */}
           <pointLight
-            color={haloColor || '#38bdf8'}
-            intensity={isSelected ? 1.5 : hovered ? 1.0 : 0.8}
-            distance={1.2}
+            color={highlightColor}
+            intensity={isSelected ? 2.2 : 1.2}
+            distance={2.4}
             decay={2}
           />
         </group>
