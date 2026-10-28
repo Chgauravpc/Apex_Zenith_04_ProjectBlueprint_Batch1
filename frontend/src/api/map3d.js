@@ -16,6 +16,8 @@ export const VMC_COMPONENTS_DATA = [
     mesh_name: 'spindle',
     display_name: 'Spindle Assembly',
     category: 'Drive & Headstock',
+    description:
+      'High-speed precision cartridge spindle with ceramic hybrid angular contact bearings. Driven by a 15 kW direct-drive motor up to 12,000 RPM. Houses the BT40 taper tool holder and internal coolant channels.',
     risk: 'high',
     incident_count: 5,
     status: 'High Chatter Risk',
@@ -77,6 +79,8 @@ export const VMC_COMPONENTS_DATA = [
     mesh_name: 'tool_holder',
     display_name: 'Tool Holder & ATC Carousel',
     category: 'Tooling & Magazine',
+    description:
+      'Precision BT40 tool holder with ER32 collet chuck securing the cutting tool, paired with a 24-tool automatic tool changer (ATC) twin-arm carousel magazine for rapid 2.2-second tool changes.',
     risk: 'medium',
     incident_count: 2,
     status: 'Caution — Runout Check',
@@ -122,6 +126,8 @@ export const VMC_COMPONENTS_DATA = [
     mesh_name: 'worktable',
     display_name: 'T-Slot Worktable & Ways',
     category: 'Axes & Table',
+    description:
+      'Heavy cast Meehanite iron table (1000 x 500 mm) with 4 precision ground longitudinal T-slots for fixture clamping. Mounted on rigid linear guide ways with stainless telescopic way covers.',
     risk: 'low',
     incident_count: 1,
     status: 'Normal Calibration',
@@ -161,6 +167,8 @@ export const VMC_COMPONENTS_DATA = [
     mesh_name: 'vise',
     display_name: 'Precision Milling Vise',
     category: 'Workholding Fixture',
+    description:
+      'Kurt-style 6-inch precision milling vise clamped to table T-slots with hardened ground jaws. Delivers up to 35 kN clamping force at 90 Nm torque to securely hold billets during heavy cutting.',
     risk: 'low',
     incident_count: 0,
     status: 'Optimal — Trammed 0.005mm',
@@ -193,6 +201,8 @@ export const VMC_COMPONENTS_DATA = [
     mesh_name: 'control_panel',
     display_name: 'CNC Control Panel & Pendant',
     category: 'Control Interface',
+    description:
+      'Ergonomic swiveling CNC pendant featuring a high-contrast display screen, coordinate DRO readouts, membrane keypad, emergency stop, cycle controls, and 3-tier status tower stack light.',
     risk: 'low',
     incident_count: 1,
     status: 'Standby / Ready',
@@ -232,6 +242,8 @@ export const VMC_COMPONENTS_DATA = [
     mesh_name: 'doors',
     display_name: 'Enclosure Safety Doors',
     category: 'Safety & Interlocks',
+    description:
+      'Twin sliding safety enclosure doors with 12 mm impact-resistant polycarbonate observation windows and interlock switches, containing high-pressure coolant spray and flying chips.',
     risk: 'low',
     incident_count: 0,
     status: 'Safety Interlock Engaged',
@@ -263,6 +275,8 @@ export const VMC_COMPONENTS_DATA = [
     mesh_name: 'machine_body',
     display_name: 'Machine Body, Base & Column',
     category: 'Structural Casting',
+    description:
+      'Rigid Meehanite cast-iron base bed and vertical Z-axis column providing high vibration damping, vibration isolation leveling pads, internal coolant splash guards, and chip conveyor trough.',
     risk: 'low',
     incident_count: 0,
     status: 'Foundation Balanced',
