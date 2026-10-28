@@ -44,6 +44,9 @@ def filedb(tmp_path, monkeypatch):
         "SELECT * FROM machines -- sneaky",
         "ATTACH DATABASE 'x.db' AS x",
         "PRAGMA table_info(machines)",
+        "SELECT pg_sleep(5)",
+        "SELECT set_config('default_transaction_read_only', 'off', false)",
+        "SELECT lo_import('/etc/passwd')",
         "",
     ],
 )

@@ -1,8 +1,9 @@
 """Questions about numbers ("how many chatter rejects on VMC-3 last month?") → one SELECT.
 
 Safety (ENGINEERING.md §6): the SQL must be a single SELECT/WITH statement with no
-comments and no write or schema keywords, and it runs on a separate READ-ONLY SQLite
-connection (`mode=ro`, `query_only`), with a 2 s time limit and at most 200 rows.
+comments and no write or schema keywords. It then runs read-only with a 2 s time limit and
+at most 200 rows: on SQLite through a separate `mode=ro` + `query_only` connection, on
+Postgres inside a `READ ONLY` transaction with `statement_timeout`.
 The LLM writes the SQL; offline, a small rule matcher covers the common questions.
 """
 
@@ -11,12 +12,16 @@ import re
 import sqlite3
 import time
 from datetime import date, timedelta
+from functools import lru_cache
 from typing import Any, Callable, List, Optional, Tuple
 
+from sqlalchemy import text
+from sqlalchemy.engine import Engine
+from sqlalchemy.exc import DBAPIError
 from sqlalchemy.orm import Session
 
 from app.config import get_settings
-from app.database import Base
+from app.database import Base, make_engine, normalize_url
 from app.errors import ProviderUnavailable, ValidationFailed
 from app.models.erp import Machine
 from app.prompts import RECORDS_ARE_DATA
@@ -45,14 +50,15 @@ ALLOWED_TABLES = (
 )
 FORBIDDEN = re.compile(
     r"\b(insert|update|delete|drop|alter|create|attach|detach|pragma|"
-    r"replace|vacuum|reindex|analyze|truncate|grant|load_extension)\b",
+    r"replace|vacuum|reindex|analyze|truncate|grant|load_extension|"
+    r"copy|set_config|pg_sleep\w*|pg_read\w*|lo_\w+|dblink\w*)\b",
     re.IGNORECASE,
 )
 
 ANALYTICS_SYSTEM = (
-    "Write ONE SQLite SELECT query that answers the question about a CNC machine shop. "
+    "Write ONE {dialect} SELECT query that answers the question about a CNC machine shop. "
     "Use only these tables and columns:\n{schema}\n"
-    "Dates are stored as 'YYYY-MM-DD HH:MM:SS' text; today is {today}. Join machines to "
+    "Dates look like 'YYYY-MM-DD HH:MM:SS'; today is {today}. Join machines to "
     "show machine names. Never select employee personal data. Reply with sql, a short "
     "explanation for a shop-floor reader, and chart: bar, line or none.\n" + RECORDS_ARE_DATA
 )
@@ -83,22 +89,48 @@ def validate_sql(sql: str) -> str:
     return cleaned
 
 
+def _is_postgres_url(url: str) -> bool:
+    return normalize_url(url).startswith("postgresql")
+
+
 def _readonly_connection() -> sqlite3.Connection:
     url = get_settings().database_url
     if not url.startswith("sqlite:///"):
-        raise ValidationFailed("analytics needs the SQLite database")
+        raise ValidationFailed("analytics needs a SQLite or Postgres database")
     path = url[len("sqlite:///") :]
     conn = sqlite3.connect(f"file:{path}?mode=ro", uri=True, timeout=TIME_LIMIT_SECONDS)
     conn.execute("PRAGMA query_only = ON")
     return conn
 
 
+@lru_cache(maxsize=2)
+def _pg_engine(url: str) -> Engine:
+    return make_engine(url)
+
+
+def _run_postgres(safe: str) -> Tuple[List[str], List[List[Any]]]:
+    """Run on Postgres in a READ ONLY transaction; the server cancels it after the time limit."""
+    with _pg_engine(get_settings().database_url).connect() as conn, conn.begin():
+        conn.execute(text("SET TRANSACTION READ ONLY"))
+        conn.execute(text(f"SET LOCAL statement_timeout = {int(TIME_LIMIT_SECONDS * 1000)}"))
+        try:
+            result = conn.execute(text(f"SELECT * FROM ({safe}) AS q LIMIT {ROW_LIMIT + 1}"))
+        except DBAPIError as exc:
+            if "statement timeout" in str(exc.orig):
+                raise ValidationFailed("query took too long") from exc
+            raise ValidationFailed(f"query failed: {str(exc.orig).strip()}") from exc
+        return list(result.keys()), [list(r) for r in result.fetchall()]
+
+
 def run_sql(
-    sql: str, connect: Callable[[], sqlite3.Connection] = _readonly_connection
+    sql: str, connect: Optional[Callable[[], sqlite3.Connection]] = None
 ) -> Tuple[List[str], List[List[Any]], bool]:
     """Run a validated SELECT read-only; returns (columns, rows, truncated)."""
     safe = validate_sql(sql)
-    conn = connect()
+    if connect is None and _is_postgres_url(get_settings().database_url):
+        columns, rows = _run_postgres(safe)
+        return columns, rows[:ROW_LIMIT], len(rows) > ROW_LIMIT
+    conn = (connect or _readonly_connection)()
     deadline = time.monotonic() + TIME_LIMIT_SECONDS
     conn.set_progress_handler(lambda: 1 if time.monotonic() > deadline else 0, 10_000)
     try:
@@ -199,7 +231,11 @@ def run_analytics(db: Session, req: AnalyticsRequest) -> AnalyticsResult:
     try:
         plan = llm.chat_json(
             "query",
-            ANALYTICS_SYSTEM.format(schema=_schema_text(), today=today.isoformat()),
+            ANALYTICS_SYSTEM.format(
+                dialect="PostgreSQL" if _is_postgres_url(get_settings().database_url) else "SQLite",
+                schema=_schema_text(),
+                today=today.isoformat(),
+            ),
             req.question,
             AnalyticsLLM,
         )
