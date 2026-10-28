@@ -12,12 +12,14 @@ from typing import AsyncIterator, Dict
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 
 from app.config import get_settings
 from app.database import SessionLocal, init_db
 from app.errors import register_handlers
 from app.routers import ask, capture, erp, guardian, guide, machines, reports, transfer
+from app.services import storage
 from app.services.capture import erp_sync, extractor, voice
 from app.services.guardian import check
 from app.services.transfer import handover
@@ -30,6 +32,7 @@ FRONTEND_DIST = Path(__file__).resolve().parents[2] / "frontend" / "dist"
 @asynccontextmanager
 async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
     """Create tables and the FTS index once at startup, then fill missing card vectors."""
+    storage.check_config()
     init_db()
     if get_settings().embedding_provider != "off":
         worker = threading.Thread(target=_backfill_embeddings, name="embedding-backfill")
@@ -82,9 +85,16 @@ def create_app() -> FastAPI:
     if handover.exit_date_hook not in erp_sync.EXIT_DATE_HOOKS:
         erp_sync.EXIT_DATE_HOOKS.append(handover.exit_date_hook)
 
-    storage = Path(settings.storage_dir)
-    storage.mkdir(parents=True, exist_ok=True)
-    app.mount("/media", StaticFiles(directory=storage), name="media")
+    Path(settings.storage_dir).mkdir(parents=True, exist_ok=True)
+
+    @app.get("/media/{key:path}", tags=["meta"])
+    def media(key: str) -> Response:
+        """Uploaded media: the local copy, else a signed link to hosted storage."""
+        path = storage.local_path(key)
+        if path.is_file():
+            return FileResponse(path)
+        return RedirectResponse(storage.signed_url(key), status_code=307)
+
     if FRONTEND_DIST.is_dir():
         app.mount("/", StaticFiles(directory=FRONTEND_DIST, html=True), name="frontend")
     return app

@@ -25,7 +25,7 @@ from app.models.guide import Procedure
 from app.models.knowledge import Document, KnowledgeCard, Meeting
 from app.models.map3d import Component
 from app.schemas.ask import Hit
-from app.services import embeddings
+from app.services import embeddings, storage
 from app.utils import lexicon
 
 logger = logging.getLogger(__name__)
@@ -77,13 +77,10 @@ def _fuse(rankings: Iterable[List[Ref]]) -> Dict[Ref, float]:
 
 def media_url(path: Optional[str]) -> Optional[str]:
     """Public URL of a stored upload (served by main.py under /media)."""
-    if not path:
+    key = storage.key_for(Path(path)) if path else None
+    if key is None:
         return None
-    storage = Path(get_settings().storage_dir).resolve()
-    try:
-        return "/media/" + Path(path).resolve().relative_to(storage).as_posix()
-    except ValueError:
-        return None
+    return f"{get_settings().public_base_url.rstrip('/')}/media/{key}"
 
 
 def _snip(text: str) -> str:
