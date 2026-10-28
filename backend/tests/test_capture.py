@@ -324,6 +324,32 @@ def test_voice_note_kept_when_stt_unavailable(api, shop, db, monkeypatch) -> Non
     assert doc.type == "voice" and doc.text is None and doc.file_path.endswith(".wav")
 
 
+def test_transcribe_returns_text_and_keeps_nothing(api, tmp_path, monkeypatch) -> None:
+    from app.services import stt
+
+    seen = []
+
+    def transcribe(path, language=None):
+        seen.append(path)
+        return stt.Transcript(text="  फीड कम करो  ", language="hindi")
+
+    monkeypatch.setattr(stt, "transcribe", transcribe)
+    resp = api.post(
+        "/api/capture/transcribe",
+        files={"file": ("blob", b"\x1aE\xdf\xa3audio", "audio/webm")},
+        data={"language": "hi"},
+    )
+    assert resp.status_code == 200, resp.json()
+    assert resp.json() == {"text": "फीड कम करो", "language": "hi", "mode": "live"}
+    assert seen and not seen[0].exists()  # the reply's audio is not stored
+
+
+def test_transcribe_offline_asks_to_type(api) -> None:
+    resp = api.post("/api/capture/transcribe", files={"file": ("n.wav", b"RIFFdata", "audio/wav")})
+    assert resp.status_code == 200 and resp.json()["mode"] == "offline"
+    assert resp.json()["text"] == ""
+
+
 @pytest.mark.parametrize(
     "payload,status",
     [
@@ -798,3 +824,11 @@ def test_sensor_sim_streams_to_api_and_spike_is_flagged(api, shop, db) -> None:
     assert [r["stored"] for r in reports] == [60, 60, 60, 60]
     flagged = {a.ts for a in db.query(Anomaly).filter_by(machine_id=shop["vmc"].id)}
     assert readings[150][0] in flagged
+
+
+def test_capture_response_carries_guardian_under_frontend_name(api, shop, fake_llm) -> None:
+    body = api.post(
+        "/api/capture/text",
+        json={"text": "VMC-3 pe chatter, feed 0.3 tha", "author_id": shop["ramesh"].id},
+    ).json()
+    assert body["guardian_result"] == body["guardian"]  # NoteEditor reads guardian_result

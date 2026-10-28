@@ -1,74 +1,62 @@
-import React, { useState } from 'react';
-import useRecorder from '../../hooks/useRecorder';
-import { replyRoutedQuestion } from '../../api/transfer';
+import React, { useEffect, useState } from 'react';
+import useApi from '../../hooks/useApi';
+import useDictation from '../../hooks/useDictation';
+import LoadState from '../common/LoadState';
+import { getRoutedQuestions, replyRoutedQuestion } from '../../api/transfer';
 import { useAuthStore } from '../../store/useAuthStore';
 
-export default function RoutedQuestions({ onReplySuccess }) {
-  const { currentUser } = useAuthStore();
-  const [questions, setQuestions] = useState([
-    {
-      id: 401,
-      asked_by: 'Priya Patel (New Employee)',
-      machine: 'VMC-3',
-      component: 'Spindle Bearing',
-      question: 'SS304 roughing karte waqt vibration thi aur feed 0.22 se niche karne par bhi finish dull aa rahi hai. Kya insert grade change karun?',
-      ts: 'Today, 11:30 AM',
-      status: 'pending',
-    },
-    {
-      id: 402,
-      asked_by: 'Priya Patel (New Employee)',
-      machine: 'VMC-3',
-      component: 'Coolant Pump',
-      question: 'Boring bar chalate waqt coolant pressure fluctuate kar raha hai. Manifold filter kaha se bleed hota hai?',
-      ts: 'Yesterday, 4:15 PM',
-      status: 'pending',
-    },
-  ]);
+const formatWhen = (iso) =>
+  new Date(iso).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 
-  const [activeReplyId, setActiveReplyId] = useState(401);
+/**
+ * Questions Ask Experience could not answer, routed to the old employee who knows the machine.
+ * `employeeId` limits the list to one person's questions; null shows every open question.
+ */
+export default function RoutedQuestions({ employeeId = null, onReplySuccess }) {
+  const { currentUser, language } = useAuthStore();
+  const routed = useApi(
+    (signal) => getRoutedQuestions(employeeId ? { employee_id: employeeId } : {}, signal),
+    [employeeId]
+  );
+  const [questions, setQuestions] = useState([]);
+
+  useEffect(() => {
+    if (routed.data) setQuestions(routed.data.items);
+  }, [routed.data]);
+
+  const [activeReplyId, setActiveReplyId] = useState(null);
   const [replyText, setReplyText] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successMsg, setSuccessMsg] = useState(null);
+  const [error, setError] = useState(null);
 
-  const {
-    isRecording,
-    duration,
-    audioBlob,
-    startRecording,
-    stopRecording,
-    resetRecording,
-  } = useRecorder();
+  // Old employees and supervisors answer for the team; new employees only read.
+  const canReply = currentUser.role !== 'new_employee';
 
-  const handleSendReply = async (questionId) => {
-    if (!replyText.trim() && !audioBlob) return;
+  const { isRecording, duration, isTranscribing, dictationError, startRecording, stopRecording } =
+    useDictation((text) => setReplyText((prev) => (prev ? `${prev} ${text}` : text)), language);
 
+  const handleSendReply = async (q) => {
+    if (!replyText.trim()) return;
     setIsSubmitting(true);
     setSuccessMsg(null);
-
+    setError(null);
     try {
-      const text = replyText || `[Voice reply - ${duration}s]: SS304 ke liye TiAlN coated carbide use karo aur cutting speed 110 m/min se upar mat le jao. Coolant direct cutting edge par lagna chahiye.`;
-
-      await replyRoutedQuestion(questionId, {
-        reply_text: text,
+      const res = await replyRoutedQuestion(q.id, {
+        reply_text: replyText.trim(),
         author_id: currentUser.id,
       });
-
       setQuestions((prev) =>
-        prev.map((q) => (q.id === questionId ? { ...q, status: 'answered', answer: text } : q))
+        prev.map((x) => (x.id === q.id ? { ...res.routed, answer: res.card.action } : x))
       );
-      setSuccessMsg('Your reply was saved as a verified know-how card for Priya!');
-      setReplyText('');
-      resetRecording();
-      if (onReplySuccess) onReplySuccess(questionId);
-    } catch {
-      // Offline fallback state
-      setQuestions((prev) =>
-        prev.map((q) => (q.id === questionId ? { ...q, status: 'answered', answer: replyText } : q))
+      setSuccessMsg(
+        `Your reply was saved as a verified know-how card${q.asked_by ? ` for ${q.asked_by.split(' ')[0]}` : ''}!`
       );
-      setSuccessMsg('Your reply was recorded and verified locally!');
       setReplyText('');
-      resetRecording();
+      setActiveReplyId(null);
+      if (onReplySuccess) onReplySuccess(q.id);
+    } catch (err) {
+      setError(`Reply not saved: ${err.message}`);
     } finally {
       setIsSubmitting(false);
     }
@@ -83,7 +71,7 @@ export default function RoutedQuestions({ onReplySuccess }) {
           </span>
           <h2 className="text-lg font-bold text-white flex items-center space-x-2 mt-0.5">
             <span>❓</span>
-            <span>Questions Waiting for Your Advice ({questions.filter((q) => q.status === 'pending').length})</span>
+            <span>Questions Waiting for Your Advice ({questions.filter((q) => q.status === 'open').length})</span>
           </h2>
           <p className="text-slate-400 text-xs mt-1">
             Questions where Ask Experience didn’t find enough data are routed to you. Your reply creates permanent shop knowledge.
@@ -100,9 +88,21 @@ export default function RoutedQuestions({ onReplySuccess }) {
         </div>
       )}
 
+      {(error || dictationError) && (
+        <div role="alert" className="p-3 bg-red-950/80 border border-red-500/50 rounded-xl text-red-200 text-xs">
+          {error || dictationError}
+        </div>
+      )}
+
+      <LoadState loading={routed.loading} error={routed.error} onRetry={routed.reload} label="Loading questions…" />
+
+      {!routed.loading && !routed.error && questions.length === 0 && (
+        <div className="text-center text-slate-400 text-xs py-6">No open questions. Everything asked so far has an answer.</div>
+      )}
+
       <div className="space-y-4">
         {questions.map((q) => {
-          const isPending = q.status === 'pending';
+          const isPending = q.status === 'open';
           const isReplying = activeReplyId === q.id && isPending;
 
           return (
@@ -116,11 +116,12 @@ export default function RoutedQuestions({ onReplySuccess }) {
             >
               <div className="flex items-center justify-between text-xs">
                 <div className="flex items-center space-x-2">
-                  <span className="font-bold text-slate-200">{q.asked_by}</span>
+                  <span className="font-bold text-slate-200">{q.asked_by || 'A new employee'}</span>
                   <span className="text-slate-500">•</span>
-                  <span className="text-slate-400 font-mono">{q.machine} • {q.component}</span>
+                  <span className="text-slate-400 font-mono">{q.machine || 'any machine'}</span>
+                  <span className="text-slate-500">→ {q.routed_to}</span>
                 </div>
-                <span className="text-slate-500 text-[10px]">{q.ts}</span>
+                <span className="text-slate-500 text-[10px]">{formatWhen(q.created_at)}</span>
               </div>
 
               <p className="text-sm text-cyan-200 font-medium">
@@ -128,7 +129,7 @@ export default function RoutedQuestions({ onReplySuccess }) {
               </p>
 
               {/* Already Answered Card */}
-              {q.status === 'answered' && (
+              {q.status === 'answered' && q.answer && (
                 <div className="bg-slate-950/80 p-3 rounded-lg border border-slate-800 text-xs space-y-1">
                   <div className="text-emerald-400 font-bold flex items-center space-x-1 text-[11px]">
                     <span>✓</span>
@@ -145,7 +146,7 @@ export default function RoutedQuestions({ onReplySuccess }) {
                     rows={2}
                     value={replyText}
                     onChange={(e) => setReplyText(e.target.value)}
-                    placeholder="Type your advice for Priya..."
+                    placeholder="Type your advice, or reply by voice and check the text..."
                     className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-xs text-slate-100 placeholder-slate-500 focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400"
                   />
 
@@ -154,8 +155,9 @@ export default function RoutedQuestions({ onReplySuccess }) {
                       {!isRecording ? (
                         <button
                           type="button"
+                          disabled={isTranscribing}
                           onClick={startRecording}
-                          className="btn-touch px-3 py-1.5 bg-red-600 hover:bg-red-500 text-white font-bold rounded-lg text-xs flex items-center space-x-1"
+                          className="btn-touch px-3 py-1.5 bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white font-bold rounded-lg text-xs flex items-center space-x-1"
                         >
                           <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
                           <span>Voice Reply</span>
@@ -170,17 +172,15 @@ export default function RoutedQuestions({ onReplySuccess }) {
                         </button>
                       )}
 
-                      {audioBlob && !isRecording && (
-                        <span className="text-[11px] text-emerald-400 font-semibold">
-                          Audio recorded ({duration}s)
-                        </span>
+                      {isTranscribing && (
+                        <span className="text-[11px] text-cyan-300 font-semibold">Writing down what you said…</span>
                       )}
                     </div>
 
                     <button
                       type="button"
-                      disabled={isSubmitting || (!replyText.trim() && !audioBlob)}
-                      onClick={() => handleSendReply(q.id)}
+                      disabled={isSubmitting || !replyText.trim()}
+                      onClick={() => handleSendReply(q)}
                       className="btn-touch px-4 py-1.5 bg-cyan-500 hover:bg-cyan-400 disabled:opacity-50 text-slate-950 font-bold text-xs rounded-lg shadow"
                     >
                       {isSubmitting ? 'Sending...' : 'Send Verified Reply →'}
@@ -189,14 +189,14 @@ export default function RoutedQuestions({ onReplySuccess }) {
                 </div>
               )}
 
-              {isPending && !isReplying && (
+              {isPending && !isReplying && canReply && (
                 <div className="flex justify-end">
                   <button
                     type="button"
                     onClick={() => setActiveReplyId(q.id)}
                     className="text-xs text-cyan-400 font-bold hover:underline"
                   >
-                    Reply to Priya →
+                    Reply to {(q.asked_by || 'them').split(' ')[0]} →
                   </button>
                 </div>
               )}

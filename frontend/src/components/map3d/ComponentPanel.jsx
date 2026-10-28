@@ -1,2 +1,216 @@
-// 3D map component (React Three Fiber).
-// Implemented in TASKS.md T21. See PRD.md §9 and ENGINEERING.md.
+import React from 'react';
+import { NavLink } from 'react-router-dom';
+
+/**
+ * Slide-out / Side Panel displaying detailed know-how, verified old employee notes,
+ * specs, and past failure incidents for the selected machine component.
+ * Reference: PRD.md §9.4 and TASKS.md T21.
+ */
+export default function ComponentPanel({
+  component,
+  onClose,
+  onOpenPinForm,
+  onFocusComponent,
+}) {
+  if (!component) {
+    return (
+      <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 text-center text-slate-400">
+        <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center text-2xl text-cyan-400">
+          ⚙️
+        </div>
+        <h3 className="text-sm font-semibold text-white">Select a 3D Component</h3>
+        <p className="text-xs text-slate-400 mt-1 max-w-xs mx-auto">
+          Click on any part of the 3D VMC model (spindle, vise, worktable, tool holder, control panel, or doors) to inspect verified notes, past failures, and operating parameters.
+        </p>
+      </div>
+    );
+  }
+
+  const getRiskBadge = (risk) => {
+    switch (risk) {
+      case 'high':
+        return (
+          <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-red-500/15 text-red-400 border border-red-500/30">
+            <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+            <span>High Risk ({component.incident_count || 0} incidents)</span>
+          </span>
+        );
+      case 'medium':
+        return (
+          <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-500/15 text-amber-400 border border-amber-500/30">
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+            <span>Medium Caution ({component.incident_count || 0} incidents)</span>
+          </span>
+        );
+      default:
+        return (
+          <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+            <span>Optimal / Normal</span>
+          </span>
+        );
+    }
+  };
+
+  return (
+    <div className="bg-slate-900/95 border border-slate-800 rounded-2xl p-5 shadow-2xl flex flex-col space-y-5">
+      {/* Panel Header */}
+      <div className="flex items-start justify-between border-b border-slate-800 pb-4">
+        <div>
+          <div className="flex items-center space-x-2">
+            <h2 className="text-lg font-bold text-white tracking-tight">
+              {component.display_name}
+            </h2>
+            {getRiskBadge(component.risk)}
+          </div>
+          <p className="text-xs text-slate-400 mt-0.5">
+            {component.category} • Mesh ID: <code className="text-cyan-400 font-mono">{component.mesh_name}</code>
+          </p>
+        </div>
+
+        <button
+          type="button"
+          onClick={onClose}
+          className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition"
+          title="Close Panel"
+        >
+          ✕
+        </button>
+      </div>
+
+      {/* Action Toolbar */}
+      <div className="grid grid-cols-2 gap-2">
+        <button
+          type="button"
+          onClick={() => onOpenPinForm(component)}
+          className="btn-touch px-3 py-2 text-xs font-semibold rounded-lg bg-cyan-600 hover:bg-cyan-500 text-slate-950 transition flex items-center justify-center space-x-1.5 shadow"
+        >
+          <span>📌 Pin Know-How</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => onFocusComponent(component.mesh_name)}
+          className="btn-touch px-3 py-2 text-xs font-semibold rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition flex items-center justify-center space-x-1.5"
+        >
+          <span>🎯 Focus View</span>
+        </button>
+
+        <NavLink
+          to={`/ask?component=${component.mesh_name}`}
+          className="btn-touch px-3 py-2 text-xs font-medium rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition flex items-center justify-center space-x-1.5"
+        >
+          <span>💡 Ask Assistant</span>
+        </NavLink>
+
+        <NavLink
+          to={`/guide?machineId=1&component=${component.mesh_name}`}
+          className="btn-touch px-3 py-2 text-xs font-medium rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition flex items-center justify-center space-x-1.5"
+        >
+          <span>📋 Guided SOP</span>
+        </NavLink>
+      </div>
+
+      {/* Specifications Grid */}
+      {component.specs && Object.keys(component.specs).length > 0 && (
+        <div className="bg-slate-950/60 rounded-xl p-3.5 border border-slate-800/80">
+          <h3 className="text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
+            Engineering Parameters
+          </h3>
+          <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-2 text-xs">
+            {Object.entries(component.specs).map(([key, val]) => (
+              <div key={key} className="flex justify-between border-b border-slate-800/50 pb-1">
+                <dt className="text-slate-400">{key}:</dt>
+                <dd className="font-mono font-medium text-slate-200 text-right">{val}</dd>
+              </div>
+            ))}
+          </dl>
+        </div>
+      )}
+
+      {/* Old Employee Verified Know-How Section */}
+      <div>
+        <div className="flex items-center justify-between mb-2.5">
+          <h3 className="text-xs font-semibold text-slate-200 uppercase tracking-wider flex items-center space-x-1.5">
+            <span>Verified Know-How</span>
+            <span className="px-1.5 py-0.2 rounded text-[10px] bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+              Old Employee Advice
+            </span>
+          </h3>
+          <span className="text-[11px] text-slate-500">
+            {component.expert_notes?.length || 0} cards
+          </span>
+        </div>
+
+        <div className="space-y-3 max-h-56 overflow-y-auto pr-1">
+          {component.expert_notes && component.expert_notes.length > 0 ? (
+            component.expert_notes.map((note) => (
+              <div
+                key={note.id || note.title}
+                className="bg-slate-800/70 border border-slate-700/80 rounded-xl p-3 shadow-sm hover:border-slate-600 transition"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <h4 className="text-xs font-bold text-white leading-tight">
+                    {note.title}
+                  </h4>
+                  {note.severity === 'stop' && (
+                    <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-500/20 text-red-300 border border-red-500/40">
+                      STOP
+                    </span>
+                  )}
+                  {note.severity === 'watch' && (
+                    <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                      WATCH
+                    </span>
+                  )}
+                </div>
+
+                <p className="text-xs text-slate-300 mt-1.5 leading-relaxed">
+                  {note.text}
+                </p>
+
+                <div className="flex items-center justify-between text-[11px] text-slate-400 mt-2.5 pt-2 border-t border-slate-700/50">
+                  <span className="font-medium text-cyan-400">
+                    👤 {note.author}
+                  </span>
+                  <span>{note.date}</span>
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="text-center py-4 bg-slate-950/40 rounded-xl border border-dashed border-slate-800 text-xs text-slate-500">
+              No verified cards pinned yet. Be the first to record advice!
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Past Failure Incidents Section */}
+      {component.past_incidents && component.past_incidents.length > 0 && (
+        <div>
+          <h3 className="text-xs font-semibold text-slate-200 uppercase tracking-wider mb-2 flex items-center space-x-1.5">
+            <span>Historical Incidents</span>
+            <span className="text-[10px] px-1.5 py-0.2 rounded bg-slate-800 text-slate-400">
+              ERP / QC Log
+            </span>
+          </h3>
+
+          <div className="space-y-2">
+            {component.past_incidents.map((inc) => (
+              <div
+                key={inc.id}
+                className="bg-slate-950/70 border border-slate-800/80 rounded-lg p-2.5 text-xs"
+              >
+                <div className="flex items-center justify-between text-[11px] text-slate-400 mb-1">
+                  <span className="font-mono text-cyan-300 font-semibold">{inc.id}</span>
+                  <span>{inc.date}</span>
+                </div>
+                <p className="text-slate-300 text-[11px] leading-tight">{inc.summary}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

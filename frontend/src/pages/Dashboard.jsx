@@ -4,15 +4,16 @@ import TransferMetrics from '../components/dashboard/TransferMetrics';
 import MachineTimeline from '../components/dashboard/MachineTimeline';
 import { useAuthStore } from '../store/useAuthStore';
 import { t } from '../utils/i18n';
+import { BarChartIcon, MapPinIcon, TrendingUpIcon, ClockIcon } from '../components/common/Icons';
 
 export default function Dashboard() {
   const { language } = useAuthStore();
   const [activeTab, setActiveTab] = useState('heatmap');
 
   const tabs = [
-    { id: 'heatmap', label: 'Knowledge Risk Heatmap', icon: '🗺️' },
-    { id: 'metrics', label: 'Transfer & Quality ROI', icon: '📈' },
-    { id: 'timeline', label: 'Machine Event Stream', icon: '⏱️' },
+    { id: 'heatmap', label: 'Knowledge Risk Heatmap', icon: <MapPinIcon className="w-3.5 h-3.5" /> },
+    { id: 'metrics', label: 'Transfer & Quality ROI', icon: <TrendingUpIcon className="w-3.5 h-3.5" /> },
+    { id: 'timeline', label: 'Machine Event Stream', icon: <ClockIcon className="w-3.5 h-3.5" /> },
   ];
 
   return (
@@ -20,7 +21,7 @@ export default function Dashboard() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-700/60 pb-5">
         <div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight flex items-center space-x-2.5">
-            <span aria-hidden="true">📊</span>
+            <BarChartIcon className="w-6 h-6 text-cyan-400" />
             <span>{t('navDashboard', language)}</span>
           </h1>
           <p className="text-slate-400 text-xs sm:text-sm mt-1.5 font-medium leading-relaxed">
@@ -43,7 +44,7 @@ export default function Dashboard() {
                   : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50 border border-transparent'
               }`}
             >
-              <span aria-hidden="true">{tab.icon}</span>
+              <span>{tab.icon}</span>
               <span>{tab.label}</span>
             </button>
           ))}

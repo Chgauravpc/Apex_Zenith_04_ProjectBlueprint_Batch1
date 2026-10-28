@@ -1,9 +1,101 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { getReviewQueue } from '../api/capture';
+import { getBriefing } from '../api/guide';
+import { getHandoverPlan, getMetrics, getRisk, getRoutedQuestions } from '../api/transfer';
+import useApi from '../hooks/useApi';
 import { useAuthStore } from '../store/useAuthStore';
+import {
+  MicIcon,
+  LightbulbIcon,
+  ClipboardIcon,
+  ShieldIcon,
+  SearchIcon,
+  UsersIcon,
+  CheckCircleIcon,
+  HelpCircleIcon,
+  BarChartIcon,
+  CogIcon,
+  TrendingUpIcon,
+} from '../components/common/Icons';
+
+// Each role's cards come from its own endpoints; a failed call only blanks its card.
+const LOADERS = {
+  new_employee: (user, signal) => ({ briefing: getBriefing(user.id, signal) }),
+  old_employee: (user, signal) => ({
+    plan: getHandoverPlan(user.id, signal),
+    review: getReviewQueue({ limit: 1 }, signal),
+    routed: getRoutedQuestions({ employee_id: user.id }, signal),
+  }),
+  supervisor: (user, signal) => ({ risk: getRisk(signal), metrics: getMetrics(signal) }),
+};
+
+async function loadHome(user, signal) {
+  const calls = (LOADERS[user.role] || (() => ({})))(user, signal);
+  const keys = Object.keys(calls);
+  const settled = await Promise.allSettled(keys.map((k) => calls[k]));
+  return Object.fromEntries(keys.map((k, i) => [k, settled[i].value || null]));
+}
+
+const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
 
 export default function Home() {
   const { currentUser } = useAuthStore();
+  const home = useApi((signal) => loadHome(currentUser, signal), [currentUser.id]);
+  const d = home.data || {};
+  const loadingText = home.loading ? 'Loading…' : null;
+
+  const briefing = d.briefing;
+  const briefingText =
+    loadingText ||
+    (briefing
+      ? `${briefing.jobs.length ? `${plural(briefing.jobs.length, 'job')} today on ` : 'Your machines: '}` +
+        `${briefing.machines.join(', ') || 'none assigned'}. ` +
+        `${plural(briefing.open_warnings.length, 'open warning')} and ` +
+        `${plural(briefing.known_issues.length, 'recent reject')} to know before you start.`
+      : 'Briefing not available right now.');
+  const guardText =
+    loadingText ||
+    (briefing
+      ? briefing.open_warnings.length
+        ? `${plural(briefing.open_warnings.length, 'open warning')}: ${briefing.open_warnings[0]}`
+        : 'No open warnings on your machines. Every note you save is checked against history.'
+      : 'Note Guardian checks every note you save against machine history.');
+
+  const plan = d.plan;
+  const tasksLeft = plan ? plan.tasks.filter((task) => task.status !== 'done').length : 0;
+  const planText =
+    loadingText ||
+    (plan
+      ? `Exit in ${plan.days_left} days: ${plural(tasksLeft, 'task')} left, handover ${plan.progress}% done.`
+      : 'No handover plan: you are not leaving soon.');
+  const reviewText =
+    loadingText ||
+    (d.review
+      ? `${plural(d.review.total, 'captured card')} await your review and sign-off.`
+      : 'Review queue not available right now.');
+  const firstRouted = d.routed && d.routed.items[0];
+  const routedText =
+    loadingText ||
+    (firstRouted
+      ? `${firstRouted.asked_by || 'A new employee'} asked: “${firstRouted.question}”`
+      : 'No questions waiting for you.');
+
+  const critical = (d.risk || []).filter((c) => c.component_id !== null && c.status === 'critical');
+  const experts = [...new Set(critical.map((c) => c.expert).filter(Boolean))];
+  const riskText =
+    loadingText ||
+    (d.risk
+      ? critical.length
+        ? `${plural(critical.length, 'machine part')} depend on ${experts.join(', ')} alone.`
+        : 'No machine part depends on one leaving person.'
+      : 'Risk data not available right now.');
+  const metricsText =
+    loadingText ||
+    (d.metrics
+      ? `Coverage ${d.metrics.coverage}% • ${d.metrics.guardian_stops} Guardian stops • ` +
+        `${d.metrics.questions_answered}/${d.metrics.questions_routed} routed questions answered.`
+      : 'Metrics not available right now.');
 
   return (
     <div className="space-y-6">
@@ -31,14 +123,14 @@ export default function Home() {
               to="/capture"
               className="btn-touch px-5 py-2.5 bg-gradient-to-r from-cyan-400 to-cyan-500 hover:from-cyan-300 hover:to-cyan-400 text-slate-950 font-extrabold rounded-xl shadow-lg shadow-cyan-500/20 hover:shadow-cyan-400/30 transition-all flex items-center space-x-2 text-sm active:scale-[0.98]"
             >
-              <span>🎙️</span>
+              <MicIcon className="w-4 h-4 text-slate-950" />
               <span>Record Know-How</span>
             </Link>
             <Link
               to="/ask"
               className="btn-touch px-5 py-2.5 bg-slate-900/80 hover:bg-slate-800 border border-slate-700 hover:border-slate-600 text-slate-200 hover:text-white font-semibold rounded-xl transition-all flex items-center space-x-2 text-sm active:scale-[0.98]"
             >
-              <span>💡</span>
+              <LightbulbIcon className="w-4 h-4 text-cyan-400" />
               <span>Ask Experience</span>
             </Link>
           </div>
@@ -52,11 +144,11 @@ export default function Home() {
             <div className="group bg-slate-800/90 hover:bg-slate-800 border border-slate-700/80 hover:border-slate-600 rounded-2xl p-6 shadow-md transition-all flex flex-col justify-between">
               <div>
                 <div className="w-10 h-10 rounded-xl bg-slate-900/80 border border-slate-700/70 flex items-center justify-center text-xl mb-3 group-hover:scale-105 transition-transform">
-                  <span aria-hidden="true">📋</span>
+                  <ClipboardIcon className="w-5 h-5 text-cyan-400" />
                 </div>
                 <h2 className="text-base font-bold text-white group-hover:text-cyan-300 transition-colors">Daily Briefing</h2>
                 <p className="text-slate-400 text-xs sm:text-sm mt-1.5 leading-relaxed">
-                  3 critical tips recorded by Ramesh for VMC-3 operation today.
+                  {briefingText}
                 </p>
               </div>
               <Link
@@ -69,11 +161,11 @@ export default function Home() {
             <div className="group bg-slate-800/90 hover:bg-slate-800 border border-slate-700/80 hover:border-slate-600 rounded-2xl p-6 shadow-md transition-all flex flex-col justify-between">
               <div>
                 <div className="w-10 h-10 rounded-xl bg-slate-900/80 border border-slate-700/70 flex items-center justify-center text-xl mb-3 group-hover:scale-105 transition-transform">
-                  <span aria-hidden="true">🛡️</span>
+                  <ShieldIcon className="w-5 h-5 text-emerald-400" />
                 </div>
                 <h2 className="text-base font-bold text-white group-hover:text-cyan-300 transition-colors">Active Guardrails</h2>
                 <p className="text-slate-400 text-xs sm:text-sm mt-1.5 leading-relaxed">
-                  Note Guardian is monitoring spindle feed limits and chatter precursors.
+                  {guardText}
                 </p>
               </div>
               <Link
@@ -86,7 +178,7 @@ export default function Home() {
             <div className="group bg-slate-800/90 hover:bg-slate-800 border border-slate-700/80 hover:border-slate-600 rounded-2xl p-6 shadow-md transition-all flex flex-col justify-between">
               <div>
                 <div className="w-10 h-10 rounded-xl bg-slate-900/80 border border-slate-700/70 flex items-center justify-center text-xl mb-3 group-hover:scale-105 transition-transform">
-                  <span aria-hidden="true">🔍</span>
+                  <SearchIcon className="w-5 h-5 text-amber-400" />
                 </div>
                 <h2 className="text-base font-bold text-white group-hover:text-cyan-300 transition-colors">Chatter & Chips</h2>
                 <p className="text-slate-400 text-xs sm:text-sm mt-1.5 leading-relaxed">
@@ -108,11 +200,11 @@ export default function Home() {
             <div className="group bg-slate-800/90 hover:bg-slate-800 border border-slate-700/80 hover:border-slate-600 rounded-2xl p-6 shadow-md transition-all flex flex-col justify-between">
               <div>
                 <div className="w-10 h-10 rounded-xl bg-slate-900/80 border border-slate-700/70 flex items-center justify-center text-xl mb-3 group-hover:scale-105 transition-transform">
-                  <span aria-hidden="true">🤝</span>
+                  <UsersIcon className="w-5 h-5 text-cyan-400" />
                 </div>
                 <h2 className="text-base font-bold text-white group-hover:text-cyan-300 transition-colors">Handover Plan</h2>
                 <p className="text-slate-400 text-xs sm:text-sm mt-1.5 leading-relaxed">
-                  Exit in 7 months: 4 uncovered VMC-3 components require knowledge capture.
+                  {planText}
                 </p>
               </div>
               <Link
@@ -125,11 +217,11 @@ export default function Home() {
             <div className="group bg-slate-800/90 hover:bg-slate-800 border border-slate-700/80 hover:border-slate-600 rounded-2xl p-6 shadow-md transition-all flex flex-col justify-between">
               <div>
                 <div className="w-10 h-10 rounded-xl bg-slate-900/80 border border-slate-700/70 flex items-center justify-center text-xl mb-3 group-hover:scale-105 transition-transform">
-                  <span aria-hidden="true">✅</span>
+                  <CheckCircleIcon className="w-5 h-5 text-emerald-400" />
                 </div>
                 <h2 className="text-base font-bold text-white group-hover:text-cyan-300 transition-colors">Verification Queue</h2>
                 <p className="text-slate-400 text-xs sm:text-sm mt-1.5 leading-relaxed">
-                  2 new AI-extracted procedure drafts await your review and sign-off.
+                  {reviewText}
                 </p>
               </div>
               <Link
@@ -142,11 +234,11 @@ export default function Home() {
             <div className="group bg-slate-800/90 hover:bg-slate-800 border border-slate-700/80 hover:border-slate-600 rounded-2xl p-6 shadow-md transition-all flex flex-col justify-between">
               <div>
                 <div className="w-10 h-10 rounded-xl bg-slate-900/80 border border-slate-700/70 flex items-center justify-center text-xl mb-3 group-hover:scale-105 transition-transform">
-                  <span aria-hidden="true">❓</span>
+                  <HelpCircleIcon className="w-5 h-5 text-purple-400" />
                 </div>
                 <h2 className="text-base font-bold text-white group-hover:text-cyan-300 transition-colors">Questions for You</h2>
                 <p className="text-slate-400 text-xs sm:text-sm mt-1.5 leading-relaxed">
-                  Priya asked about chatter on SS304 roughing. Leave a quick voice reply.
+                  {routedText}
                 </p>
               </div>
               <Link
@@ -164,11 +256,11 @@ export default function Home() {
             <div className="group bg-slate-800/90 hover:bg-slate-800 border border-slate-700/80 hover:border-slate-600 rounded-2xl p-6 shadow-md transition-all flex flex-col justify-between">
               <div>
                 <div className="w-10 h-10 rounded-xl bg-slate-900/80 border border-slate-700/70 flex items-center justify-center text-xl mb-3 group-hover:scale-105 transition-transform">
-                  <span aria-hidden="true">📊</span>
+                  <BarChartIcon className="w-5 h-5 text-rose-400" />
                 </div>
                 <h2 className="text-base font-bold text-white group-hover:text-cyan-300 transition-colors">Knowledge-at-Risk</h2>
                 <p className="text-slate-400 text-xs sm:text-sm mt-1.5 leading-relaxed">
-                  Heatmap shows bus factor = 1 on VMC-3 Spindle and Lathe-2 Turret.
+                  {riskText}
                 </p>
               </div>
               <Link
@@ -181,7 +273,7 @@ export default function Home() {
             <div className="group bg-slate-800/90 hover:bg-slate-800 border border-slate-700/80 hover:border-slate-600 rounded-2xl p-6 shadow-md transition-all flex flex-col justify-between">
               <div>
                 <div className="w-10 h-10 rounded-xl bg-slate-900/80 border border-slate-700/70 flex items-center justify-center text-xl mb-3 group-hover:scale-105 transition-transform">
-                  <span aria-hidden="true">⚙️</span>
+                  <CogIcon className="w-5 h-5 text-cyan-400" />
                 </div>
                 <h2 className="text-base font-bold text-white group-hover:text-cyan-300 transition-colors">Machine Health Map</h2>
                 <p className="text-slate-400 text-xs sm:text-sm mt-1.5 leading-relaxed">
@@ -198,11 +290,11 @@ export default function Home() {
             <div className="group bg-slate-800/90 hover:bg-slate-800 border border-slate-700/80 hover:border-slate-600 rounded-2xl p-6 shadow-md transition-all flex flex-col justify-between">
               <div>
                 <div className="w-10 h-10 rounded-xl bg-slate-900/80 border border-slate-700/70 flex items-center justify-center text-xl mb-3 group-hover:scale-105 transition-transform">
-                  <span aria-hidden="true">📈</span>
+                  <TrendingUpIcon className="w-5 h-5 text-emerald-400" />
                 </div>
                 <h2 className="text-base font-bold text-white group-hover:text-cyan-300 transition-colors">Transfer Metrics</h2>
                 <p className="text-slate-400 text-xs sm:text-sm mt-1.5 leading-relaxed">
-                  Track time-to-independence and reject rates as handover progresses.
+                  {metricsText}
                 </p>
               </div>
               <Link

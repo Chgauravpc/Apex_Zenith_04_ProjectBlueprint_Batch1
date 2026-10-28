@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import WarningBanner from '../guardian/WarningBanner';
+import { LightbulbIcon } from '../common/Icons';
 
 /**
  * StepView component.
@@ -12,22 +13,28 @@ export default function StepView({
   skillLevel = 1,
   onCompleteStep,
   onPreviousStep,
+  serverResult = null,
 }) {
   const [measuredValue, setMeasuredValue] = useState('');
   const [operatorNotes, setOperatorNotes] = useState('');
   const [warning, setWarning] = useState(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   if (!step) return null;
+
+  // Allowed range: explicit min/max, else target ± tolerance; none when the step has no check.
+  const hasTarget = step.target_value != null && step.tolerance != null;
+  const minVal =
+    step.tolerance_min != null ? step.tolerance_min : hasTarget ? step.target_value - step.tolerance : null;
+  const maxVal =
+    step.tolerance_max != null ? step.tolerance_max : hasTarget ? step.target_value + step.tolerance : null;
 
   const handleValueChange = (val) => {
     setMeasuredValue(val);
     const num = parseFloat(val);
 
-    // Live parameter tolerance checking
-    if (!isNaN(num) && step.target_value !== undefined && step.tolerance !== undefined) {
-      const minVal = step.target_value - step.tolerance;
-      const maxVal = step.target_value + step.tolerance;
-
+    // Instant tolerance preview; the backend check on "next" is the one that counts.
+    if (!isNaN(num) && minVal != null && maxVal != null) {
       if (num < minVal || num > maxVal) {
         setWarning({
           severity: 'stop',
@@ -36,7 +43,6 @@ export default function StepView({
               message: `Measurement ${num} is out of tolerance [${minVal.toFixed(2)} – ${maxVal.toFixed(2)}]. Stop and re-align clamp before proceeding.`,
             },
           ],
-          expert_fix: 'Loosen clamp bolt, wipe jaw surface clean with cloth, and re-torque.',
         });
         return;
       }
@@ -45,16 +51,19 @@ export default function StepView({
     setWarning(null);
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (warning && warning.severity === 'stop') {
       return; // Block progress
     }
     if (onCompleteStep) {
-      onCompleteStep({
-        step_no: stepIndex + 1,
+      setIsSaving(true);
+      const ok = await onCompleteStep({
+        step_no: step.step_no != null ? step.step_no : stepIndex + 1,
         value: measuredValue ? parseFloat(measuredValue) : null,
         notes: operatorNotes,
       });
+      setIsSaving(false);
+      if (ok === false) return; // the backend stopped this step: keep the values to correct
     }
     setMeasuredValue('');
     setOperatorNotes('');
@@ -114,8 +123,8 @@ export default function StepView({
         {step.expert_tip && skillLevel <= 2 && (
           <div className="bg-slate-900/90 border border-cyan-500/30 rounded-xl p-4 space-y-1.5 text-xs shadow-sm">
             <div className="font-bold text-cyan-300 flex items-center space-x-1.5">
-              <span>💡</span>
-              <span>Ramesh’s Shop-Floor Tip:</span>
+              <LightbulbIcon className="w-4 h-4 text-cyan-400" />
+              <span>{step.expert_tip_author || 'Old employee'}’s Shop-Floor Tip:</span>
             </div>
             <p className="text-slate-300 leading-relaxed">{step.expert_tip}</p>
           </div>
@@ -130,7 +139,15 @@ export default function StepView({
               Enter Measured {step.param_name} ({step.param_unit || 'mm'}):
             </label>
             <span className="text-xs text-slate-400 font-mono">
-              Target: <strong className="text-cyan-300 font-semibold">{step.target_value}</strong> ±{step.tolerance}
+              {hasTarget ? (
+                <>
+                  Target: <strong className="text-cyan-300 font-semibold">{step.target_value}</strong> ±{step.tolerance}
+                </>
+              ) : minVal != null && maxVal != null ? (
+                <>
+                  Allowed: <strong className="text-cyan-300 font-semibold">{minVal} – {maxVal}</strong>
+                </>
+              ) : null}
             </span>
           </div>
 
@@ -140,8 +157,8 @@ export default function StepView({
             step="0.001"
             value={measuredValue}
             onChange={(e) => handleValueChange(e.target.value)}
-            placeholder={`Target ${step.target_value} ±${step.tolerance}`}
-            className="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-sm text-slate-100 font-mono focus:border-cyan-400"
+            placeholder={hasTarget ? `Target ${step.target_value} ±${step.tolerance}` : 'Measured value'}
+            className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-sm text-slate-100 font-mono focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400"
           />
         </div>
       )}
@@ -150,6 +167,7 @@ export default function StepView({
       {warning && (
         <WarningBanner result={warning} />
       )}
+      {!warning && serverResult && <WarningBanner result={serverResult} />}
 
       {/* Action Navigation */}
       <div className="flex items-center justify-between pt-4 border-t border-slate-700/60">
@@ -164,7 +182,7 @@ export default function StepView({
 
         <button
           type="button"
-          disabled={isStopActive}
+          disabled={isStopActive || isSaving}
           onClick={handleNext}
           className={`btn-touch px-6 py-2.5 rounded-xl font-extrabold text-sm shadow-lg transition flex items-center space-x-2 active:scale-[0.98] ${
             isStopActive
@@ -172,7 +190,7 @@ export default function StepView({
               : 'bg-gradient-to-r from-cyan-400 to-cyan-500 hover:from-cyan-300 hover:to-cyan-400 text-slate-950 shadow-cyan-500/20'
           }`}
         >
-          <span>{isStopActive ? 'Blocked by STOP Warning' : stepIndex + 1 === totalSteps ? 'Complete Run ✓' : 'Complete Step & Next →'}</span>
+          <span>{isStopActive ? 'Blocked by STOP Warning' : stepIndex + 1 === totalSteps ? 'Complete Run' : 'Complete Step & Next →'}</span>
         </button>
       </div>
     </div>

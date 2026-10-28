@@ -8,12 +8,14 @@ export default function ShadowTracePlayer({
   traceSteps = [],
   currentStepNo = 1,
   videoUrl,
+  author,
 }) {
+  const who = author ? author.split(' ')[0] : 'The old employee';
   const videoRef = useRef(null);
   const activeTrace = traceSteps.find((t) => t.step_no === currentStepNo) || traceSteps[0];
 
   useEffect(() => {
-    if (videoRef.current && activeTrace && activeTrace.clip_start !== undefined) {
+    if (videoRef.current && activeTrace && activeTrace.clip_start != null) {
       videoRef.current.currentTime = activeTrace.clip_start;
     }
   }, [activeTrace]);
@@ -26,12 +28,12 @@ export default function ShadowTracePlayer({
           <div>
             <h3 className="text-sm font-bold text-white">ShadowTrace™ Reference Player</h3>
             <span className="text-[11px] text-cyan-400">
-              Ramesh’s Recorded Gold-Standard Run
+              {author ? `${author}’s` : 'Recorded'} Gold-Standard Run
             </span>
           </div>
         </div>
 
-        {activeTrace && (
+        {activeTrace && activeTrace.clip_start != null && (
           <span className="text-xs bg-slate-800 text-cyan-300 font-mono px-2.5 py-1 rounded-lg border border-slate-700">
             Clip: {activeTrace.clip_start}s – {activeTrace.clip_end}s
           </span>
@@ -51,20 +53,20 @@ export default function ShadowTracePlayer({
           <div className="text-center p-6 space-y-2">
             <span className="text-3xl block" aria-hidden="true">🎥</span>
             <span className="text-xs text-slate-400 block">
-              Reference clip for Step {currentStepNo}: Spindle clamp alignment
+              Step {currentStepNo}: {activeTrace ? activeTrace.instruction : 'no recorded run'}
             </span>
-            <span className="text-[11px] text-slate-500 font-mono block">
-              Timecode: 00:{activeTrace?.clip_start || 15} – 00:{activeTrace?.clip_end || 35}
+            <span className="text-[11px] text-slate-500 block">
+              No setup video is linked to this procedure yet.
             </span>
           </div>
         )}
       </div>
 
       {/* Components Checked at this Step */}
-      {activeTrace && activeTrace.components_checked && (
+      {activeTrace && activeTrace.components_checked && activeTrace.components_checked.length > 0 && (
         <div className="text-xs space-y-1.5 pt-2 border-t border-slate-800">
           <span className="text-slate-400 font-semibold block text-[11px] uppercase tracking-wider">
-            Components Ramesh verified in this clip:
+            Components {who} checked at this step:
           </span>
           <div className="flex flex-wrap gap-2">
             {activeTrace.components_checked.map((c, idx) => (

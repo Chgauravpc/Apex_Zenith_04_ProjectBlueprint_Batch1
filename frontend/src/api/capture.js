@@ -103,11 +103,29 @@ export const getReviewQueue = (params, signal) =>
 /**
  * Approve or edit a card in the review queue.
  * @param {number|string} cardId
- * @param {Object} reviewData { verified_by, action, why, symptom, approved }
+ * @param {Object} reviewData { reviewer_id, action: 'approve'|'edit'|'reject', action_text, why, symptom }
  * @param {AbortSignal} [signal]
  */
 export const reviewCard = (cardId, reviewData, signal) =>
   client.post(`/capture/review/${cardId}`, reviewData, { signal }).then((r) => r.data);
+
+/**
+ * Turn a spoken reply into text the speaker can check before sending (nothing is stored).
+ * @param {Blob} audioBlob
+ * @param {string} [language] 'hi' | 'mr' | 'en'
+ * @param {AbortSignal} [signal]
+ */
+export const transcribe = (audioBlob, language, signal) => {
+  const form = new FormData();
+  form.append('file', audioBlob, 'reply.webm');
+  if (language) form.append('language', language);
+  return client
+    .post('/capture/transcribe', form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      signal,
+    })
+    .then((r) => r.data);
+};
 
 export default {
   captureText,
@@ -118,4 +136,5 @@ export default {
   pollJob,
   getReviewQueue,
   reviewCard,
+  transcribe,
 };

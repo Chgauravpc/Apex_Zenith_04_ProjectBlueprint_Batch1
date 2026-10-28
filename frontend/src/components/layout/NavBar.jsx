@@ -10,14 +10,14 @@ export default function NavBar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const navItems = [
-    { to: '/', labelKey: 'navHome', icon: '🏠' },
-    { to: '/capture', labelKey: 'navCapture', icon: '🎙️' },
-    { to: '/ask', labelKey: 'navAsk', icon: '💡' },
-    { to: '/guide', labelKey: 'navGuide', icon: '📋' },
-    { to: '/map', labelKey: 'navMap', icon: '⚙️' },
-    { to: '/handover', labelKey: 'navHandover', icon: '🤝' },
-    { to: '/review', labelKey: 'navReview', icon: '✅' },
-    { to: '/dashboard', labelKey: 'navDashboard', icon: '📊' },
+    { to: '/', labelKey: 'navHome' },
+    { to: '/capture', labelKey: 'navCapture' },
+    { to: '/ask', labelKey: 'navAsk' },
+    { to: '/guide', labelKey: 'navGuide' },
+    { to: '/map', labelKey: 'navMap' },
+    { to: '/handover', labelKey: 'navHandover' },
+    { to: '/review', labelKey: 'navReview' },
+    { to: '/dashboard', labelKey: 'navDashboard' },
   ];
 
   return (
@@ -47,14 +47,13 @@ export default function NavBar() {
                 to={item.to}
                 end={item.to === '/'}
                 className={({ isActive }) =>
-                  `px-2 xl:px-2.5 py-1.5 rounded-lg text-xs transition-all flex items-center space-x-1 ${
+                  `px-2.5 xl:px-3 py-1.5 rounded-lg text-xs transition-all flex items-center ${
                     isActive
                       ? 'bg-slate-800 text-cyan-300 font-semibold border border-slate-700 shadow-sm'
                       : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50 border border-transparent font-medium'
                   }`
                 }
               >
-                <span aria-hidden="true" className="text-xs">{item.icon}</span>
                 <span>{t(item.labelKey, language)}</span>
               </NavLink>
             ))}
@@ -99,14 +98,13 @@ export default function NavBar() {
               end={item.to === '/'}
               onClick={() => setMobileMenuOpen(false)}
               className={({ isActive }) =>
-                `px-3 py-2.5 rounded-xl text-xs font-medium transition flex items-center space-x-2.5 ${
+                `px-3 py-2.5 rounded-xl text-xs font-medium transition flex items-center ${
                   isActive
                     ? 'bg-emerald-500/10 text-emerald-700 dark:bg-teal-500/15 dark:text-teal-300 font-semibold border border-emerald-500/30 dark:border-teal-500/30'
                     : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/80 border border-transparent'
                 }`
               }
             >
-              <span aria-hidden="true">{item.icon}</span>
               <span>{t(item.labelKey, language)}</span>
             </NavLink>
           ))}

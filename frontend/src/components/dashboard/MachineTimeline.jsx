@@ -1,74 +1,90 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { getMachines, getTimeline } from '../../api/machines';
+import useApi from '../../hooks/useApi';
+import { useMachineStore } from '../../store/useMachineStore';
+import LoadState from '../common/LoadState';
+import {
+  ClockIcon,
+  MicIcon,
+  VolumeIcon,
+  UsersIcon,
+  PlayIcon,
+  FileTextIcon,
+  AlertTriangleIcon,
+  XIcon,
+} from '../common/Icons';
+
+const PAGE = 20;
+
+const WrenchIcon = ({ className = 'w-3 h-3' }) => (
+  <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+  </svg>
+);
+
+const BoltIcon = ({ className = 'w-3 h-3' }) => (
+  <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+  </svg>
+);
+
+const KINDS = {
+  warning: { label: 'Guardian Warning', badge: 'bg-red-500/20 text-red-400 border-red-500/40', icon: <AlertTriangleIcon className="w-3 h-3 text-red-400" /> },
+  note: { label: 'Note Captured', badge: 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40', icon: <MicIcon className="w-3 h-3 text-cyan-300" /> },
+  anomaly: { label: 'Sensor Anomaly', badge: 'bg-amber-500/20 text-amber-300 border-amber-500/40', icon: <BoltIcon className="w-3 h-3 text-amber-300" /> },
+  qc_reject: { label: 'QC Reject', badge: 'bg-orange-500/20 text-orange-300 border-orange-500/40', icon: <XIcon className="w-3 h-3 text-orange-400" /> },
+  maintenance: { label: 'Maintenance', badge: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40', icon: <WrenchIcon className="w-3 h-3 text-emerald-300" /> },
+  meeting: { label: 'Team Meeting', badge: 'bg-purple-500/20 text-purple-300 border-purple-500/40', icon: <UsersIcon className="w-3 h-3 text-purple-300" /> },
+  run: { label: 'Guided Run', badge: 'bg-blue-500/20 text-blue-300 border-blue-500/40', icon: <PlayIcon className="w-3 h-3 text-blue-300" /> },
+  chatter: { label: 'Chatter Check', badge: 'bg-amber-500/20 text-amber-300 border-amber-500/40', icon: <VolumeIcon className="w-3 h-3 text-amber-300" /> },
+};
+const OTHER = { label: 'Event', badge: 'bg-slate-500/20 text-slate-300 border-slate-500/40', icon: <FileTextIcon className="w-3 h-3 text-slate-300" /> };
+
+const formatWhen = (iso) =>
+  new Date(iso).toLocaleString('en-IN', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
 
 /**
  * MachineTimeline component.
- * Unified stream of machine jobs, sensor anomalies, cards captured, and Guardian halts.
+ * One machine's stream from GET /machines/{id}/timeline: ERP records, sensor anomalies,
+ * captured notes, meetings and Guardian warnings, newest first.
  */
 export default function MachineTimeline() {
-  const [machineFilter, setMachineFilter] = useState('all');
+  const { selectedMachineId, setSelectedMachineId } = useMachineStore();
+  const machines = useApi((signal) => getMachines(signal), []);
+  const [events, setEvents] = useState([]);
+  const [total, setTotal] = useState(0);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [moreError, setMoreError] = useState(null);
 
-  const events = [
-    {
-      id: 1,
-      ts: '11:42 AM Today',
-      machine: 'VMC-3',
-      kind: 'warning',
-      kindLabel: 'Guardian Warning',
-      badgeClass: 'bg-red-500/20 text-red-400 border-red-500/40',
-      icon: '⛔',
-      summary: 'Spindle feed rate 0.35 mm/rev exceeded limit (0.25). Operation halted.',
-      actor: 'Note Guardian',
-    },
-    {
-      id: 2,
-      ts: '10:15 AM Today',
-      machine: 'VMC-3',
-      kind: 'card',
-      kindLabel: 'Card Captured',
-      badgeClass: 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40',
-      icon: '🎙️',
-      summary: 'Ramesh added voice tip: SS304 roughing feed reduction to 0.20 mm/rev.',
-      actor: 'Ramesh Sharma',
-    },
-    {
-      id: 3,
-      ts: '09:05 AM Today',
-      machine: 'VMC-3',
-      kind: 'sensor',
-      kindLabel: 'Sensor Anomaly',
-      badgeClass: 'bg-amber-500/20 text-amber-300 border-amber-500/40',
-      icon: '⚡',
-      summary: 'Spindle vibration spike: 3.8 mm/s (z = +3.4 above normal baseline).',
-      actor: 'Sensor Sim Gateway',
-    },
-    {
-      id: 4,
-      ts: 'Yesterday, 04:30 PM',
-      machine: 'Lathe-2',
-      kind: 'job',
-      kindLabel: 'Work Order Completed',
-      badgeClass: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40',
-      icon: '✓',
-      summary: 'Priya completed 20 Flange Shafts on Lathe-2 with zero QC rejects.',
-      actor: 'Priya Patel',
-    },
-    {
-      id: 5,
-      ts: 'Yesterday, 02:00 PM',
-      machine: 'VMC-3',
-      kind: 'procedure',
-      kindLabel: 'Procedure Drafted',
-      badgeClass: 'bg-purple-500/20 text-purple-300 border-purple-500/40',
-      icon: '🎥',
-      summary: 'Video Drafter extracted 4 setup steps from Ramesh’s setup recording.',
-      actor: 'Video Drafter',
-    },
-  ];
+  const first = useApi(
+    (signal) => (selectedMachineId ? getTimeline(selectedMachineId, { limit: PAGE }, signal) : null),
+    [selectedMachineId]
+  );
 
-  const filteredEvents =
-    machineFilter === 'all'
-      ? events
-      : events.filter((e) => e.machine === machineFilter);
+  useEffect(() => {
+    setEvents(first.data ? first.data.items : []);
+    setTotal(first.data ? first.data.total : 0);
+  }, [first.data]);
+
+  const loadMore = async () => {
+    setLoadingMore(true);
+    setMoreError(null);
+    try {
+      const page = await getTimeline(selectedMachineId, { limit: PAGE, offset: events.length });
+      setEvents((prev) => [...prev, ...page.items]);
+      setTotal(page.total);
+    } catch (err) {
+      setMoreError(err.message);
+    } finally {
+      setLoadingMore(false);
+    }
+  };
 
   return (
     <div className="bg-slate-800/90 border border-slate-700/80 rounded-2xl p-6 shadow-xl space-y-6">
@@ -78,64 +94,90 @@ export default function MachineTimeline() {
             Shop-Floor Activity Stream
           </span>
           <h2 className="text-lg font-bold text-white flex items-center space-x-2 mt-0.5">
-            <span>⏱️</span>
+            <ClockIcon className="w-5 h-5 text-cyan-400" />
             <span>Machine Event Timeline</span>
           </h2>
           <p className="text-slate-400 text-xs mt-1">
-            Real-time feed combining work orders, sensor spikes, operator voice logs, and safety guardrails.
+            ERP records, sensor spikes, operator notes, meetings and safety warnings in one stream.
           </p>
         </div>
 
         <div className="flex items-center space-x-2 text-xs">
-          <label className="text-slate-400 font-medium">Filter Machine:</label>
+          <label htmlFor="timeline-machine" className="text-slate-300 font-medium">
+            Machine:
+          </label>
           <select
-            value={machineFilter}
-            onChange={(e) => setMachineFilter(e.target.value)}
-            className="bg-slate-900 border border-slate-700 text-slate-200 py-1 pl-2.5 pr-7 rounded-lg font-semibold focus:border-cyan-400 text-xs"
+            id="timeline-machine"
+            value={selectedMachineId || ''}
+            onChange={(e) => setSelectedMachineId(Number(e.target.value))}
+            className="bg-slate-900 border border-slate-700 text-slate-200 py-1 px-2.5 rounded-lg font-semibold focus:border-cyan-400 text-xs"
           >
-            <option value="all">All Machines</option>
-            <option value="VMC-3">VMC-3</option>
-            <option value="Lathe-2">Lathe-2</option>
+            {(machines.data || []).map((m) => (
+              <option key={m.id} value={m.id}>
+                {m.name}
+              </option>
+            ))}
           </select>
         </div>
       </div>
 
+      <LoadState
+        loading={first.loading}
+        error={first.error || machines.error}
+        onRetry={first.reload}
+        label="Loading timeline…"
+      />
+
+      {!first.loading && !first.error && events.length === 0 && (
+        <div className="text-center text-slate-400 text-xs py-6">Nothing recorded on this machine yet.</div>
+      )}
+
       {/* Timeline Stream */}
-      <div className="relative border-l-2 border-slate-800 ml-4 pl-6 space-y-6">
-        {filteredEvents.map((event) => (
-          <div key={event.id} className="relative group">
-            {/* Timeline node icon */}
-            <div className="absolute -left-[38px] top-0.5 w-7 h-7 rounded-full bg-slate-950 border-2 border-slate-700 flex items-center justify-center text-xs shadow-md group-hover:border-cyan-400 transition-colors">
-              <span aria-hidden="true">{event.icon}</span>
-            </div>
-
-            <div className="bg-slate-900/90 hover:bg-slate-900 border border-slate-800 hover:border-slate-700/80 rounded-2xl p-4 space-y-2 shadow-sm transition-all">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-xs">
-                <div className="flex items-center space-x-2">
-                  <span
-                    className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border ${event.badgeClass}`}
-                  >
-                    {event.kindLabel}
-                  </span>
-                  <span className="font-bold text-slate-200 font-mono">
-                    {event.machine}
-                  </span>
+      {events.length > 0 && (
+        <div className="relative border-l-2 border-slate-700 ml-4 pl-6 space-y-6">
+          {events.map((event) => {
+            const kind = KINDS[event.kind] || OTHER;
+            return (
+              <div key={event.id} className="relative group">
+                <div className="absolute -left-[35px] top-0.5 w-6 h-6 rounded-full bg-slate-900 border-2 border-slate-600 flex items-center justify-center text-[11px] shadow group-hover:border-cyan-400 transition">
+                  {kind.icon}
                 </div>
-                <span className="text-slate-500 text-[10px] font-mono">{event.ts}</span>
-              </div>
 
-              <p className="text-xs text-slate-200 leading-relaxed font-medium">
-                {event.summary}
-              </p>
+                <div className="bg-slate-900/70 border border-slate-800 rounded-xl p-3.5 space-y-1.5 shadow-sm transition hover:border-slate-700">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-xs">
+                    <div className="flex items-center space-x-2">
+                      <span
+                        className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border ${kind.badge}`}
+                      >
+                        {kind.label}
+                      </span>
+                      <span className="font-bold text-slate-200">{first.data && first.data.machine}</span>
+                    </div>
+                    <span className="text-slate-500 text-[10px] font-mono">{formatWhen(event.occurred_at)}</span>
+                  </div>
 
-              <div className="text-[10px] text-slate-400 flex items-center space-x-1 pt-1 border-t border-slate-800/80">
-                <span>Logged by:</span>
-                <span className="text-cyan-300 font-semibold">{event.actor}</span>
+                  <p className="text-xs text-slate-200 leading-relaxed font-medium">{event.summary}</p>
+                </div>
               </div>
-            </div>
-          </div>
-        ))}
-      </div>
+            );
+          })}
+        </div>
+      )}
+
+      {moreError && <div className="text-red-300 text-xs">Could not load more: {moreError}</div>}
+
+      {events.length < total && (
+        <div className="flex justify-center">
+          <button
+            type="button"
+            disabled={loadingMore}
+            onClick={loadMore}
+            className="btn-touch px-4 py-1.5 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 text-slate-200 text-xs font-semibold rounded-lg border border-slate-700"
+          >
+            {loadingMore ? 'Loading…' : `Load older events (${total - events.length} more)`}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

@@ -58,6 +58,13 @@ export const replyRoutedQuestion = (questionId, replyData, signal) =>
 export const getRisk = (signal) =>
   client.get('/transfer/risk', { signal }).then((r) => r.data);
 
+/**
+ * Fetch transfer metrics counted from the records (coverage, Guardian, routing, skills).
+ * @param {AbortSignal} [signal]
+ */
+export const getMetrics = (signal) =>
+  client.get('/transfer/metrics', { signal }).then((r) => r.data);
+
 export default {
   getHandoverPlan,
   startInterview,
@@ -65,4 +72,5 @@ export default {
   getRoutedQuestions,
   replyRoutedQuestion,
   getRisk,
+  getMetrics,
 };

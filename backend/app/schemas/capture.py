@@ -7,7 +7,7 @@ so field descriptions here double as instructions to the model.
 from datetime import datetime
 from typing import Any, Dict, List, Literal, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 Mode = Literal["live", "offline"]
 
@@ -84,6 +84,13 @@ class VoiceNoteOut(BaseModel):
     message: Optional[str] = None
     # Filled by Note Guardian (registered on the on_note_saved hook); None until it runs.
     guardian: Optional[Dict[str, Any]] = None
+    # Same object under the name the frontend's NoteEditor / VoiceRecorder read.
+    guardian_result: Optional[Dict[str, Any]] = None
+
+    @model_validator(mode="after")
+    def _mirror_guardian(self) -> "VoiceNoteOut":
+        self.guardian_result = self.guardian
+        return self
 
 
 class DraftStep(BaseModel):
@@ -194,8 +201,16 @@ class ReviewIn(BaseModel):
     params: Optional[Dict[str, float]] = None
 
 
+class ReviewCardOut(CardOut):
+    """A card in the review queue, with the names a reviewer needs to judge it."""
+
+    machine: Optional[str] = None
+    component: Optional[str] = None
+    author: Optional[str] = None
+
+
 class ReviewQueueOut(BaseModel):
-    items: List[CardOut]
+    items: List[ReviewCardOut]
     total: int
     limit: int
     offset: int
@@ -204,3 +219,11 @@ class ReviewQueueOut(BaseModel):
 class ReviewOut(BaseModel):
     outcome: Literal["verified", "rejected"]
     card: CardOut
+
+
+class TranscriptOut(BaseModel):
+    """Speech turned into text only, so the speaker can check it before sending."""
+
+    text: str
+    language: Optional[str] = None
+    mode: Literal["live", "offline"] = "live"

@@ -24,8 +24,8 @@ class Settings(BaseSettings):
     openrouter_api_key: Optional[str] = None
 
     # Model IDs per task. Free-tier IDs change often, so they live in .env.
-    model_text: str = "llama-3.3-70b-versatile"
-    model_text_fallback: str = "nvidia/nemotron-3-super-120b-a12b:free"
+    model_text: str = "openai/gpt-oss-120b"
+    model_text_fallback: str = "nvidia/nemotron-3.5-lightning:free"
     model_vision: str = "nvidia/nemotron-3.5-super-vl:free"
     model_vision_fallback: str = "qwen/qwen3.8-27b"
     model_stt: str = "whisper-large-v3"

@@ -1,112 +1,90 @@
-import React, { useState } from 'react';
-import { reviewCard } from '../api/capture';
+import React, { useEffect, useState } from 'react';
+import { getReviewQueue, reviewCard } from '../api/capture';
+import LoadState from '../components/common/LoadState';
+import useApi from '../hooks/useApi';
 import { useAuthStore } from '../store/useAuthStore';
 import { t } from '../utils/i18n';
+import { CheckCircleIcon, SparklesIcon } from '../components/common/Icons';
+
+const symptomLabel = (key) => (key ? key.replace(/_/g, ' ') : null);
 
 export default function Review() {
   const { currentUser, language } = useAuthStore();
-  const [cards, setCards] = useState([
-    {
-      id: 501,
-      machine: 'VMC-3',
-      component: 'Spindle Bearing',
-      symptom: 'Intermittent chatter during roughing pass',
-      action: 'Check pull stud torque on BT40 toolholder; ensure clamping force is at least 18 kN',
-      why: 'Worn pull stud or low Belleville spring washer stack force causes microscopic tool vibration under high radial loads',
-      author: 'Priya Patel (Captured via Voice Note)',
-      confidence: 0.92,
-      status: 'pending',
-    },
-    {
-      id: 502,
-      machine: 'VMC-3',
-      component: 'Coolant Delivery',
-      symptom: 'Surface discoloration on SS304 bore',
-      action: 'Direct nozzle #2 specifically at cutting insert trailing edge, not workpiece top surface',
-      why: 'Stainless steel work-hardens rapidly if thermal shock occurs from intermittent splash coolant',
-      author: 'AI-Extracted from Shift Meeting Photo',
-      confidence: 0.88,
-      status: 'pending',
-    },
-    {
-      id: 503,
-      machine: 'Lathe-2',
-      component: 'Turret Index Cam',
-      symptom: 'Turret index alarm 2044',
-      action: 'Inspect proximity sensor gap; wipe away fine steel swarf using brass scraper',
-      why: 'Magnetic swarf builds up near sensor face giving false unclamp status',
-      author: 'Suresh Rao (Supervisor)',
-      confidence: 0.95,
-      status: 'pending',
-    },
-  ]);
+  const queue = useApi((signal) => getReviewQueue({ limit: 50 }, signal), []);
+  const [cards, setCards] = useState([]);
+
+  useEffect(() => {
+    if (queue.data) setCards(queue.data.items.map((c) => ({ ...c, status: 'pending' })));
+  }, [queue.data]);
 
   const [editingCardId, setEditingCardId] = useState(null);
   const [editText, setEditText] = useState('');
   const [editWhy, setEditWhy] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [feedbackMsg, setFeedbackMsg] = useState(null);
+  const [errorMsg, setErrorMsg] = useState(null);
+
+  // The backend lets only old employees and supervisors verify know-how.
+  const canReview = currentUser.role !== 'new_employee';
 
   const startEdit = (card) => {
     setEditingCardId(card.id);
     setEditText(card.action);
-    setEditWhy(card.why);
+    setEditWhy(card.why || '');
   };
 
-  const handleApprove = async (card, isEdited = false) => {
+  const submitReview = async (card, payload, onDone) => {
     setIsSubmitting(true);
     setFeedbackMsg(null);
-
-    const actionText = isEdited ? editText : card.action;
-    const whyText = isEdited ? editWhy : card.why;
-
+    setErrorMsg(null);
     try {
-      await reviewCard(card.id, {
-        verified_by: currentUser.id,
-        action: actionText,
-        why: whyText,
-        approved: true,
-      });
-
-      setCards((prev) =>
-        prev.map((c) =>
-          c.id === card.id
-            ? { ...c, status: 'approved', action: actionText, why: whyText, verified_by: currentUser.name }
-            : c
-        )
-      );
+      const res = await reviewCard(card.id, { reviewer_id: currentUser.id, ...payload });
+      onDone(res);
       setEditingCardId(null);
-      setFeedbackMsg(`Card #${card.id} was verified and published to the plant knowledge base!`);
-    } catch {
-      // Fallback local update
-      setCards((prev) =>
-        prev.map((c) =>
-          c.id === card.id
-            ? { ...c, status: 'approved', action: actionText, why: whyText, verified_by: currentUser.name }
-            : c
-        )
-      );
-      setEditingCardId(null);
-      setFeedbackMsg(`Card #${card.id} was verified locally!`);
+    } catch (err) {
+      setErrorMsg(`Card #${card.id} was not saved: ${err.message}`);
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleReject = async (cardId) => {
-    setCards((prev) => prev.filter((c) => c.id !== cardId));
-    setFeedbackMsg(`Card #${cardId} was discarded from the verification queue.`);
-  };
+  const handleApprove = (card, isEdited = false) =>
+    submitReview(
+      card,
+      isEdited
+        ? { action: 'edit', action_text: editText, why: editWhy.trim() || null }
+        : { action: 'approve' },
+      (res) => {
+        setCards((prev) =>
+          prev.map((c) =>
+            c.id === card.id
+              ? { ...c, ...res.card, status: 'approved', verified_by: currentUser.name }
+              : c
+          )
+        );
+        setFeedbackMsg(`Card #${card.id} was verified and published to the plant knowledge base!`);
+      }
+    );
+
+  const handleReject = (card) =>
+    submitReview(card, { action: 'reject' }, () => {
+      setCards((prev) => prev.filter((c) => c.id !== card.id));
+      setFeedbackMsg(`Card #${card.id} was discarded from the verification queue.`);
+    });
 
   const pendingCards = cards.filter((c) => c.status === 'pending');
   const approvedCards = cards.filter((c) => c.status === 'approved');
+  // Server total, minus the cards reviewed on this page since it loaded.
+  const pendingTotal = queue.data
+    ? queue.data.total - (queue.data.items.length - pendingCards.length)
+    : 0;
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-700/60 pb-5">
         <div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight flex items-center space-x-2.5">
-            <span aria-hidden="true">✅</span>
+            <CheckCircleIcon className="w-6 h-6 text-emerald-400" />
             <span>{t('navReview', language)}</span>
           </h1>
           <p className="text-slate-400 text-xs sm:text-sm mt-1.5 font-medium leading-relaxed">
@@ -116,9 +94,26 @@ export default function Review() {
 
         <span className="text-xs bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 px-3.5 py-1.5 rounded-xl font-semibold font-mono shadow-sm flex items-center space-x-2 self-start sm:self-auto">
           <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" aria-hidden="true" />
-          <span>{pendingCards.length} Cards Pending Verification</span>
+          <span>{pendingTotal} Cards Pending Verification</span>
         </span>
       </div>
+
+      {!canReview && (
+        <div className="p-3 bg-slate-800 border border-slate-700 rounded-xl text-slate-300 text-xs">
+          Only an old employee or a supervisor can verify know-how. Switch role to review these cards.
+        </div>
+      )}
+
+      {errorMsg && (
+        <div role="alert" className="p-3 bg-red-950/80 border border-red-500/50 rounded-xl text-red-200 text-xs font-semibold flex items-center justify-between">
+          <span>{errorMsg}</span>
+          <button type="button" onClick={() => setErrorMsg(null)} className="text-red-400 font-bold">
+            ✕
+          </button>
+        </div>
+      )}
+
+      <LoadState loading={queue.loading} error={queue.error} onRetry={queue.reload} label="Loading review queue…" />
 
       {feedbackMsg && (
         <div className="p-3.5 bg-emerald-950/80 border border-emerald-500/50 rounded-xl text-emerald-200 text-xs font-semibold flex items-center justify-between shadow-lg">
@@ -134,9 +129,9 @@ export default function Review() {
 
       {/* Pending Review List */}
       <div className="space-y-4">
-        {pendingCards.length === 0 ? (
+        {queue.loading || queue.error ? null : pendingCards.length === 0 ? (
           <div className="bg-slate-800/60 border border-slate-800 rounded-2xl p-8 text-center text-slate-400 text-sm">
-            <span className="text-3xl block mb-2" aria-hidden="true">🎉</span>
+            <SparklesIcon className="w-8 h-8 mx-auto mb-2 text-cyan-400" />
             <span>All know-how cards in the review queue have been verified!</span>
           </div>
         ) : (
@@ -154,19 +149,24 @@ export default function Review() {
                       Pending Sign-off
                     </span>
                     <span className="text-xs font-bold text-white">
-                      #{card.id} • {card.machine} ({card.component})
+                      #{card.id} • {card.machine || 'Machine not set'}
+                      {card.component ? ` (${card.component})` : ''}
                     </span>
                   </div>
 
                   <span className="text-slate-400 text-[11px]">
-                    Captured by: <strong className="text-slate-300">{card.author}</strong>
+                    Captured by: <strong className="text-slate-300">{card.author || 'Unknown'}</strong>
+                    {' '}• confidence {Math.round(card.confidence * 100)}%
                   </span>
                 </div>
 
                 <div className="space-y-2">
                   <div className="text-xs font-bold text-cyan-300 flex items-center space-x-1.5">
                     <span>Symptom / Scenario:</span>
-                    <span className="text-slate-200 font-normal">{card.symptom}</span>
+                    <span className="text-slate-200 font-normal">
+                      {card.title}
+                      {card.symptom ? ` (${symptomLabel(card.symptom)})` : ''}
+                    </span>
                   </div>
 
                   {isEditing ? (
@@ -205,11 +205,11 @@ export default function Review() {
                         </button>
                         <button
                           type="button"
-                          disabled={isSubmitting}
+                          disabled={isSubmitting || !editText.trim()}
                           onClick={() => handleApprove(card, true)}
                           className="btn-touch px-4 py-1 bg-emerald-500 text-slate-950 font-bold rounded-lg text-xs shadow"
                         >
-                          Save Changes & Approve ✓
+                          Save Changes & Approve
                         </button>
                       </div>
                     </div>
@@ -233,8 +233,9 @@ export default function Review() {
                   <div className="flex items-center justify-between pt-3 border-t border-slate-700/60">
                     <button
                       type="button"
-                      onClick={() => handleReject(card.id)}
-                      className="btn-touch px-3 py-1.5 text-red-400 hover:text-red-300 text-xs font-semibold rounded-lg hover:bg-red-950/40 border border-transparent hover:border-red-500/30 transition"
+                      disabled={!canReview || isSubmitting}
+                      onClick={() => handleReject(card)}
+                      className="btn-touch px-3 py-1.5 text-red-400 hover:text-red-300 text-xs font-semibold rounded-lg hover:bg-red-950/40 border border-transparent hover:border-red-500/30 transition disabled:opacity-40"
                     >
                       Discard / Reject
                     </button>
@@ -242,19 +243,20 @@ export default function Review() {
                     <div className="flex items-center space-x-2">
                       <button
                         type="button"
+                        disabled={!canReview}
                         onClick={() => startEdit(card)}
                         className="btn-touch px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 active:scale-[0.98] text-slate-200 text-xs font-semibold rounded-xl border border-slate-700 transition"
                       >
-                        Edit Details ✏️
+                        Edit Details
                       </button>
 
                       <button
                         type="button"
-                        disabled={isSubmitting}
+                        disabled={!canReview || isSubmitting}
                         onClick={() => handleApprove(card, false)}
                         className="btn-touch px-5 py-1.5 bg-emerald-500 hover:bg-emerald-400 active:scale-[0.98] disabled:opacity-50 text-slate-950 font-extrabold text-xs rounded-xl shadow-lg shadow-emerald-500/20 transition"
                       >
-                        Approve & Verify ✓
+                        Approve & Verify
                       </button>
                     </div>
                   </div>
@@ -279,10 +281,10 @@ export default function Review() {
               >
                 <div className="flex items-center justify-between">
                   <span className="font-bold text-slate-200 truncate">
-                    #{c.id} • {c.symptom}
+                    #{c.id} • {c.title}
                   </span>
                   <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400">
-                    Verified ✓
+                    Verified
                   </span>
                 </div>
                 <p className="text-slate-300 leading-snug">{c.action}</p>

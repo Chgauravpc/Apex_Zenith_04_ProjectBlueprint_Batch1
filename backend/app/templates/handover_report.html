@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Handover — {{ plan.employee }}</title>
+<style>
+  body { font: 14px/1.45 system-ui, "Noto Sans", "Noto Sans Devanagari", sans-serif; color: #1f2933; max-width: 900px; margin: 24px auto; padding: 0 16px; }
+  h1 { font-size: 22px; margin-bottom: 2px; } h2 { font-size: 17px; border-bottom: 1px solid #d0d7de; padding-bottom: 4px; margin-top: 28px; }
+  .meta { color: #57606a; font-size: 12px; } table { border-collapse: collapse; width: 100%; } td, th { border: 1px solid #d0d7de; padding: 4px 8px; text-align: left; vertical-align: top; }
+  .critical { color: #b42318; font-weight: 600; } .at_risk { color: #b54708; font-weight: 600; } .ok { color: #067647; }
+  .why { color: #57606a; font-style: italic; } sup { color: #0969da; } ol.notes { font-size: 12px; color: #57606a; }
+  @media print { body { margin: 0; } a { color: inherit; } }
+</style>
+</head>
+<body>
+<h1>Handover report — {{ plan.employee }}</h1>
+<p class="meta">Last day {{ plan.exit_date }} ({{ plan.days_left }} days left) · progress {{ plan.progress }}% · generated {{ generated }}</p>
+{% if plan.sole_holder_machines %}<p class="critical">Only person holding the know-how for: {{ plan.sole_holder_machines | join(", ") }}</p>{% endif %}
+{% if risk %}<table><tr><th>Machine</th><th>Status</th><th>Verified cards</th><th>People after exits</th><th>Parts covered</th></tr>
+{% for r in risk %}<tr><td>{{ r.name }}</td><td class="{{ r.status }}">{{ r.status | replace("_", " ") }}</td><td>{{ r.cards }}</td><td>{{ r.bus }}</td><td>{{ r.coverage }}%</td></tr>{% endfor %}</table>{% endif %}
+
+<h2>Handover tasks</h2>
+<table><tr><th>Task</th><th>Kind</th><th>Status</th></tr>
+{% for t in plan.tasks %}<tr><td>{{ t.title }}</td><td>{{ t.category | replace("_", " ") }}</td><td class="{{ 'ok' if t.status == 'done' else 'at_risk' }}">{{ t.status }}</td></tr>{% endfor %}
+</table>
+{% if plan.gaps %}<p>Still missing: {{ plan.gaps | join("; ") }}</p>{% endif %}
+
+<h2>Know-how already shared ({{ shared | length }} cards)</h2>
+<ul>{% for item in shared %}<li>{{ item.machine }} — <b>{{ item.card.title }}</b>: {{ item.card.action }}<sup>[{{ item.n }}]</sup></li>{% endfor %}</ul>
+
+<h2>Sources</h2>
+<ol class="notes">{% for f in footnotes %}<li>Card #{{ f.card_id }} by {{ f.author }}, {{ f.when }}, from {{ f.source }}{% if f.verified_by %}, verified by {{ f.verified_by }}{% endif %}.</li>{% endfor %}</ol>
+</body>
+</html>

@@ -91,3 +91,11 @@ def test_seed_training_and_samples(db: Session, tmp_path: Path) -> None:
     img = cv2.imread(blue.file_path)
     assert img is not None and img.shape == (480, 640, 3)
     assert Path(blue.file_path).parent == tmp_path / "seed"
+
+
+def test_seed_ids_match_frontend_role_switcher(db: Session) -> None:
+    """frontend/src/store/useAuthStore.js uses 1 = Ramesh, 2 = Priya, 3 = Suresh."""
+    seed(db, TODAY)
+    names = {e.id: e.name.split()[0] for e in db.execute(select(Employee)).scalars()}
+    assert (names[1], names[2], names[3]) == ("Ramesh", "Priya", "Suresh")
+    assert db.execute(select(Machine).filter_by(id=1)).scalar_one().name == "VMC-3"

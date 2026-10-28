@@ -4,15 +4,16 @@ import ChatterDoctor from '../components/ask/ChatterDoctor';
 import ChipReader from '../components/ask/ChipReader';
 import { useAuthStore } from '../store/useAuthStore';
 import { t } from '../utils/i18n';
+import { LightbulbIcon, MessageSquareIcon, VolumeIcon, SearchIcon } from '../components/common/Icons';
 
 export default function Ask() {
   const { language } = useAuthStore();
   const [activeTab, setActiveTab] = useState('chat');
 
   const tabs = [
-    { id: 'chat', label: 'Grounded Q&A Chat', icon: '💬' },
-    { id: 'chatter', label: 'Chatter Doctor (Acoustic)', icon: '🔊' },
-    { id: 'chips', label: 'Chip Colour Reader (Thermal)', icon: '🔍' },
+    { id: 'chat', label: 'Grounded Q&A Chat', icon: <MessageSquareIcon className="w-3.5 h-3.5" /> },
+    { id: 'chatter', label: 'Chatter Doctor (Acoustic)', icon: <VolumeIcon className="w-3.5 h-3.5" /> },
+    { id: 'chips', label: 'Chip Colour Reader (Thermal)', icon: <SearchIcon className="w-3.5 h-3.5" /> },
   ];
 
   return (
@@ -21,7 +22,7 @@ export default function Ask() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-700/60 pb-5">
         <div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight flex items-center space-x-2.5">
-            <span aria-hidden="true">💡</span>
+            <LightbulbIcon className="w-6 h-6 text-cyan-400" />
             <span>{t('navAsk', language)}</span>
           </h1>
           <p className="text-slate-400 text-xs sm:text-sm mt-1.5 font-medium leading-relaxed">
@@ -44,7 +45,7 @@ export default function Ask() {
                   : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50 border border-transparent'
               }`}
             >
-              <span aria-hidden="true">{tab.icon}</span>
+              <span>{tab.icon}</span>
               <span>{tab.label}</span>
             </button>
           ))}

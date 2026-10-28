@@ -5,16 +5,17 @@ import PhotoUpload from '../components/capture/PhotoUpload';
 import VideoUpload from '../components/capture/VideoUpload';
 import { useAuthStore } from '../store/useAuthStore';
 import { t } from '../utils/i18n';
+import { MicIcon, FileTextIcon, CameraIcon, VideoIcon } from '../components/common/Icons';
 
 export default function Capture() {
   const { language } = useAuthStore();
   const [activeTab, setActiveTab] = useState('voice');
 
   const tabs = [
-    { id: 'voice', label: 'Voice Note', icon: '🎙️' },
-    { id: 'text', label: 'Text & Params', icon: '✍️' },
-    { id: 'photo', label: 'Handwritten / Photo', icon: '📷' },
-    { id: 'video', label: 'Setup Video', icon: '🎥' },
+    { id: 'voice', label: 'Voice Note', icon: <MicIcon className="w-3.5 h-3.5" /> },
+    { id: 'text', label: 'Text & Params', icon: <FileTextIcon className="w-3.5 h-3.5" /> },
+    { id: 'photo', label: 'Handwritten / Photo', icon: <CameraIcon className="w-3.5 h-3.5" /> },
+    { id: 'video', label: 'Setup Video', icon: <VideoIcon className="w-3.5 h-3.5" /> },
   ];
 
   return (
@@ -23,7 +24,7 @@ export default function Capture() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-700/60 pb-5">
         <div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight flex items-center space-x-2.5">
-            <span aria-hidden="true">🎙️</span>
+            <MicIcon className="w-6 h-6 text-cyan-400" />
             <span>{t('navCapture', language)}</span>
           </h1>
           <p className="text-slate-400 text-xs sm:text-sm mt-1.5 font-medium leading-relaxed">
@@ -46,7 +47,7 @@ export default function Capture() {
                   : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50 border border-transparent'
               }`}
             >
-              <span aria-hidden="true">{tab.icon}</span>
+              <span>{tab.icon}</span>
               <span>{tab.label}</span>
             </button>
           ))}

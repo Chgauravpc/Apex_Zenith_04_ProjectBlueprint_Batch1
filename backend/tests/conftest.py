@@ -17,6 +17,19 @@ from app.errors import ProviderUnavailable
 from app.main import create_app
 
 
+@pytest.fixture(autouse=True)
+def _no_real_provider_keys(request: pytest.FixtureRequest, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Unit tests never reach Groq/OpenRouter, even when backend/.env holds real keys.
+
+    Tests marked `live` keep the real keys; tests that need a key set a fake one themselves.
+    """
+    if request.node.get_closest_marker("live") is None:
+        from app.config import get_settings
+
+        monkeypatch.setattr(get_settings(), "groq_api_key", None)
+        monkeypatch.setattr(get_settings(), "openrouter_api_key", None)
+
+
 @pytest.fixture()
 def db() -> Iterator[Session]:
     """Fresh in-memory database with all tables and the FTS index."""

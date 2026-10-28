@@ -153,6 +153,8 @@ def seed_reference(db: Session, today: date) -> Dict[str, Any]:
             material_id=materials[mat].id,
         )
 
+    # Creation order fixes the ids the frontend's role switcher uses:
+    # 1 = Ramesh (old), 2 = Priya (new), 3 = Suresh, 4 = Anil (supervisor).
     people = {
         "Ramesh": get_or_create(
             db,
@@ -164,15 +166,6 @@ def seed_reference(db: Session, today: date) -> Dict[str, Any]:
             join_date=date(1998, 6, 1),
             exit_date=today + timedelta(days=213),
         ),
-        "Suresh": get_or_create(
-            db,
-            Employee,
-            {"external_id": "ERP-EMP-1002"},
-            name="Suresh Jadhav",
-            role=ROLE_OLD,
-            language="mr",
-            join_date=date(2005, 3, 15),
-        ),
         "Priya": get_or_create(
             db,
             Employee,
@@ -181,6 +174,15 @@ def seed_reference(db: Session, today: date) -> Dict[str, Any]:
             role=ROLE_NEW,
             language="hi",
             join_date=today - timedelta(days=30),
+        ),
+        "Suresh": get_or_create(
+            db,
+            Employee,
+            {"external_id": "ERP-EMP-1002"},
+            name="Suresh Jadhav",
+            role=ROLE_OLD,
+            language="mr",
+            join_date=date(2005, 3, 15),
         ),
         "Anil": get_or_create(
             db,
