@@ -138,6 +138,9 @@ PARAM_PATTERN = re.compile(
 )
 # "9000 rpm" (number before the unit)
 RPM_AFTER = re.compile(r"(\d{3,5})\s*rpm\b", re.IGNORECASE)
+# Stainless grades as speech-to-text writes them ("S-S304", "s s 304"): joined into "ss304"
+# so the lone "s" is not read as a spindle speed S304.
+STEEL_GRADE = re.compile(r"(?<![\w.])s[\s-]*s[\s-]*(\d{3})(?!\d)")
 
 
 def _contains(haystack: str, phrase: str) -> bool:
@@ -159,7 +162,7 @@ def find_params(text: str) -> Dict[str, float]:
 
     The last mention of a parameter wins ("feed 0.2 ... increased feed to 0.3" → 0.3).
     """
-    norm = normalize(text)
+    norm = STEEL_GRADE.sub(r"ss\1", normalize(text))
     found: Dict[str, float] = {}
     for alias, value in PARAM_PATTERN.findall(norm):
         found[_PARAM_ALIAS[alias.lower()]] = float(value)
