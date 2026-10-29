@@ -5,6 +5,7 @@ import SkillBadge from '../components/guide/SkillBadge';
 import ShadowTracePlayer from '../components/guide/ShadowTracePlayer';
 import TroubleshootTree from '../components/guide/TroubleshootTree';
 import LoadState from '../components/common/LoadState';
+import PlaybookLink from '../components/common/PlaybookLink';
 import { getProcedures, getShadowTrace, getTroubleshoot, recordStep, startRun } from '../api/guide';
 import useApi from '../hooks/useApi';
 import { useAuthStore } from '../store/useAuthStore';
@@ -154,35 +155,38 @@ export default function GuidedJob() {
           </p>
         </div>
 
-        {run && (
-          <div className="flex items-center space-x-2.5">
-            <button
-              type="button"
-              onClick={() => setShowShadowTrace(!showShadowTrace)}
-              className={`btn-touch px-3.5 py-1.5 rounded-xl text-xs font-semibold border transition-all flex items-center space-x-1.5 active:scale-[0.98] ${
-                showShadowTrace
-                  ? 'bg-maroon-50 text-maroon-800 border-maroon-200 shadow-xs'
-                  : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-300 shadow-xs'
-              }`}
-            >
-              <PlayIcon className={`w-4 h-4 ${showShadowTrace ? 'text-maroon-700' : 'text-slate-500'}`} />
-              <span>ShadowTrace™</span>
-            </button>
+        <div className="flex flex-wrap items-center gap-2.5">
+          <PlaybookLink machineId={procedure ? procedure.machine_id : selectedMachineId} />
+          {run && (
+            <>
+              <button
+                type="button"
+                onClick={() => setShowShadowTrace(!showShadowTrace)}
+                className={`btn-touch px-3.5 py-1.5 rounded-xl text-xs font-semibold border transition-all flex items-center space-x-1.5 active:scale-[0.98] ${
+                  showShadowTrace
+                    ? 'bg-maroon-50 text-maroon-800 border-maroon-200 shadow-xs'
+                    : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-300 shadow-xs'
+                }`}
+              >
+                <PlayIcon className={`w-4 h-4 ${showShadowTrace ? 'text-maroon-700' : 'text-slate-500'}`} />
+                <span>ShadowTrace™</span>
+              </button>
 
-            <button
-              type="button"
-              onClick={() => setShowTroubleshoot(!showTroubleshoot)}
-              className={`btn-touch px-3.5 py-1.5 rounded-xl text-xs font-semibold border transition-all flex items-center space-x-1.5 active:scale-[0.98] ${
-                showTroubleshoot
-                  ? 'bg-amber-50 text-amber-800 border-amber-200 shadow-xs'
-                  : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-300 shadow-xs'
-              }`}
-            >
-              <BranchIcon className={`w-4 h-4 ${showTroubleshoot ? 'text-amber-700' : 'text-slate-500'}`} />
-              <span>Troubleshoot</span>
-            </button>
-          </div>
-        )}
+              <button
+                type="button"
+                onClick={() => setShowTroubleshoot(!showTroubleshoot)}
+                className={`btn-touch px-3.5 py-1.5 rounded-xl text-xs font-semibold border transition-all flex items-center space-x-1.5 active:scale-[0.98] ${
+                  showTroubleshoot
+                    ? 'bg-amber-50 text-amber-800 border-amber-200 shadow-xs'
+                    : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-300 shadow-xs'
+                }`}
+              >
+                <BranchIcon className={`w-4 h-4 ${showTroubleshoot ? 'text-amber-700' : 'text-slate-500'}`} />
+                <span>Troubleshoot</span>
+              </button>
+            </>
+          )}
+        </div>
       </div>
 
       {!run && (

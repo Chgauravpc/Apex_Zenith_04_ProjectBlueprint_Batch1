@@ -1,10 +1,12 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { getReviewQueue } from '../api/capture';
 import { getBriefing } from '../api/guide';
 import { getHandoverPlan, getMetrics, getRisk, getRoutedQuestions } from '../api/transfer';
 import useApi from '../hooks/useApi';
 import { useAuthStore } from '../store/useAuthStore';
+import { useMachineStore } from '../store/useMachineStore';
+import PlaybookLink from '../components/common/PlaybookLink';
 import {
   MicIcon,
   LightbulbIcon,
@@ -42,6 +44,11 @@ const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
 export default function Home() {
   const { currentUser } = useAuthStore();
   const home = useApi((signal) => loadHome(currentUser, signal), [currentUser.id]);
+  const { machines, loadMachines } = useMachineStore();
+  useEffect(() => {
+    loadMachines();
+  }, [loadMachines]);
+  const myMachine = machines.find((m) => m.name === currentUser.machine);
   const d = home.data || {};
   const loadingText = home.loading ? 'Loading…' : null;
 
@@ -124,6 +131,7 @@ export default function Home() {
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
+            <PlaybookLink machineId={myMachine && myMachine.id} machineName={myMachine && myMachine.name} />
             <Link
               to="/capture"
               className="btn-touch px-5 py-2.5 bg-maroon-700 hover:bg-maroon-800 text-white font-semibold rounded-xl shadow-xs transition-all flex items-center space-x-2 text-sm active:scale-[0.98]"
