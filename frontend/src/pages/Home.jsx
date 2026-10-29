@@ -11,36 +11,37 @@ import { IMAGES, PERSONAS, ROLE_ORDER, STATS, KNOWHOW_CARDS, TIMELINE } from "@/
 
 function Hero() {
     return (
-        <section className="relative overflow-hidden pt-10 pb-20 sm:pt-14 sm:pb-28">
-            {/* Background Radial Shades (21st.dev Hero 3 pattern - id: 11428) */}
+        <section className="relative overflow-hidden pt-12 pb-24 sm:pt-16 sm:pb-32">
+            {/* Background Ambient Radial Glow */}
             <div aria-hidden="true" className="pointer-events-none absolute inset-0 size-full overflow-hidden -z-10">
-                <div className="absolute inset-0 bg-[radial-gradient(45%_60%_at_20%_0%,rgba(128,0,32,0.12),transparent)] dark:bg-[radial-gradient(45%_60%_at_20%_0%,rgba(128,0,32,0.22),transparent)]" />
-                <div className="absolute top-1/4 right-0 h-96 w-96 rounded-full bg-maroon-700/10 dark:bg-maroon-500/15 blur-3xl" />
+                <div className="absolute inset-0 bg-[radial-gradient(50%_50%_at_50%_0%,rgba(128,0,32,0.12),transparent)] dark:bg-[radial-gradient(50%_50%_at_50%_0%,rgba(128,0,32,0.22),transparent)]" />
+                <div className="absolute top-1/4 left-1/2 -translate-x-1/2 h-[500px] w-[800px] rounded-full bg-maroon-700/8 dark:bg-maroon-500/12 blur-[100px]" />
             </div>
 
             <div className="mx-auto max-w-7xl px-5 sm:px-8">
-                {/* Left-Aligned Hero Content */}
-                <div className="relative z-10 flex max-w-3xl flex-col gap-5 sm:gap-6">
-                    {/* Headline - High-impact large display with White & Maroon styling */}
+                {/* Full-Width Centered Hero Content (Not divided into 2 parts) */}
+                <div className="relative z-10 mx-auto flex max-w-4xl flex-col items-center text-center gap-6 sm:gap-7">
+                    
+                    {/* Headline - 3 Distinct Lines with White & Maroon Styling */}
                     <h1
                         data-testid="hero-reveal-title"
-                        className="text-balance font-display font-black text-5xl sm:text-6xl md:text-7xl lg:text-[5.25rem] xl:text-[5.75rem] tracking-tight text-ink dark:text-white leading-[1.02] sm:leading-[1.02]"
+                        className="text-balance font-display font-black text-5xl sm:text-6xl md:text-7xl lg:text-[5.5rem] xl:text-[6.25rem] tracking-tight text-ink dark:text-white leading-[1.02] sm:leading-[1.02]"
                     >
                         Experience walks out
-                        <br className="hidden sm:inline" />{" "}
-                        the door.{" "}
-                        <span className="font-serif font-normal italic text-maroon-700 dark:text-maroon-400">
+                        <br />
+                        the door.
+                        <span className="block font-serif font-normal italic text-maroon-700 dark:text-maroon-400 mt-2 sm:mt-3">
                             We make it stay.
                         </span>
                     </h1>
 
                     {/* Subtext */}
-                    <p className="max-w-2xl text-base sm:text-lg leading-relaxed text-slate-600 dark:text-slate-300">
+                    <p className="max-w-2xl text-base sm:text-lg lg:text-xl leading-relaxed text-slate-600 dark:text-slate-300 mx-auto">
                         Apex Zenith captures veteran machinists' tacit know-how — audio nuances, vibration signatures, logbook sketches — and returns it to operators as verified procedures and real-time guardrails before scrap happens.
                     </p>
 
-                    {/* CTA Actions - White and Maroon Theme */}
-                    <div className="flex flex-wrap items-center gap-4 pt-1">
+                    {/* Centered CTA Actions */}
+                    <div className="flex flex-wrap items-center justify-center gap-4 pt-1">
                         <Link
                             to="/capture"
                             data-testid="hero-cta-capture"
@@ -60,10 +61,10 @@ function Hero() {
                         </Link>
                     </div>
 
-                    {/* Quick Metric Stats Bar */}
-                    <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-6 max-w-xl pt-4 border-t border-slate-100 dark:border-slate-800/80">
+                    {/* Centered Metric Stats Bar */}
+                    <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-8 max-w-2xl w-full pt-6 border-t border-slate-200/80 dark:border-slate-800/80 mx-auto">
                         {STATS.map((s) => (
-                            <div key={s.label}>
+                            <div key={s.label} className="text-center">
                                 <div className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-ink dark:text-white">
                                     {s.value}
                                     <span className="text-maroon-700 dark:text-maroon-400">{s.unit}</span>
@@ -74,15 +75,15 @@ function Hero() {
                     </div>
                 </div>
 
-                {/* 21st.dev Signature Hero 3 Dashboard Mockup Preview */}
-                <div className="relative mt-12 sm:mt-16 lg:mt-20">
+                {/* Big Showcase Frame (Full Width across the screen) */}
+                <div className="relative mt-14 sm:mt-18 lg:mt-22">
                     {/* Ambient Radial Glow */}
                     <div
-                        className="absolute -inset-x-20 inset-y-0 -translate-y-1/4 scale-110 rounded-full bg-[radial-gradient(ellipse_at_center,rgba(128,0,32,0.20),transparent_70%)] blur-[70px] pointer-events-none"
+                        className="absolute -inset-x-20 inset-y-0 -translate-y-1/4 scale-110 rounded-full bg-[radial-gradient(ellipse_at_center,rgba(128,0,32,0.20),transparent_70%)] blur-[80px] pointer-events-none"
                         aria-hidden="true"
                     />
 
-                    {/* Dashboard Frame */}
+                    {/* Console Window Container */}
                     <div className="relative mx-auto max-w-6xl overflow-hidden rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 p-2 sm:p-3 shadow-2xl backdrop-blur-xl ring-1 ring-slate-900/5 dark:ring-white/10">
                         
                         {/* Mockup Console Window Header */}
@@ -94,7 +95,7 @@ function Hero() {
                                     <span className="w-2.5 h-2.5 rounded-full bg-emerald-500/80" />
                                 </div>
                                 <span className="text-[11px] font-mono text-slate-400 dark:text-slate-500 ml-2 hidden sm:inline-block">
-                                    Apex Zenith CNC · Shop Floor Console • Station VMC-3
+                                    Apex Zenith CNC · Shop Floor Console · Station VMC-3
                                 </span>
                             </div>
                             <div className="flex items-center gap-2">
@@ -105,79 +106,70 @@ function Hero() {
                             </div>
                         </div>
 
-                        {/* Mockup Dashboard Content Grid */}
-                        <div className="grid grid-cols-1 md:grid-cols-12 gap-3 p-1">
-                            {/* Column 1: Live Machine Image & Spindle Telemetry HUD */}
-                            <div className="md:col-span-4 relative aspect-[4/3] md:aspect-auto md:min-h-[280px] overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-900 group">
-                                <img
-                                    src={IMAGES.hero}
-                                    alt="Machinist inspecting CNC spindle"
-                                    className="h-full w-full object-cover grayscale-[25%] contrast-[105%] group-hover:scale-105 transition-transform duration-700"
-                                />
-                                <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/30 to-transparent" />
-                                
-                                <div className="absolute top-3 left-3 flex items-center gap-1.5 bg-black/60 backdrop-blur-md px-2 py-1 rounded-md text-[10px] font-mono text-white">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                                    Haas VF-2 · VMC-03
-                                </div>
+                        {/* Big Size Image Hero Container with Cinematic Aspect Ratio and Interactive Overlays */}
+                        <div className="relative w-full aspect-[16/10] sm:aspect-[21/9] lg:aspect-[2.4/1] min-h-[340px] sm:min-h-[440px] lg:min-h-[480px] overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-950 group">
+                            <img
+                                src={IMAGES.hero}
+                                alt="Machinist inspecting CNC spindle"
+                                className="h-full w-full object-cover object-center grayscale-[20%] contrast-[108%] group-hover:scale-105 transition-transform duration-700"
+                            />
+                            {/* Ambient vignette gradient */}
+                            <div className="absolute inset-0 bg-gradient-to-t from-slate-950/95 via-slate-950/30 to-slate-950/20" />
 
-                                <div className="absolute bottom-3 left-3 right-3 text-white">
-                                    <p className="font-mono text-[9px] uppercase tracking-wider text-maroon-600 dark:text-maroon-400 font-semibold">Active Spindle Telemetry</p>
-                                    <div className="flex items-center justify-between text-xs font-semibold mt-1">
-                                        <span>4,200 RPM</span>
-                                        <span className="text-emerald-400">Runout: 0.002mm</span>
-                                        <span className="text-slate-300">Temp: 44°C</span>
-                                    </div>
-                                </div>
+                            {/* Top-Left Live Station Tag */}
+                            <div className="absolute top-4 left-4 flex items-center gap-2 bg-slate-900/85 border border-white/10 backdrop-blur-md px-3 py-1.5 rounded-lg text-xs font-mono text-white shadow-lg">
+                                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                                <span className="font-semibold">Haas VF-2 · VMC-03</span>
+                                <span className="text-slate-400 text-[11px] hidden sm:inline">Aerospace SS304 Flange</span>
                             </div>
 
-                            {/* Column 2: Active Operation & Tolerances */}
-                            <div className="md:col-span-4 flex flex-col justify-between p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/40">
-                                <div>
-                                    <div className="flex items-center justify-between text-xs mb-2">
-                                        <span className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
-                                            <Wrench size={13} className="text-maroon-700" />
-                                            Operation Step 3 of 6
-                                        </span>
-                                        <span className="text-[10px] font-mono bg-white dark:bg-slate-800 px-2 py-0.5 rounded border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300">
-                                            SS304 Flange
-                                        </span>
-                                    </div>
-                                    <p className="text-xs text-slate-600 dark:text-slate-300 font-medium leading-relaxed">
-                                        Face roughing at 850 mm/min feed. Acoustic chatter monitoring continuously calibrated to 820 Hz threshold.
-                                    </p>
-                                </div>
-
-                                <div className="space-y-1.5 mt-3 pt-3 border-t border-slate-200/80 dark:border-slate-700/80">
-                                    <div className="flex items-center justify-between text-[11px]">
-                                        <span className="text-slate-500">Coolant Pressure</span>
-                                        <span className="font-mono font-semibold text-slate-900 dark:text-white">4.8 bar ✓</span>
-                                    </div>
-                                    <div className="flex items-center justify-between text-[11px]">
-                                        <span className="text-slate-500">Insert Wear Indicator</span>
-                                        <span className="font-mono font-semibold text-emerald-600 dark:text-emerald-400">92% Life OK</span>
-                                    </div>
-                                </div>
+                            {/* Top-Right Operation Badge */}
+                            <div className="absolute top-4 right-4 hidden sm:flex items-center gap-2 bg-slate-900/85 border border-white/10 backdrop-blur-md px-3 py-1.5 rounded-lg text-xs font-mono text-white shadow-lg">
+                                <Wrench size={13} className="text-maroon-400" />
+                                <span>Roughing Step 3 of 6</span>
+                                <span className="text-emerald-400 font-semibold">Feed: 850 mm/min</span>
                             </div>
 
-                            {/* Column 3: Veteran Ramesh Patil Tacit Rule Card */}
-                            <div className="md:col-span-4 flex flex-col justify-between p-3.5 rounded-xl border border-amber-200/80 dark:border-amber-900/50 bg-amber-50/80 dark:bg-amber-950/30">
-                                <div>
-                                    <div className="flex items-center justify-between mb-2">
-                                        <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-maroon-900 dark:text-maroon-300">
-                                            <span className="w-1.5 h-1.5 rounded-full bg-maroon-700 pin-pulse" />
-                                            Ramesh's Rule #104
-                                        </span>
-                                        <span className="text-[10px] text-amber-800 dark:text-amber-400 font-mono">38 yrs exp</span>
-                                    </div>
-                                    <p className="font-serif text-xs italic leading-relaxed text-amber-950 dark:text-amber-200">
-                                        "The wall rings like a bell at 4,200. Drop 150 RPM — never the feed. That SS304 chatter howl precedes bearing thermal trip."
+                            {/* Bottom HUD Overlay Bar: Telemetry & Ramesh Patil Rule in Big Cinematic View */}
+                            <div className="absolute bottom-4 left-4 right-4 grid grid-cols-1 md:grid-cols-12 gap-3">
+                                {/* Spindle Telemetry HUD */}
+                                <div className="md:col-span-6 bg-slate-900/90 border border-white/10 backdrop-blur-md p-3.5 rounded-xl text-white shadow-xl">
+                                    <p className="font-mono text-[10px] uppercase tracking-wider text-maroon-400 font-bold mb-1 flex items-center justify-between">
+                                        <span>Active Spindle Telemetry</span>
+                                        <span className="text-emerald-400 text-[10px]">Threshold: 820 Hz OK</span>
                                     </p>
+                                    <div className="grid grid-cols-3 gap-2 text-center pt-1 border-t border-white/10">
+                                        <div>
+                                            <p className="text-xs text-slate-400">Speed</p>
+                                            <p className="text-sm sm:text-base font-mono font-bold text-white">4,200 RPM</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-xs text-slate-400">Runout</p>
+                                            <p className="text-sm sm:text-base font-mono font-bold text-emerald-400">0.002 mm</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-xs text-slate-400">Spindle Temp</p>
+                                            <p className="text-sm sm:text-base font-mono font-bold text-amber-300">44°C</p>
+                                        </div>
+                                    </div>
                                 </div>
 
-                                <div className="mt-3 pt-2.5 border-t border-amber-200/60 dark:border-amber-900/40 flex items-center justify-between text-[10px] text-amber-900/80 dark:text-amber-300/80">
-                                    <span>Verified by Anil K.</span>
-                                    <span className="font-mono font-semibold">14 Incidents Prevented</span>
+                                {/* Ramesh Patil Tacit Rule Overlay Card */}
+                                <div className="md:col-span-6 bg-amber-950/90 border border-amber-500/30 backdrop-blur-md p-3.5 rounded-xl text-amber-100 shadow-xl flex flex-col justify-between">
+                                    <div>
+                                        <div className="flex items-center justify-between mb-1">
+                                            <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-amber-300">
+                                                <span className="w-1.5 h-1.5 rounded-full bg-maroon-500 pin-pulse" />
+                                                Ramesh's Rule #104 · 38 yrs experience
+                                            </span>
+                                            <span className="text-[10px] font-mono text-emerald-400 bg-emerald-950/80 px-2 py-0.5 rounded border border-emerald-800/80">
+                                                14 Incidents Prevented
+                                            </span>
+                                        </div>
+                                        <p className="font-serif text-xs italic leading-relaxed text-amber-100">
+                                            "The wall rings like a bell at 4,200. Drop 150 RPM — never the feed. That SS304 chatter howl precedes bearing thermal trip."
+                                        </p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
