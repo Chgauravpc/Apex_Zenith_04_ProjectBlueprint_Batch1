@@ -3,11 +3,15 @@ import { create } from 'zustand';
 const THEME_STORAGE_KEY = 'blueprint_theme';
 
 const getInitialTheme = () => {
-  if (typeof window !== 'undefined') {
-    const saved = localStorage.getItem(THEME_STORAGE_KEY);
-    if (saved === 'dark' || saved === 'light') {
-      return saved;
+  try {
+    if (typeof window !== 'undefined' && typeof localStorage !== 'undefined' && localStorage?.getItem) {
+      const saved = localStorage.getItem(THEME_STORAGE_KEY);
+      if (saved === 'dark' || saved === 'light') {
+        return saved;
+      }
     }
+  } catch (e) {
+    // Ignore storage errors in test or restricted environments
   }
   // Default to Light Theme per prompt requirements
   return 'light';
