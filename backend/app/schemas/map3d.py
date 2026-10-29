@@ -5,6 +5,7 @@ and component-level diagnostics. Reference: TASKS.md T12 / T21 and PRD.md §9.4.
 """
 
 from typing import Any, Dict, List, Optional
+
 from pydantic import BaseModel, Field
 
 

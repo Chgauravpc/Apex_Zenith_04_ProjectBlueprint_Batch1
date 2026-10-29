@@ -5,16 +5,16 @@ risk calculation, and linked knowledge. Reference: TASKS.md T12 and PRD.md §9.4
 """
 
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional
 
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.models.erp import Machine, Maintenance
-from app.models.guardian import FailurePrecursor, Warning
+from app.models.guardian import Warning
 from app.models.knowledge import KnowledgeCard
-from app.models.map3d import Component, ComponentPin
-from app.models.ops import Anomaly, Event, SensorReading
+from app.models.map3d import Component
+from app.models.ops import Anomaly, SensorReading
 from app.schemas.map3d import ComponentKnowledge, ComponentOut, MachineLiveTelemetry
 
 # Default 3D metadata catalog for standard VMC machines
@@ -22,7 +22,10 @@ VMC_COMPONENT_DEFAULTS: Dict[str, Dict[str, Any]] = {
     "spindle": {
         "display_name": "Spindle Assembly",
         "category": "Drive & Headstock",
-        "description": "High-speed precision cartridge spindle with ceramic hybrid angular contact bearings. Houses BT40 taper.",
+        "description": (
+            "High-speed precision cartridge spindle with ceramic hybrid angular "
+            "contact bearings. Houses BT40 taper."
+        ),
         "position": [0.0, 1.45, -0.15],
         "pin_position": [0.0, 1.95, 0.05],
         "specs": {
@@ -36,7 +39,10 @@ VMC_COMPONENT_DEFAULTS: Dict[str, Dict[str, Any]] = {
     "tool_holder": {
         "display_name": "Tool Holder & ATC Magazine",
         "category": "Automatic Tool Changer",
-        "description": "24-station arm-type automatic tool changer (ATC) magazine with dual-gripper swing arm.",
+        "description": (
+            "24-station arm-type automatic tool changer (ATC) magazine with "
+            "dual-gripper swing arm."
+        ),
         "position": [-0.72, 1.55, -0.1],
         "pin_position": [-0.85, 1.95, 0.15],
         "specs": {
@@ -49,7 +55,10 @@ VMC_COMPONENT_DEFAULTS: Dict[str, Dict[str, Any]] = {
     "worktable": {
         "display_name": "T-Slot Worktable",
         "category": "Workholding & Kinematics",
-        "description": "Precision ground Meehanite cast-iron table with 5 precision T-slots for modular clamping.",
+        "description": (
+            "Precision ground Meehanite cast-iron table with 5 precision T-slots "
+            "for modular clamping."
+        ),
         "position": [0.0, 0.65, 0.05],
         "pin_position": [0.65, 0.95, 0.35],
         "specs": {
@@ -62,7 +71,10 @@ VMC_COMPONENT_DEFAULTS: Dict[str, Dict[str, Any]] = {
     "vise": {
         "display_name": "Precision Clamping Vise",
         "category": "Clamping Fixture",
-        "description": "Kurt-style 6-inch precision CNC milling vise with flame-hardened bed and matched-height ground step jaws.",
+        "description": (
+            "Kurt-style 6-inch precision CNC milling vise with flame-hardened bed "
+            "and matched-height ground step jaws."
+        ),
         "position": [0.0, 0.84, 0.0],
         "pin_position": [-0.25, 1.15, 0.25],
         "specs": {
@@ -75,7 +87,10 @@ VMC_COMPONENT_DEFAULTS: Dict[str, Dict[str, Any]] = {
     "control_panel": {
         "display_name": "Operator Pendant Console",
         "category": "HMI & Controller",
-        "description": "Ergonomic swing-arm operator console with 15-inch industrial LCD, tactile QWERTY keyboard, MPG, and stack light.",
+        "description": (
+            "Ergonomic swing-arm operator console with 15-inch industrial LCD, "
+            "tactile QWERTY keyboard, MPG, and stack light."
+        ),
         "position": [1.35, 1.45, 0.95],
         "pin_position": [1.45, 1.85, 1.05],
         "specs": {
@@ -88,7 +103,10 @@ VMC_COMPONENT_DEFAULTS: Dict[str, Dict[str, Any]] = {
     "doors": {
         "display_name": "Enclosure Sliding Doors",
         "category": "Safety Enclosure",
-        "description": "Twin sliding safety enclosure doors with 12 mm impact-resistant polycarbonate observation windows and RFID interlocks.",
+        "description": (
+            "Twin sliding safety enclosure doors with 12 mm impact-resistant "
+            "polycarbonate observation windows and RFID interlocks."
+        ),
         "position": [0.0, 1.35, 0.95],
         "pin_position": [0.55, 1.65, 1.05],
         "specs": {
@@ -101,7 +119,10 @@ VMC_COMPONENT_DEFAULTS: Dict[str, Dict[str, Any]] = {
     "machine_body": {
         "display_name": "Machine Body, Base & Column",
         "category": "Structural Casting",
-        "description": "Rigid Meehanite cast-iron base bed and vertical Z-axis column providing high vibration damping.",
+        "description": (
+            "Rigid Meehanite cast-iron base bed and vertical Z-axis column "
+            "providing high vibration damping."
+        ),
         "position": [0.0, 1.35, 0.0],
         "pin_position": [-1.05, 0.55, 0.85],
         "specs": {
@@ -154,16 +175,16 @@ def get_machine_telemetry(db: Session, machine_id: int) -> MachineLiveTelemetry:
 
     # Recent anomalies
     recent_anomaly = db.execute(
-        select(Anomaly)
-        .where(Anomaly.machine_id == machine_id)
-        .order_by(Anomaly.ts.desc())
-        .limit(1)
+        select(Anomaly).where(Anomaly.machine_id == machine_id).order_by(Anomaly.ts.desc()).limit(1)
     ).scalar()
 
     status = "online"
     latest_anomaly_text = None
     if recent_anomaly:
-        latest_anomaly_text = f"Anomaly on {recent_anomaly.sensor}: {recent_anomaly.value:g} (z={recent_anomaly.zscore:+.1f})"
+        latest_anomaly_text = (
+            f"Anomaly on {recent_anomaly.sensor}: {recent_anomaly.value:g} "
+            f"(z={recent_anomaly.zscore:+.1f})"
+        )
         status = "warning"
     elif open_warnings_count > 0:
         status = "warning"
@@ -193,9 +214,7 @@ def list_components(db: Session, machine_id: int) -> List[ComponentOut]:
     """Retrieve machine components with live dynamic risk levels, telemetry, and pinned cards."""
     # Query database components
     db_components = (
-        db.execute(select(Component).where(Component.machine_id == machine_id))
-        .scalars()
-        .all()
+        db.execute(select(Component).where(Component.machine_id == machine_id)).scalars().all()
     )
 
     # Map database components by mesh_name
@@ -255,9 +274,7 @@ def list_components(db: Session, machine_id: int) -> List[ComponentOut]:
         cards = []
         if db_comp:
             card_rows = (
-                db.execute(
-                    select(KnowledgeCard).where(KnowledgeCard.component_id == db_comp.id)
-                )
+                db.execute(select(KnowledgeCard).where(KnowledgeCard.component_id == db_comp.id))
                 .scalars()
                 .all()
             )
@@ -276,9 +293,7 @@ def list_components(db: Session, machine_id: int) -> List[ComponentOut]:
         # Query past failure incidents for this machine & component
         incidents = []
         incident_rows = (
-            db.execute(
-                select(Maintenance).where(Maintenance.machine_id == machine_id).limit(5)
-            )
+            db.execute(select(Maintenance).where(Maintenance.machine_id == machine_id).limit(5))
             .scalars()
             .all()
         )
