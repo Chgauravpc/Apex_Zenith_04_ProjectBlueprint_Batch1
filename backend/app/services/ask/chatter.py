@@ -46,7 +46,7 @@ def load_audio(path: Path, sr: int = SAMPLE_RATE, max_seconds: int = MAX_SECONDS
             data = f.read(frames=int(native * max_seconds), dtype="float32", always_2d=True)
     except (RuntimeError, sf.LibsndfileError) as exc:
         raise ValidationFailed(
-            "could not read this recording; please send WAV, MP3, OGG or " "FLAC"
+            "could not read this recording; please send WAV, MP3, OGG or FLAC"
         ) from exc
     mono = data.mean(axis=1)
     if mono.size < native // 2:
@@ -168,11 +168,7 @@ def analyse_chatter(
             else ""
         )
         + f". With {teeth} teeth, speeds where the cutter lines up with it are "
-        + (
-            ", ".join(str(r) for r in candidates)
-            if candidates
-            else "outside this machine's " "range"
-        )
+        + (", ".join(str(r) for r in candidates) if candidates else "outside this machine's range")
         + " rpm. Try the nearest one and listen again; the decision is yours."
         + ("" if clear else " The peak is weak, so this may not be chatter at all.")
     )
@@ -182,7 +178,7 @@ def analyse_chatter(
             kind="chatter_check",
             ref_type="machine",
             ref_id=machine.id,
-            summary=f"chatter check: {fc:.0f} Hz, stable " f"{candidates or 'none in range'}",
+            summary=f"chatter check: {fc:.0f} Hz, stable {candidates or 'none in range'}",
         )
     )
     db.commit()

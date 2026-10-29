@@ -81,7 +81,7 @@ def _procedure_for(db: Session, payload: RunStartIn) -> Tuple[Procedure, Optiona
     )
     if not candidates:
         raise NotFound(
-            "no approved procedure for this machine yet; ask an old employee to " "record one"
+            "no approved procedure for this machine yet; ask an old employee to record one"
         )
     return candidates[0], order
 

@@ -53,30 +53,30 @@ RULES: Dict[Tuple[str, int], Tuple[str, str, str]] = {
     ("carbide", 0): (
         "ok",
         "Cool cut.",
-        "Fine for finishing; for roughing you may have room " "to raise speed a little.",
+        "Fine for finishing; for roughing you may have room to raise speed a little.",
     ),
     ("carbide", 1): ("ok", "Normal cutting heat for carbide on steel.", "Keep going."),
     ("carbide", 2): (
         "caution",
         "Getting hot.",
-        "Check coolant flow and insert wear before " "the next part.",
+        "Check coolant flow and insert wear before the next part.",
     ),
     ("carbide", 3): (
         "stop",
         "Too hot at the edge.",
-        "Reduce speed about 10%, check coolant " "aim and change the insert edge if it is worn.",
+        "Reduce speed about 10%, check coolant aim and change the insert edge if it is worn.",
     ),
     ("hss", 0): ("ok", "Cool cut for HSS.", "Keep going."),
     ("hss", 1): ("caution", "Upper limit for HSS.", "Do not raise speed; keep coolant on."),
     ("hss", 2): (
         "stop",
         "Too hot for HSS: the edge softens.",
-        "Stop, reduce speed 20–30% " "and check the edge.",
+        "Stop, reduce speed 20–30% and check the edge.",
     ),
     ("hss", 3): (
         "stop",
         "Far too hot for HSS.",
-        "Stop now, reduce speed, regrind or replace " "the tool.",
+        "Stop now, reduce speed, regrind or replace the tool.",
     ),
 }
 

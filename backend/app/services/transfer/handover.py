@@ -109,27 +109,27 @@ def _tasks_for(
             topic=f"AI interview: what only you know about {machine.name}",
         ),
     ]
-    for comp in db.execute(select(Component).filter_by(machine_id=machine.id)).scalars():
-        if not who.get((machine.id, comp.id)):
-            tasks.append(
-                HandoverTask(
-                    plan_id=plan.id,
-                    kind="interview",
-                    machine_id=machine.id,
-                    component_id=comp.id,
-                    topic=f"Explain the {comp.display_name.lower()} on {machine.name} "
-                    f"(nothing recorded yet)",
-                )
-            )
-    for gap in [g for g in gaps if g.machine_id == machine.id][:MAX_GAP_TASKS]:
-        tasks.append(
-            HandoverTask(
-                plan_id=plan.id,
-                kind="interview",
-                machine_id=machine.id,
-                topic=f"Answer: {gap.topic}"[:200],
-            )
+    tasks.extend(
+        HandoverTask(
+            plan_id=plan.id,
+            kind="interview",
+            machine_id=machine.id,
+            component_id=comp.id,
+            topic=f"Explain the {comp.display_name.lower()} on {machine.name} "
+            f"(nothing recorded yet)",
         )
+        for comp in db.execute(select(Component).filter_by(machine_id=machine.id)).scalars()
+        if not who.get((machine.id, comp.id))
+    )
+    tasks.extend(
+        HandoverTask(
+            plan_id=plan.id,
+            kind="interview",
+            machine_id=machine.id,
+            topic=f"Answer: {gap.topic}"[:200],
+        )
+        for gap in [g for g in gaps if g.machine_id == machine.id][:MAX_GAP_TASKS]
+    )
     pending = db.execute(
         select(func.count())
         .select_from(KnowledgeCard)

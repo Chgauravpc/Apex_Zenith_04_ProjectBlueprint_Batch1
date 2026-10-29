@@ -142,7 +142,7 @@ def _offline(question: str, hits: List[Hit]) -> AnswerLLM:
 
 def _ask_llm(req: AskRequest, hits: List[Hit], machine: Optional[str]) -> Tuple[AnswerLLM, str]:
     system = ANSWER_SYSTEM.format(
-        language=LANGUAGE_NAMES.get(req.language or "", "the " "language of the question")
+        language=LANGUAGE_NAMES.get(req.language or "", "the language of the question")
     )
     user = ANSWER_USER.format(
         question=wrap_records([("question", req.question)]),

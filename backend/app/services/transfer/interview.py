@@ -134,7 +134,7 @@ def _topics(db: Session, session: InterviewSession, n: int) -> List[Topic]:
             topics.append(
                 (
                     "part",
-                    f"Nothing recorded yet about the " f"{comp.display_name.lower()}",
+                    f"Nothing recorded yet about the {comp.display_name.lower()}",
                     None,
                     comp.id,
                     None,
