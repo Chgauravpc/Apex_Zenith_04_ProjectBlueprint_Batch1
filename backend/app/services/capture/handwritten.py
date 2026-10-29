@@ -7,6 +7,7 @@ clear message (we never guess what a page says).
 """
 
 import logging
+import re
 from datetime import date
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
@@ -51,10 +52,24 @@ def _page_jpeg(image_path: Path) -> bytes:
     return buf.tobytes()
 
 
-def _parse_date(value: Optional[str]) -> Optional[date]:
+def _parse_date(
+    value: Optional[str], page_text: str = "", today: Optional[date] = None
+) -> Optional[date]:
+    """The meeting date, in this year when the page shows no year ("29/10").
+
+    The model fills in a year it cannot see; keep it only if the page has it (2026 or /26).
+    """
     try:
-        return date.fromisoformat(value) if value else None
+        held = date.fromisoformat(value) if value else None
     except ValueError:
+        return None
+    if held is None or re.search(rf"{held.year}|[/.-]{held.year % 100:02d}\b", page_text):
+        return held
+    today = today or date.today()
+    try:
+        held = held.replace(year=today.year)
+        return held if held <= today else held.replace(year=today.year - 1)
+    except ValueError:  # 29 February
         return None
 
 
@@ -125,7 +140,7 @@ def process_handwritten(
         document_id=doc.id,
         title=result.title[:200],
         summary=summary or None,
-        held_on=_parse_date(result.meeting_date) or date.today(),
+        held_on=_parse_date(result.meeting_date, result.text) or date.today(),
     )
     db.add(meeting)
     db.flush()

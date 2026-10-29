@@ -1,5 +1,7 @@
 """Capture (Lane 1): shop-floor lexicon, card extraction, text/voice capture."""
 
+from datetime import date
+
 import pytest
 
 from app.errors import ValidationFailed
@@ -36,6 +38,8 @@ def test_find_symptoms(text: str, expected: set) -> None:
         ("spindle temp 61 after warm-up", {"spindle_temp": 61.0}),
         ("F0.12 S3800", {"feed": 0.12, "speed": 3800.0}),
         ("VMC-3 is 3 years old", {}),
+        ("VNC3 पर S-S304 फिनिशिंग में फीड 0.12", {"feed": 0.12}),  # speech-to-text spelling
+        ("s s 304 finish at 3000 rpm", {"speed": 3000.0}),
     ],
 )
 def test_find_params(text: str, expected: dict) -> None:
@@ -1029,3 +1033,19 @@ def test_capture_response_carries_guardian_under_frontend_name(api, shop, fake_l
         json={"text": "VMC-3 pe chatter, feed 0.3 tha", "author_id": shop["ramesh"].id},
     ).json()
     assert body["guardian_result"] == body["guardian"]  # NoteEditor reads guardian_result
+
+
+@pytest.mark.parametrize(
+    "value,page,expected",
+    [
+        ("2024-10-29", "Shift A meeting - 29/10 - VMC-3", date(2026, 10, 29)),  # year guessed
+        ("2024-10-29", "meeting 29/10/2024", date(2024, 10, 29)),  # year written
+        ("2024-10-29", "meeting 29.10.24", date(2024, 10, 29)),  # short year written
+        ("2026-12-20", "meeting 20/12", date(2025, 12, 20)),  # would be in the future
+        (None, "no date", None),
+    ],
+)
+def test_meeting_date_keeps_only_a_year_the_page_shows(value, page, expected) -> None:
+    from app.services.capture.handwritten import _parse_date
+
+    assert _parse_date(value, page, today=date(2026, 10, 29)) == expected
