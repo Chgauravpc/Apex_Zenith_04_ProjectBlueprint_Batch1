@@ -65,6 +65,7 @@ export default function App() {
                 <Route path="/guided-job" element={<GuidedJob />} />
                 <Route path="/guide" element={<GuidedJob />} />
                 <Route path="/map" element={<MachineMap />} />
+                <Route path="/map3d" element={<MachineMap />} />
                 <Route path="/handover" element={<Handover />} />
                 <Route path="/review" element={<Review />} />
                 <Route path="/dashboard" element={<Dashboard />} />

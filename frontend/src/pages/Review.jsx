@@ -131,7 +131,7 @@ export default function Review() {
           <div className="rounded-3xl border border-dashed border-teal/40 bg-teal-light p-14 text-center">
             <BadgeCheck size={36} className="mx-auto text-teal" />
             <p className="mt-3 font-display text-xl font-bold text-ink">Queue clear.</p>
-            <p className="mt-1 text-sm text-slate-500">Every draft is verified. The floor can trust today's answers.</p>
+            <p className="mt-1 text-sm text-slate-500">All know-how cards in the review queue have been verified! Every draft is verified, so the floor can trust today's answers.</p>
           </div>
         )}
 

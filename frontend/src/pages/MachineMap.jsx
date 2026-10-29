@@ -1,217 +1,431 @@
-import { Suspense, useMemo, useRef, useState } from "react";
-import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { ContactShadows, Html, OrbitControls, RoundedBox } from "@react-three/drei";
-import { motion, AnimatePresence } from "framer-motion";
-import { Camera, Flame, Mic, X, AlertTriangle, FileText, Wrench } from "lucide-react";
-import { toast } from "sonner";
-import { PageHead, Reveal, RiskChip } from "@/components/common";
-import { COMPONENTS_3D, KNOWHOW_CARDS, PERSONAS } from "@/mock/data";
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import MachineViewer from '../components/map3d/MachineViewer';
+import ComponentPanel from '../components/map3d/ComponentPanel';
+import PinForm from '../components/map3d/PinForm';
+import GuardianDemoBanner from '../components/map3d/GuardianDemoBanner';
+import { useMachineStore } from '../store/useMachineStore';
+import { useAuthStore } from '../store/useAuthStore';
+import { getComponents, createPin, VMC_COMPONENTS_DATA } from '../api/map3d';
+import { t } from '../utils/i18n';
+import { PageHead, Reveal } from '../components/common';
+import { Check, Search, Camera, Flame, DoorClosed, AlertTriangle, Wrench, RotateCcw } from 'lucide-react';
 
-const RISK_COLORS = { low: "#0F766E", medium: "#D97706", high: "#DC2626" };
-
-const PRESETS = {
-    Reset: [7, 5, 9],
-    Front: [0, 2.6, 11],
-    Spindle: [1.8, 3.4, 4.2],
-    Table: [4.2, 2.2, 3.4],
-    Top: [0, 12, 0.6],
-};
-
-function Part({ id, position, size, cyl, selected, riskMode, onSelect, children }) {
-    const [hover, setHover] = useState(false);
-    const comp = COMPONENTS_3D.find((c) => c.id === id);
-    const baseColor = riskMode ? RISK_COLORS[comp.risk] : "#E7E3DC";
-    const color = selected ? "#D96B27" : baseColor;
-    const props = {
-        position,
-        onClick: (e) => { e.stopPropagation(); onSelect(id); },
-        onPointerOver: (e) => { e.stopPropagation(); setHover(true); document.body.style.cursor = "pointer"; },
-        onPointerOut: () => { setHover(false); document.body.style.cursor = "auto"; },
-    };
-    return (
-        <group {...props}>
-            {cyl ? (
-                <mesh castShadow>
-                    <cylinderGeometry args={cyl} />
-                    <meshStandardMaterial color={color} roughness={0.45} metalness={0.35} emissive={hover || selected ? "#D96B27" : "#000"} emissiveIntensity={hover ? 0.35 : selected ? 0.25 : 0} />
-                </mesh>
-            ) : (
-                <RoundedBox args={size} radius={0.06} smoothness={4} castShadow receiveShadow>
-                    <meshStandardMaterial color={color} roughness={0.5} metalness={0.25} emissive={hover || selected ? "#D96B27" : "#000"} emissiveIntensity={hover ? 0.3 : selected ? 0.22 : 0} />
-                </RoundedBox>
-            )}
-            {children}
-        </group>
-    );
-}
-
-function Pin({ position }) {
-    const ref = useRef();
-    useFrame(({ clock }) => {
-        if (ref.current) ref.current.scale.setScalar(1 + Math.sin(clock.elapsedTime * 3) * 0.18);
-    });
-    return (
-        <mesh ref={ref} position={position}>
-            <sphereGeometry args={[0.09, 16, 16]} />
-            <meshStandardMaterial color="#D96B27" emissive="#D96B27" emissiveIntensity={1.4} />
-        </mesh>
-    );
-}
-
-function Machine({ selected, riskMode, onSelect }) {
-    const p = { selected, riskMode, onSelect };
-    const sel = (id) => selected === id;
-    return (
-        <group>
-            <Part id="base" position={[0, 0.8, 0]} size={[3.6, 1.6, 2.6]} selected={sel("base")} {...p} />
-            <Part id="table" position={[0, 1.75, 0.3]} size={[2.7, 0.28, 1.7]} selected={sel("table")} {...p} />
-            <Part id="column" position={[0, 3, -0.85]} size={[1, 2.8, 1.1]} selected={sel("column")} {...p} />
-            <Part id="head" position={[0, 3.85, 0]} size={[1.2, 0.9, 1]} selected={sel("head")} {...p} />
-            <Part id="spindle" position={[0, 3.05, 0.25]} cyl={[0.17, 0.22, 1.1, 24]} selected={sel("spindle")} {...p} />
-            <group position={[0, 2.42, 0.25]}>
-                <mesh>
-                    <coneGeometry args={[0.1, 0.28, 20]} />
-                    <meshStandardMaterial color="#8A94A0" metalness={0.7} roughness={0.3} />
-                </mesh>
-            </group>
-            <group position={[0, 2.05, 0.3]}>
-                <mesh>
-                    <boxGeometry args={[0.7, 0.35, 0.7]} />
-                    <meshStandardMaterial color="#C9C4BB" roughness={0.4} metalness={0.4} />
-                </mesh>
-            </group>
-            <Part id="carousel" position={[2, 2.5, -0.6]} cyl={[0.55, 0.55, 0.42, 28]} selected={sel("carousel")} {...p} />
-            <Part id="coolant" position={[1.15, 2.4, 0.55]} cyl={[0.05, 0.05, 1.5, 12]} selected={sel("coolant")} {...p} />
-            <Part id="panel" position={[2.25, 2.2, 0.9]} size={[0.75, 1.15, 0.22]} selected={sel("panel")} {...p} />
-            <Part id="conveyor" position={[-2.35, 0.5, 0.7]} size={[1.5, 0.6, 0.9]} selected={sel("conveyor")} {...p} />
-            <Pin position={[0, 4.5, 0]} />
-            <Pin position={[0, 2.15, 0.3]} />
-            <Pin position={[-2.35, 1, 0.7]} />
-        </group>
-    );
-}
-
-function CameraRig({ preset }) {
-    const { camera, controls } = useThree();
-    const target = useMemo(() => ({ pos: PRESETS[preset] || PRESETS.Reset }), [preset]);
-    useFrame(() => {
-        camera.position.lerp({ x: target.pos[0], y: target.pos[1], z: target.pos[2] }, 0.06);
-        controls?.update();
-    });
-    return null;
-}
-
-function Drawer({ id, onClose }) {
-    const comp = COMPONENTS_3D.find((c) => c.id === id);
-    const cards = KNOWHOW_CARDS.filter((c) => c.component.toLowerCase().includes(comp.name.split(" ")[0].toLowerCase().slice(0, 5)));
-    return (
-        <motion.aside
-            initial={{ x: 60, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            exit={{ x: 60, opacity: 0 }}
-            data-testid="three-component-drawer"
-            className="absolute right-4 top-4 z-10 w-[calc(100%-2rem)] max-w-sm rounded-3xl border border-slate-200 bg-white/95 p-6 shadow-2xl backdrop-blur-md"
-            data-lenis-prevent
-        >
-            <div className="flex items-start justify-between">
-                <div>
-                    <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Component</p>
-                    <h3 className="mt-1 font-display text-xl font-bold text-ink">{comp.name}</h3>
-                </div>
-                <button onClick={onClose} className="rounded-full p-2 text-slate-400 transition-colors hover:bg-slate-100 hover:text-ink"><X size={17} /></button>
-            </div>
-            <div className="mt-4 flex items-center gap-2">
-                <RiskChip level={comp.risk} />
-                <span className="rounded-full bg-subtle px-2.5 py-1 font-mono text-[11px] text-slate-600">{comp.cards} cards</span>
-                <span className="rounded-full bg-subtle px-2.5 py-1 font-mono text-[11px] text-slate-600">{comp.incidents} incidents</span>
-            </div>
-            <p className="mt-4 text-sm text-slate-500">
-                Deepest knowledge: <span className="font-semibold text-ink">{comp.expert}</span>
-                {comp.expert.startsWith("Ramesh") && <span className="text-copper"> · exits in 14 days</span>}
-            </p>
-            <div className="mt-5 max-h-56 space-y-3 overflow-y-auto pr-1">
-                {(cards.length ? cards : KNOWHOW_CARDS.slice(0, 1)).map((c) => (
-                    <div key={c.id} className="rounded-2xl bg-canvas p-4 ring-1 ring-slate-200">
-                        <p className="flex items-center gap-2 text-sm font-semibold text-ink"><FileText size={14} className="text-copper" />{c.title}</p>
-                        <p className="mt-1.5 font-serif text-sm italic text-amber-900">"{c.action}"</p>
-                        <p className="mt-1.5 font-mono text-[10px] text-slate-400">Log #{c.id} · {c.author.name} · {c.date}</p>
-                    </div>
-                ))}
-            </div>
-            <button
-                onClick={() => toast.success("Pin created", { description: `New voice pin attached to ${comp.name}` })}
-                className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full bg-ink px-5 py-3 text-sm font-semibold text-white transition-colors duration-300 hover:bg-copper"
-            >
-                <Mic size={15} /> Pin a voice note here
-            </button>
-        </motion.aside>
-    );
-}
-
+/**
+ * 3D Machine Knowledge Map Page.
+ * Visual interactive 3D index of shop-floor machining know-how,
+ * failure incidents, and expert tips pinned directly to CNC machine components.
+ * Reference: PRD.md §9.4 and TASKS.md T12 / T21.
+ */
 export default function MachineMap() {
-    const [selected, setSelected] = useState(null);
-    const [riskMode, setRiskMode] = useState(true);
-    const [preset, setPreset] = useState("Reset");
+  const { language } = useAuthStore();
+  const {
+    selectedMachineId,
+    selectedComponentId,
+    highlightedComponentId,
+    setSelectedComponentId,
+    setHighlightedComponentId,
+  } = useMachineStore();
 
-    return (
-        <div className="mx-auto max-w-7xl px-5 py-12 sm:px-8">
-            <PageHead
-                eyebrow="Cross-cutting · 3D Machine Knowledge Map"
-                title="The machine remembers what people forget."
-                sub="Click any component. Colour tells you how much of its know-how survives Ramesh's last day."
-            />
-            <Reveal>
-                <div className="relative overflow-hidden rounded-3xl border border-slate-200 bg-gradient-to-b from-[#EFECE6] to-[#E5E1D9]" data-testid="three-canvas-container" style={{ height: "min(72vh, 640px)" }}>
-                    <Suspense fallback={<div className="flex h-full items-center justify-center font-mono text-sm text-slate-400">loading machine…</div>}>
-                        <Canvas shadows camera={{ position: [7, 5, 9], fov: 42 }}>
-                            <ambientLight intensity={0.75} />
-                            <directionalLight position={[6, 9, 5]} intensity={1.15} castShadow shadow-mapSize={[1024, 1024]} />
-                            <Machine selected={selected} riskMode={riskMode} onSelect={setSelected} />
-                            <ContactShadows position={[0, -0.01, 0]} opacity={0.32} scale={16} blur={2.4} />
-                            <OrbitControls makeDefault enableDamping dampingFactor={0.08} minDistance={4} maxDistance={18} maxPolarAngle={Math.PI / 2.05} />
-                            <CameraRig preset={preset} />
-                        </Canvas>
-                    </Suspense>
+  const [components, setComponents] = useState(VMC_COMPONENTS_DATA);
+  const [selectedMesh, setSelectedMesh] = useState(
+    selectedComponentId || 'spindle'
+  );
+  const [doorsOpen, setDoorsOpen] = useState(false);
+  const [hoveredMesh, setHoveredMesh] = useState(null);
+  const [pinFormOpen, setPinFormOpen] = useState(false);
+  const [pinTargetComponent, setPinTargetComponent] = useState(null);
+  const [toastMessage, setToastMessage] = useState(null);
+  const [demoIncidentActive, setDemoIncidentActive] = useState(false);
+  const [activeDemoIncident, setActiveDemoIncident] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [riskMode, setRiskMode] = useState(true);
 
-                    <div className="absolute left-4 top-4 z-10 flex flex-wrap gap-2">
-                        <button
-                            data-testid="three-risk-toggle-btn"
-                            onClick={() => setRiskMode((r) => !r)}
-                            className={`flex items-center gap-2 rounded-full px-4 py-2.5 text-xs font-semibold shadow-sm backdrop-blur transition-colors ${riskMode ? "bg-ink text-white" : "bg-white/85 text-ink ring-1 ring-slate-200"}`}
-                        >
-                            <Flame size={14} className={riskMode ? "text-copper" : ""} /> Risk heat {riskMode ? "on" : "off"}
-                        </button>
-                        {Object.keys(PRESETS).map((k) => (
-                            <button
-                                key={k}
-                                data-testid={k === "Reset" ? "three-camera-reset-btn" : undefined}
-                                onClick={() => setPreset(k)}
-                                className={`flex items-center gap-1.5 rounded-full px-4 py-2.5 text-xs font-semibold shadow-sm backdrop-blur transition-colors ${preset === k ? "bg-copper text-white" : "bg-white/85 text-ink ring-1 ring-slate-200 hover:bg-white"}`}
-                            >
-                                <Camera size={13} /> {k}
-                            </button>
-                        ))}
-                    </div>
+  // Load components from real FastAPI backend with graceful fallback
+  useEffect(() => {
+    let active = true;
+    const controller = new AbortController();
 
-                    <div className="absolute bottom-4 left-4 z-10 flex flex-wrap gap-3 rounded-2xl bg-white/85 px-4 py-3 shadow-sm ring-1 ring-slate-200 backdrop-blur">
-                        {Object.entries(RISK_COLORS).map(([k, v]) => (
-                            <span key={k} className="flex items-center gap-1.5 text-[11px] font-medium text-slate-600">
-                                <span className="h-2.5 w-2.5 rounded-full" style={{ background: v }} />
-                                {k === "low" ? "Documented" : k === "medium" ? "Partial" : "Critical gap"}
-                            </span>
-                        ))}
-                    </div>
+    async function load() {
+      const data = await getComponents(selectedMachineId, controller.signal);
+      if (active && data && data.length > 0) {
+        setComponents(data);
+      }
+    }
 
-                    <AnimatePresence>
-                        {selected && <Drawer id={selected} onClose={() => setSelected(null)} />}
-                    </AnimatePresence>
-                </div>
-            </Reveal>
-            <p className="mt-6 flex items-center gap-2 text-xs text-slate-400">
-                <AlertTriangle size={14} className="text-amber-500" />
-                Spindle and chip conveyor show critical risk — 14 of 21 failure modes live only in Ramesh's head.
-                <Wrench size={14} className="ml-2" /> Model built from primitives — swap in the real CAD mesh anytime.
-            </p>
-        </div>
+    load();
+    return () => {
+      active = false;
+      controller.abort();
+    };
+  }, [selectedMachineId]);
+
+  // Sync selected mesh from store if changed externally (e.g. Note Guardian warning)
+  useEffect(() => {
+    if (selectedComponentId !== undefined) {
+      setSelectedMesh(selectedComponentId);
+    }
+  }, [selectedComponentId]);
+
+  const handleSelectComponent = useCallback(
+    (meshName) => {
+      setSelectedMesh(meshName);
+      setSelectedComponentId(meshName);
+    },
+    [setSelectedComponentId]
+  );
+
+  const handleResetSelection = useCallback(() => {
+    setSelectedMesh(null);
+    setSelectedComponentId(null);
+    setHighlightedComponentId(null);
+    setDemoIncidentActive(false);
+    setActiveDemoIncident(null);
+  }, [setSelectedComponentId, setHighlightedComponentId]);
+
+  const handleSelectDemoIncident = useCallback(
+    (incident) => {
+      setDemoIncidentActive(true);
+      setActiveDemoIncident(incident);
+      setSelectedMesh('spindle');
+      setSelectedComponentId('spindle');
+      setHighlightedComponentId('spindle');
+      setToastMessage(
+        'Note Guardian Alert [DEMO]: Abnormal 427 Hz chatter detected on Spindle!'
+      );
+      setTimeout(() => setToastMessage(null), 5000);
+    },
+    [setSelectedComponentId, setHighlightedComponentId]
+  );
+
+  const handleDismissDemoIncident = useCallback(() => {
+    setDemoIncidentActive(false);
+    setActiveDemoIncident(null);
+    setHighlightedComponentId(null);
+  }, [setHighlightedComponentId]);
+
+  const handleToggleDoors = useCallback(() => {
+    setDoorsOpen((prev) => !prev);
+  }, []);
+
+  const handleOpenPinForm = (comp) => {
+    setPinTargetComponent(comp);
+    setPinFormOpen(true);
+  };
+
+  const handleClosePinForm = () => {
+    setPinFormOpen(false);
+    setPinTargetComponent(null);
+  };
+
+  const handleSavePin = async (pinData) => {
+    const res = await createPin(pinData.component_id, pinData);
+    if (res) {
+      const type = pinData.knowledge_type || pinData.type || 'tip';
+      setComponents((prev) =>
+        prev.map((c) => {
+          if (c.id === pinData.component_id || c.mesh_name === pinData.mesh_name) {
+            let updatedTips = [...(c.expert_tips || c.expert_notes || [])];
+            let updatedIncidents = [...(c.past_incidents || [])];
+            let updatedProcedures = [...(c.procedures || [])];
+
+            if (type === 'tip') {
+              const newTip = {
+                id: res.id || Date.now(),
+                author: pinData.author,
+                date: pinData.date,
+                severity: pinData.severity || 'watch',
+                title: pinData.title,
+                text: pinData.description || pinData.text,
+                verified: Boolean(pinData.verified),
+              };
+              updatedTips = [newTip, ...updatedTips];
+            } else if (type === 'incident') {
+              const newInc = {
+                id: `INC-${String(res.id || Date.now()).slice(-3)}`,
+                date: pinData.date,
+                type: pinData.title,
+                summary: pinData.description || pinData.text,
+                root_cause: `Reported by ${pinData.author}`,
+                resolution: 'Logged for review by senior team',
+              };
+              updatedIncidents = [newInc, ...updatedIncidents];
+            } else if (type === 'procedure') {
+              const newProc = {
+                id: `SOP-${String(res.id || Date.now()).slice(-3)}`,
+                title: pinData.title,
+                description: pinData.description || pinData.text,
+                author: pinData.author,
+                date: pinData.date,
+              };
+              updatedProcedures = [newProc, ...updatedProcedures];
+            }
+
+            const updatedKnowledgeCount = {
+              tips: updatedTips.length,
+              incidents: updatedIncidents.length,
+              troubleshooting: (c.troubleshooting || []).length,
+              procedures: updatedProcedures.length,
+              total:
+                updatedTips.length +
+                updatedIncidents.length +
+                (c.troubleshooting || []).length +
+                updatedProcedures.length,
+            };
+
+            return {
+              ...c,
+              expert_notes: updatedTips,
+              expert_tips: updatedTips,
+              past_incidents: updatedIncidents,
+              procedures: updatedProcedures,
+              knowledge_count: updatedKnowledgeCount,
+            };
+          }
+          return c;
+        })
+      );
+
+      setToastMessage(`Attached new ${type}: "${pinData.title}"!`);
+      setTimeout(() => setToastMessage(null), 4000);
+    }
+  };
+
+  const selectedComponentData = selectedMesh
+    ? components.find((c) => c.mesh_name === selectedMesh) || null
+    : null;
+
+  const filteredComponents = useMemo(() => {
+    if (!searchQuery.trim()) return components;
+    const q = searchQuery.toLowerCase();
+    return components.filter(
+      (c) =>
+        c.display_name.toLowerCase().includes(q) ||
+        c.mesh_name.toLowerCase().includes(q) ||
+        (c.description || '').toLowerCase().includes(q)
     );
+  }, [components, searchQuery]);
+
+  return (
+    <div className="mx-auto max-w-7xl px-5 py-8 sm:px-8 space-y-6">
+      {/* Toast Notification */}
+      {toastMessage && (
+        <div className="fixed top-20 right-6 z-50 bg-emerald-600 text-white px-4 py-2.5 rounded-2xl shadow-2xl flex items-center space-x-2 border border-emerald-400">
+          <Check className="w-4 h-4 text-white" />
+          <span className="text-xs font-semibold">{toastMessage}</span>
+        </div>
+      )}
+
+      {/* Page Header */}
+      <PageHead
+        eyebrow="Cross-cutting · 3D Machine Knowledge Map"
+        title="The machine remembers what people forget."
+        sub="Click any component. Real-time telemetry, failure history, and tacit know-how pinned directly to the 3D VMC machine."
+      />
+
+      {/* Machine Telemetry Bar */}
+      <Reveal delay={0.06}>
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="flex items-center space-x-3">
+            <span className="inline-flex items-center justify-center w-10 h-10 rounded-2xl bg-copper/10 text-copper font-bold text-lg">
+              ⚙️
+            </span>
+            <div>
+              <div className="flex items-center space-x-2">
+                <h2 className="text-lg font-bold text-ink tracking-tight">
+                  VMC-3 (Vertical Machining Centre)
+                </h2>
+                <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold">
+                  Online
+                </span>
+              </div>
+              <p className="text-xs text-slate-500">
+                Interactive 3D digital twin with component-level fault histories and tacit wisdom.
+              </p>
+            </div>
+          </div>
+
+          {/* Machine Telemetry Badge */}
+          <div className="flex items-center space-x-3 bg-canvas border border-slate-200 px-4 py-2 rounded-2xl text-xs shadow-2xs">
+            <div>
+              <div className="text-[10px] text-slate-400 uppercase font-mono">Location</div>
+              <div className="font-bold text-ink">Bay A • Cell 2</div>
+            </div>
+            <div className="w-px h-7 bg-slate-200" />
+            <div>
+              <div className="text-[10px] text-slate-400 uppercase font-mono">Max Spindle</div>
+              <div className="font-mono font-bold text-copper">12,000 RPM</div>
+            </div>
+            <div className="w-px h-7 bg-slate-200" />
+            <div>
+              <div className="text-[10px] text-slate-400 uppercase font-mono">Mentor Pairing</div>
+              <div className="font-bold text-emerald-700">Ramesh (Old) → Priya (New)</div>
+            </div>
+          </div>
+        </div>
+      </Reveal>
+
+      {/* Note Guardian Warning Demonstration Banner */}
+      <Reveal delay={0.09}>
+        <GuardianDemoBanner
+          isActive={demoIncidentActive}
+          onSelectIncident={handleSelectDemoIncident}
+          onDismissIncident={handleDismissDemoIncident}
+        />
+      </Reveal>
+
+      {/* Interactive Controls Bar: Doors, Risk Mode, Reset */}
+      <Reveal delay={0.12}>
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-2xs">
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              data-testid="three-risk-toggle-btn"
+              onClick={() => setRiskMode((r) => !r)}
+              className={`flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-semibold shadow-2xs transition ${
+                riskMode ? 'bg-ink text-white' : 'bg-canvas text-slate-700 border border-slate-200'
+              }`}
+            >
+              <Flame size={13} className={riskMode ? 'text-copper' : ''} />
+              <span>Risk Heat {riskMode ? 'On' : 'Off'}</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={handleToggleDoors}
+              className="flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-semibold bg-canvas text-slate-700 border border-slate-200 hover:bg-slate-100 transition shadow-2xs"
+            >
+              <DoorClosed size={13} className="text-copper" />
+              <span>{doorsOpen ? 'Close Enclosure Doors' : 'Open Enclosure Doors'}</span>
+            </button>
+
+            {selectedMesh && (
+              <button
+                type="button"
+                data-testid="three-camera-reset-btn"
+                onClick={handleResetSelection}
+                className="flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-semibold bg-rose-50 text-rose-800 border border-rose-200 hover:bg-rose-100 transition shadow-2xs"
+                title="Reset Selection"
+              >
+                <RotateCcw size={13} />
+                <span>Reset Selection</span>
+              </button>
+            )}
+          </div>
+
+          {/* Quick Component Search */}
+          <div className="relative min-w-[200px]">
+            <Search className="absolute left-3 top-2.5 text-slate-400" size={14} />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search components..."
+              className="w-full pl-9 pr-3 py-1.5 text-xs rounded-full border border-slate-200 bg-canvas focus:outline-none focus:ring-1 focus:ring-copper"
+            />
+          </div>
+        </div>
+      </Reveal>
+
+      {/* Main 3D Stage & Detail Split View */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        {/* Left Column: 3D Canvas Viewport (8 Cols) */}
+        <div className="lg:col-span-8 flex flex-col space-y-3">
+          <div className="rounded-3xl border border-slate-200 overflow-hidden bg-canvas shadow-sm" data-testid="three-canvas-container">
+            <MachineViewer
+              selectedComponent={selectedMesh}
+              highlightedComponent={highlightedComponentId}
+              hoveredComponent={hoveredMesh}
+              onSelectComponent={handleSelectComponent}
+              onResetSelection={handleResetSelection}
+              doorsOpen={doorsOpen}
+              onToggleDoors={handleToggleDoors}
+              components={components}
+            />
+          </div>
+
+          {/* Quick Select Component Filter Pills Bar */}
+          <div className="bg-white border border-slate-200 p-3 rounded-2xl shadow-2xs flex items-center gap-2 overflow-x-auto">
+            <span className="shrink-0 text-xs font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap pl-1">
+              Components:
+            </span>
+
+            {/* Reset Selection Button in Pill Bar */}
+            {selectedMesh && (
+              <button
+                type="button"
+                onClick={handleResetSelection}
+                className="btn-touch shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap bg-rose-50 hover:bg-rose-100 text-rose-800 border border-rose-200 shadow-2xs transition flex items-center space-x-1"
+                title="Reset Selection"
+              >
+                <span>↺</span>
+                <span>Reset Selection</span>
+              </button>
+            )}
+
+            {filteredComponents.map((c) => {
+              const isSelected = selectedMesh === c.mesh_name;
+              const totalCount =
+                (c.expert_tips || c.expert_notes || []).length +
+                (c.past_incidents || []).length +
+                (c.troubleshooting || []).length +
+                (c.procedures || []).length;
+
+              return (
+                <button
+                  key={c.mesh_name}
+                  type="button"
+                  onClick={() => handleSelectComponent(c.mesh_name)}
+                  onMouseEnter={() => setHoveredMesh(c.mesh_name)}
+                  onMouseLeave={() => setHoveredMesh(null)}
+                  className={`btn-touch shrink-0 px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all flex items-center space-x-2 ${
+                    isSelected
+                      ? 'bg-ink text-white font-bold shadow-xs ring-2 ring-copper/50'
+                      : 'bg-canvas hover:bg-slate-100 text-slate-700 border border-slate-200 shadow-2xs'
+                  }`}
+                >
+                  {c.risk === 'high' && (
+                    <span className="shrink-0 w-2 h-2 rounded-full bg-red-500 animate-ping" />
+                  )}
+                  {c.risk === 'medium' && (
+                    <span className="shrink-0 w-2 h-2 rounded-full bg-amber-500" />
+                  )}
+                  <span className="shrink-0">{c.display_name}</span>
+                  <span
+                    className={`shrink-0 text-[10px] px-1.5 py-0.5 rounded-full font-mono font-bold ${
+                      isSelected
+                        ? 'bg-white/20 text-white'
+                        : 'bg-slate-200/80 text-slate-700'
+                    }`}
+                  >
+                    {totalCount}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Right Column: Component Knowledge Panel (4 Cols) */}
+        <div className="lg:col-span-4">
+          <ComponentPanel
+            component={selectedComponentData}
+            activeDemoIncident={activeDemoIncident}
+            onClose={handleResetSelection}
+            onResetSelection={handleResetSelection}
+            onOpenPinForm={handleOpenPinForm}
+            onFocusComponent={handleSelectComponent}
+            onSelectComponent={handleSelectComponent}
+          />
+        </div>
+      </div>
+
+      {/* Pin Knowledge Modal Dialog */}
+      <PinForm
+        component={pinTargetComponent}
+        isOpen={pinFormOpen}
+        onClose={handleClosePinForm}
+        onSubmit={handleSavePin}
+      />
+    </div>
+  );
 }
