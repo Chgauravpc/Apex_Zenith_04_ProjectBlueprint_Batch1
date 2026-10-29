@@ -109,7 +109,7 @@ describe('GuidedJob page and components (T22)', () => {
 
     // Confirm STOP alert is shown, without made-up repair advice
     expect(screen.getByText(/STOP — CRITICAL WARNING/i)).toBeDefined();
-    expect(screen.getByText(/Measurement 40 is out of tolerance \[29 – 35\]/i)).toBeDefined();
+    expect(screen.getByText(/Measurement 40 is out of tolerance \[29.00 – 35.00\]/i)).toBeDefined();
     expect(screen.queryByText(/re-align clamp/i)).toBeNull();
 
     // Confirm next button is blocked

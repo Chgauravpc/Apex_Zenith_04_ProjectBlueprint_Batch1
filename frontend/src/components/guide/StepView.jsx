@@ -49,7 +49,7 @@ export default function StepView({
           severity: 'stop',
           warnings: [
             {
-              message: `Measurement ${num} is out of tolerance [${minVal} – ${maxVal}]. Measure again; do not continue until it is within limits.`,
+              message: `Measurement ${num} is out of tolerance [${minVal.toFixed(2)} – ${maxVal.toFixed(2)}]. Measure again; do not continue until it is within limits.`,
             },
           ],
         });
@@ -179,13 +179,13 @@ export default function StepView({
 
       {/* Settings used at this step: checked against the machine's approved limits */}
       {Object.keys(settings).length > 0 && (
-        <div className="bg-slate-900/70 p-4 rounded-2xl border border-slate-800 space-y-2">
-          <span className="text-xs font-semibold text-slate-300 block">
+        <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-2">
+          <span className="text-xs font-semibold text-slate-700 block">
             Machine settings used at this step (change them if you used different values):
           </span>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             {Object.entries(settings).map(([name, val]) => (
-              <label key={name} className="text-[11px] text-slate-400 space-y-1">
+              <label key={name} className="text-[11px] text-slate-600 space-y-1">
                 <span className="capitalize">{name.replace('_', ' ')}</span>
                 <input
                   type="number"
@@ -193,7 +193,7 @@ export default function StepView({
                   value={val}
                   aria-label={`Setting ${name}`}
                   onChange={(e) => setSettings((prev) => ({ ...prev, [name]: e.target.value }))}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-slate-100 font-mono"
+                  className="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs text-slate-900 font-mono focus:border-maroon-600 outline-none"
                 />
               </label>
             ))}
