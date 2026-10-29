@@ -61,24 +61,41 @@ def test_get_component_knowledge(client, story) -> None:
     assert "knowledge_count" in data
 
 
-def test_create_component_pin(client, story) -> None:
-    """Creates a new pinned knowledge note for a 3D component."""
+def _spindle(client):
     machines = client.get("/api/machines").json()
     vmc = next(m for m in machines if m["name"] == "VMC-3")
     comps = client.get(f"/api/machines/{vmc['id']}/components").json()
-    spindle = next(c for c in comps if c["mesh_name"] == "spindle")
+    return next(c for c in comps if c["mesh_name"] == "spindle")
 
-    payload = {
+
+def _pin_payload(author_id, **extra):
+    return {
         "title": "SS304 Chatter Reduction Check",
         "text": "Reduce feed to 0.15 mm/rev and inspect drawbar clamping before heavy cut.",
         "severity": "stop",
         "knowledge_type": "tip",
+        "author_id": author_id,
         "author": "Ramesh (Old Employee)",
         "mesh_name": "spindle",
         "x": 0.0,
         "y": 1.85,
         "z": 0.15,
+        **extra,
     }
+
+
+def test_create_component_pin(client, story, db) -> None:
+    """A pin becomes a card by its real author, waits for review and is searchable."""
+    from sqlalchemy import select
+
+    from app.database import fts_search
+    from app.models.erp import Employee
+    from app.models.knowledge import KnowledgeCard
+    from app.models.map3d import ComponentPin
+
+    spindle = _spindle(client)
+    ramesh = db.execute(select(Employee).where(Employee.name == "Ramesh Patil")).scalar_one()
+    payload = _pin_payload(ramesh.id)
 
     res = client.post(f"/api/components/{spindle['id']}/pins", json=payload)
     assert res.status_code == 200
@@ -89,7 +106,51 @@ def test_create_component_pin(client, story) -> None:
     assert pin["text"] == payload["text"]
     assert pin["severity"] == "stop"
     assert pin["knowledge_type"] == "tip"
-    assert pin["verified"] is True
+    assert pin["author"] == "Ramesh Patil"
+    assert pin["verified"] is False  # nobody checked it yet
+
+    db.expire_all()
+    card = db.get(KnowledgeCard, pin["card_id"])
+    assert card.author_id == ramesh.id and card.verified_by_id is None
+    stored = db.get(ComponentPin, pin["id"])
+    assert (stored.severity, stored.kind) == ("stop", "tip")
+
+    queue = client.get("/api/capture/review-queue", params={"limit": 100}).json()
+    assert pin["card_id"] in [c["id"] for c in queue["items"]]
+    hits = fts_search(db, "drawbar clamping", machine_id=card.machine_id)
+    assert ("card", card.id) in [(kind, rid) for kind, rid, _ in hits]
+
+
+def test_pin_needs_a_known_author_and_valid_severity(client, story) -> None:
+    spindle = _spindle(client)
+    url = f"/api/components/{spindle['id']}/pins"
+
+    assert client.post(url, json=_pin_payload(99999)).status_code == 404
+    assert client.post(url, json=_pin_payload(1, severity="panic")).status_code == 422
+    no_author = _pin_payload(1)
+    del no_author["author_id"]
+    assert client.post(url, json=no_author).status_code == 422
+    assert client.post("/api/components/99999/pins", json=_pin_payload(1)).status_code == 404
+
+
+def test_auto_pin_links_a_card_to_the_part_it_names(client, story, db) -> None:
+    from app.models.knowledge import KnowledgeCard
+    from app.models.map3d import Component
+    from app.services.map3d.pins import auto_pin
+
+    spindle = _spindle(client)
+    machine_id = db.get(Component, spindle["id"]).machine_id
+    named = KnowledgeCard(
+        title="Spindle warm-up", action="Run 10 min at 2000 rpm", machine_id=machine_id
+    )
+    unrelated = KnowledgeCard(
+        title="Clean the chip tray", action="Every shift", machine_id=machine_id
+    )
+    db.add_all([named, unrelated])
+    db.flush()
+
+    assert auto_pin(db, named) == spindle["id"]
+    assert auto_pin(db, unrelated) is None
 
 
 def test_machine_live_telemetry(client, story) -> None:

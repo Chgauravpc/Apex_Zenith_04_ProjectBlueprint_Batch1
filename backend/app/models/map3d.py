@@ -43,3 +43,5 @@ class ComponentPin(IdMixin, Base):
     y: Mapped[Optional[float]] = mapped_column(Float)
     z: Mapped[Optional[float]] = mapped_column(Float)
     author_id: Mapped[Optional[int]] = fk("employees.id")
+    severity: Mapped[Optional[str]] = mapped_column(String(16))  # info / watch / stop
+    kind: Mapped[Optional[str]] = mapped_column(String(16))  # tip / incident / procedure

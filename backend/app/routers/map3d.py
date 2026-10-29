@@ -44,7 +44,7 @@ def get_component_knowledge(
     """Retrieve knowledge cards, past incidents, and troubleshooting for a component."""
     data = components.component_knowledge(db, component_id, limit=limit, offset=offset)
     if not data:
-        raise NotFound("Component", component_id)
+        raise NotFound(f"component {component_id} not found")
     return data
 
 

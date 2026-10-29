@@ -4,18 +4,22 @@ Defines schemas for machine components, live telemetry, pinned knowledge notes,
 and component-level diagnostics. Reference: TASKS.md T12 / T21 and PRD.md §9.4.
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Literal, Optional
 
 from pydantic import BaseModel, Field
 
+PinSeverity = Literal["info", "watch", "stop"]
+PinKind = Literal["tip", "incident", "procedure"]
+
 
 class PinIn(BaseModel):
-    title: str = Field(..., max_length=200)
-    text: str
-    severity: Optional[str] = "info"
-    knowledge_type: Optional[str] = "tip"
-    type: Optional[str] = None
-    author: Optional[str] = None
+    title: str = Field(..., min_length=1, max_length=200)
+    text: str = Field(..., min_length=1)
+    author_id: int  # the employee pinning it; the card waits in the review queue
+    severity: PinSeverity = "info"
+    knowledge_type: Optional[PinKind] = None
+    type: Optional[PinKind] = None  # older name for knowledge_type
+    author: Optional[str] = None  # display only; author_id decides who wrote it
     mesh_name: Optional[str] = None
     x: Optional[float] = None
     y: Optional[float] = None
@@ -33,7 +37,7 @@ class PinOut(BaseModel):
     knowledge_type: str = "tip"
     author: str
     date: str
-    verified: bool = True
+    verified: bool = False
 
 
 class ComponentOut(BaseModel):
