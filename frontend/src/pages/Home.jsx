@@ -25,7 +25,7 @@ function Hero() {
                     {/* Headline - Aesthetic Typography with Bold Statement & Editorial Serif Below */}
                     <h1
                         data-testid="hero-reveal-title"
-                        className="text-balance font-display font-black text-5xl sm:text-6xl md:text-7xl lg:text-[5.5rem] xl:text-[6.25rem] tracking-tight text-ink dark:text-white leading-[1.02] sm:leading-[1.02]"
+                        className="text-balance font-display font-black text-4xl sm:text-5xl md:text-6xl lg:text-[4.75rem] xl:text-[5.25rem] tracking-tight text-ink dark:text-white leading-[1.02] sm:leading-[1.02]"
                     >
                         Experience walks out
                         <br />
