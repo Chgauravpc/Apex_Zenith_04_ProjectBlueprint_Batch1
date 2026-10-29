@@ -22,31 +22,15 @@ function Hero() {
                 {/* Full-Width Centered Hero Content (Not divided into 2 parts) */}
                 <div className="relative z-10 mx-auto flex max-w-4xl flex-col items-center text-center gap-6 sm:gap-7">
                     
-                    {/* Live Shop Floor Tacit Transfer Active Badge */}
-                    <Link
-                        to="/map"
-                        className="group inline-flex items-center gap-2.5 rounded-full border border-slate-200/90 dark:border-slate-800 bg-white/95 dark:bg-slate-900/90 px-3.5 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-300 shadow-xs hover:border-maroon-300 dark:hover:border-maroon-700 transition"
-                    >
-                        <span className="inline-flex items-center gap-1.5 rounded-full bg-rose-50 dark:bg-maroon-950/70 border border-rose-200/60 dark:border-maroon-800/60 px-2.5 py-0.5 text-[11px] font-bold text-maroon-800 dark:text-maroon-300 tracking-wider">
-                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                            LIVE SHOP FLOOR
-                        </span>
-                        <span className="text-slate-600 dark:text-slate-300 font-normal">
-                            Aerospace VMC-3 Tacit Transfer Active
-                        </span>
-                        <span className="text-slate-300 dark:text-slate-600">|</span>
-                        <ArrowRight size={13} className="text-slate-400 group-hover:text-maroon-700 dark:group-hover:text-maroon-400 group-hover:translate-x-0.5 transition" />
-                    </Link>
-
-                    {/* Headline - Clean 2 Lines with White & Maroon Styling */}
+                    {/* Headline - Aesthetic Typography with Bold Statement & Editorial Serif Below */}
                     <h1
                         data-testid="hero-reveal-title"
-                        className="text-balance font-display font-black text-5xl sm:text-6xl md:text-7xl lg:text-[5.5rem] xl:text-[6.25rem] tracking-tight text-ink dark:text-white leading-[1.04] sm:leading-[1.04]"
+                        className="text-balance font-display font-black text-5xl sm:text-6xl md:text-7xl lg:text-[5.5rem] xl:text-[6.25rem] tracking-tight text-ink dark:text-white leading-[1.02] sm:leading-[1.02]"
                     >
                         Experience walks out
                         <br />
-                        the door.{' '}
-                        <span className="font-serif font-normal italic text-maroon-700 dark:text-maroon-400">
+                        the door.
+                        <span className="block font-serif font-normal italic text-maroon-700 dark:text-maroon-400 mt-2 sm:mt-3 text-4xl sm:text-5xl md:text-6xl lg:text-7xl tracking-normal">
                             We make it stay.
                         </span>
                     </h1>
@@ -114,12 +98,7 @@ function Hero() {
                                     Apex Zenith CNC · Shop Floor Console · Station VMC-3
                                 </span>
                             </div>
-                            <div className="flex items-center gap-2">
-                                <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                                    Live Audio Guardrail Active
-                                </span>
-                            </div>
+
                         </div>
 
                         {/* Big Size Image Hero Container with Cinematic Aspect Ratio and Interactive Overlays */}
@@ -132,19 +111,7 @@ function Hero() {
                             {/* Ambient vignette gradient */}
                             <div className="absolute inset-0 bg-gradient-to-t from-slate-950/95 via-slate-950/30 to-slate-950/20" />
 
-                            {/* Top-Left Live Station Tag */}
-                            <div className="absolute top-4 left-4 flex items-center gap-2 bg-slate-900/85 border border-white/10 backdrop-blur-md px-3 py-1.5 rounded-lg text-xs font-mono text-white shadow-lg">
-                                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                                <span className="font-semibold">Haas VF-2 · VMC-03</span>
-                                <span className="text-slate-400 text-[11px] hidden sm:inline">Aerospace SS304 Flange</span>
-                            </div>
 
-                            {/* Top-Right Operation Badge */}
-                            <div className="absolute top-4 right-4 hidden sm:flex items-center gap-2 bg-slate-900/85 border border-white/10 backdrop-blur-md px-3 py-1.5 rounded-lg text-xs font-mono text-white shadow-lg">
-                                <Wrench size={13} className="text-maroon-400" />
-                                <span>Roughing Step 3 of 6</span>
-                                <span className="text-emerald-400 font-semibold">Feed: 850 mm/min</span>
-                            </div>
 
                             {/* Bottom HUD Overlay Bar: Telemetry & Ramesh Patil Rule in Big Cinematic View */}
                             <div className="absolute bottom-4 left-4 right-4 grid grid-cols-1 md:grid-cols-12 gap-3">
