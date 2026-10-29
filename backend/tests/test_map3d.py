@@ -123,6 +123,7 @@ def test_create_component_pin(client, story, db) -> None:
     shown = client.get(f"/api/components/{spindle['id']}/knowledge").json()["cards"]
     mine = next(c for c in shown if c["id"] == card.id)
     assert (mine["author"], mine["verified"], mine["severity"]) == ("Ramesh Patil", False, "stop")
+    assert mine["date"] == card.created_at.strftime("%Y-%m-%d") and mine["confidence"] == 100
     assert all(c["author"] != "Ramesh (Master Machinist)" for c in shown)
 
 

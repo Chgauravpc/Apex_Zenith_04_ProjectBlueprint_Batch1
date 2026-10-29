@@ -350,6 +350,9 @@ def _card_dicts(
             "id": card.id,
             "title": card.title,
             "text": card.action,
+            "why": card.why,
+            "date": card.created_at.strftime("%Y-%m-%d") if card.created_at else None,
+            "confidence": round(card.confidence * 100),
             "author": author or "Unknown",
             # Cards captured outside the 3D map have no pin severity; chatter is the known risk.
             "severity": severity or ("stop" if "chatter" in card.title.lower() else "watch"),
