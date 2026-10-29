@@ -1,7 +1,7 @@
 import React from 'react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, cleanup, waitFor } from '@testing-library/react';
-import { MemoryRouter, BrowserRouter } from 'react-router-dom';
+import { BrowserRouter } from 'react-router-dom';
 
 import Home from '../pages/Home';
 import Dashboard from '../pages/Dashboard';
@@ -13,7 +13,6 @@ import Handover from '../pages/Handover';
 import Review from '../pages/Review';
 import StepView from '../components/guide/StepView';
 import PinMarker from '../components/map3d/PinMarker';
-import ComponentPanel from '../components/map3d/ComponentPanel';
 
 import { useAuthStore, DEMO_USERS } from '../store/useAuthStore';
 import { useMachineStore } from '../store/useMachineStore';
@@ -26,7 +25,6 @@ import {
   TEST_RISK,
   TEST_METRICS,
   TEST_PLAN,
-  TEST_CARD,
   resetTestStores,
 } from './test-helpers';
 

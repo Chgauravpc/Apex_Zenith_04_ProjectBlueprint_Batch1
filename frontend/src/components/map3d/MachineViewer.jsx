@@ -1,12 +1,7 @@
 ﻿/* eslint-disable react/no-unknown-property */
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Canvas } from '@react-three/fiber';
-import {
-  OrbitControls,
-  Environment,
-  ContactShadows,
-  BakeShadows,
-} from '@react-three/drei';
+import { OrbitControls } from '@react-three/drei';
 import VmcMachine from './VmcMachine';
 import PinMarker from './PinMarker';
 import { VMC_COMPONENTS_DATA } from '../../api/map3d';
