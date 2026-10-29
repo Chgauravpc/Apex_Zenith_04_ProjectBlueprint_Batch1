@@ -49,7 +49,7 @@
 
 <h2>4. Approved limits</h2>
 {% if limits %}<table><tr><th>Parameter</th><th>Material</th><th>Range</th><th>Why</th></tr>
-{% for row in limits %}<tr><td>{{ row.limit.param }}</td><td>{{ row.material }}</td><td>{{ row.limit.min_value if row.limit.min_value is not none else "–" }} – {{ row.limit.max_value if row.limit.max_value is not none else "–" }} {{ row.limit.unit }}</td><td>{{ row.limit.note or "" }}</td></tr>{% endfor %}
+{% for row in limits %}<tr><td>{{ row.limit.param }}</td><td>{{ row.material }}</td>{% set lo, hi = row.limit.min_value, row.limit.max_value %}<td>{% if lo is not none and hi is not none %}{{ "%g" | format(lo) }} – {{ "%g" | format(hi) }}{% elif hi is not none %}up to {{ "%g" | format(hi) }}{% else %}at least {{ "%g" | format(lo) }}{% endif %} {{ row.limit.unit }}</td><td>{{ row.limit.note or "" }}</td></tr>{% endfor %}
 </table>{% else %}<p>No limits recorded.</p>{% endif %}
 
 <h2>5. Know-how from experienced employees</h2>
