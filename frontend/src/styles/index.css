@@ -10,45 +10,45 @@
      ======================================================== */
   :root {
     color-scheme: light;
-    --bg-main: #FFFFFF;
-    --bg-secondary: #F8F9FA;
-    --bg-header: #FFFFFF;
+    --bg-main: #F9F8F6;
+    --bg-secondary: #F1EFEA;
+    --bg-header: #F9F8F6;
     --bg-card: #FFFFFF;
     --bg-elevated: #FFFFFF;
-    --bg-well: #F8F9FA;
+    --bg-well: #F1EFEA;
     --bg-input: #FFFFFF;
 
-    --primary-accent: #721026;
-    --primary-accent-hover: #5C0B1D;
-    --primary-accent-light: #FDF2F4;
-    --accent-light: #FDF2F4;
-    --accent-border: #F9D2D9;
+    --primary-accent: #D96B27;
+    --primary-accent-hover: #BF5A1B;
+    --primary-accent-light: #FDF3EC;
+    --accent-light: #FDF3EC;
+    --accent-border: #F7D4BE;
 
-    --text-primary: #1F2937;
-    --primary-text: #1F2937;
-    --text-secondary: #4B5563;
-    --secondary-text: #4B5563;
-    --muted-text: #6B7280;
+    --text-primary: #11161B;
+    --primary-text: #11161B;
+    --text-secondary: #475569;
+    --secondary-text: #475569;
+    --muted-text: #64748B;
 
-    --border-default: #DADCE0;
-    --border-subtle: #E2E8F0;
-    --border-hover: #BDC1C6;
+    --border-default: #E2E8F0;
+    --border-subtle: #CBD5E1;
+    --border-hover: #94A3B8;
 
-    --color-success: #137333;
-    --color-warning: #B06000;
-    --color-error: #C5221F;
+    --color-success: #0F766E;
+    --color-warning: #D97706;
+    --color-error: #DC2626;
 
-    --shadow-xs: 0 1px 2px 0 rgba(60, 64, 67, 0.1), 0 1px 3px 1px rgba(60, 64, 67, 0.05);
-    --shadow-card: 0 1px 3px 0 rgba(60, 64, 67, 0.12), 0 1px 2px -1px rgba(60, 64, 67, 0.08);
-    --shadow-elevated: 0 4px 6px -1px rgba(60, 64, 67, 0.12), 0 2px 4px -2px rgba(60, 64, 67, 0.08);
+    --shadow-xs: 0 1px 2px 0 rgba(17, 22, 27, 0.05);
+    --shadow-card: 0 1px 3px 0 rgba(17, 22, 27, 0.08), 0 1px 2px -1px rgba(17, 22, 27, 0.04);
+    --shadow-elevated: 0 4px 6px -1px rgba(17, 22, 27, 0.08), 0 2px 4px -2px rgba(17, 22, 27, 0.04);
 
-    --selection-bg: #F9D2D9;
-    --selection-text: #5C0B1D;
-    --focus-ring: #721026;
+    --selection-bg: #D96B27;
+    --selection-text: #FFFFFF;
+    --focus-ring: #D96B27;
 
-    --scrollbar-track: #F8F9FA;
-    --scrollbar-thumb: #DADCE0;
-    --scrollbar-thumb-hover: #BDC1C6;
+    --scrollbar-track: #F1EFEA;
+    --scrollbar-thumb: #CBD5E1;
+    --scrollbar-thumb-hover: #94A3B8;
   }
 
   .dark {
@@ -649,3 +649,47 @@ footer {
     scroll-behavior: auto !important;
   }
 }
+
+/* UI animations for marquee, waveform, and pin markers */
+@keyframes marquee-x {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+.animate-marquee {
+  animation: marquee-x 46s linear infinite;
+}
+.marquee-paused:hover .animate-marquee {
+  animation-play-state: paused;
+}
+
+@keyframes wave-bar {
+  0%, 100% {
+    transform: scaleY(0.25);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+.wave-bar {
+  transform-origin: center;
+  animation: wave-bar 1s ease-in-out infinite;
+}
+
+@keyframes pin-pulse {
+  0%, 100% {
+    opacity: 0.55;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.35);
+  }
+}
+.pin-pulse {
+  animation: pin-pulse 1.8s ease-in-out infinite;
+}
+

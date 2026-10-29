@@ -8,6 +8,17 @@ export default {
   theme: {
     extend: {
       colors: {
+        canvas: '#F9F8F6',
+        ink: '#11161B',
+        copper: {
+          DEFAULT: '#D96B27',
+          light: '#FDF3EC',
+        },
+        teal: {
+          DEFAULT: '#0F766E',
+          light: '#E6F4F1',
+        },
+        subtle: '#F1EFEA',
         maroon: {
           50: '#FDF2F4',
           100: '#FCE7EB',
@@ -102,12 +113,22 @@ export default {
       },
       fontFamily: {
         sans: [
+          '"Plus Jakarta Sans"',
           'Inter',
           '-apple-system',
           'BlinkMacSystemFont',
           '"Segoe UI"',
           'Roboto',
           'sans-serif',
+        ],
+        display: [
+          'Outfit',
+          'sans-serif',
+        ],
+        serif: [
+          '"Instrument Serif"',
+          'Georgia',
+          'serif',
         ],
         mono: [
           'JetBrains Mono',
