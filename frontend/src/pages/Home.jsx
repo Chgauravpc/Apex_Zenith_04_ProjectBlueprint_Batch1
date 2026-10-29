@@ -31,7 +31,7 @@ function Hero() {
                     <h1
                         data-testid="hero-reveal-title"
                         className="mcp-hero-title text-balance font-hero font-black text-4xl sm:text-5xl md:text-6xl lg:text-[4.75rem] xl:text-[5.25rem] tracking-tight text-ink dark:text-white leading-[1.02] sm:leading-[1.02]"
-                        style={{ fontFamily: "var(--font-hero, var(--font-display, 'Outfit', 'Plus Jakarta Sans', sans-serif))" }}
+                        style={{ fontFamily: "var(--font-hero, var(--font-display, 'Syne', 'Outfit', 'Plus Jakarta Sans', sans-serif))" }}
                     >
                         Experience walks out
                         <br />

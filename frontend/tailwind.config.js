@@ -123,6 +123,7 @@ export default {
         ],
         display: [
           'var(--font-display)',
+          'Syne',
           'Outfit',
           '"Plus Jakarta Sans"',
           'sans-serif',
@@ -130,6 +131,7 @@ export default {
         hero: [
           'var(--font-hero)',
           'var(--font-display)',
+          'Syne',
           'Outfit',
           '"Plus Jakarta Sans"',
           'sans-serif',
