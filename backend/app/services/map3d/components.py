@@ -10,10 +10,10 @@ from typing import Any, Dict, List, Optional
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from app.models.erp import Machine, Maintenance
+from app.models.erp import Employee, Machine, Maintenance
 from app.models.guardian import Warning
 from app.models.knowledge import KnowledgeCard
-from app.models.map3d import Component
+from app.models.map3d import Component, ComponentPin
 from app.models.ops import Anomaly, SensorReading
 from app.schemas.map3d import ComponentKnowledge, ComponentOut, MachineLiveTelemetry
 
@@ -271,24 +271,7 @@ def list_components(db: Session, machine_id: int) -> List[ComponentOut]:
             comp_status = "Caution Monitored"
 
         # Query real KnowledgeCards pinned to this component
-        cards = []
-        if db_comp:
-            card_rows = (
-                db.execute(select(KnowledgeCard).where(KnowledgeCard.component_id == db_comp.id))
-                .scalars()
-                .all()
-            )
-            for c in card_rows:
-                cards.append(
-                    {
-                        "id": c.id,
-                        "title": c.title,
-                        "text": c.action,
-                        "author": "Ramesh (Master Machinist)",
-                        "severity": "stop" if "chatter" in c.title.lower() else "watch",
-                        "verified": True,
-                    }
-                )
+        cards = _card_dicts(db, db_comp.id) if db_comp else []
 
         # Query past failure incidents for this machine & component
         incidents = []
@@ -349,6 +332,33 @@ def list_components(db: Session, machine_id: int) -> List[ComponentOut]:
     return results
 
 
+def _card_dicts(
+    db: Session, component_id: int, limit: Optional[int] = None, offset: int = 0
+) -> List[Dict[str, Any]]:
+    """Cards on a component with their real author, review state and pin severity (one query)."""
+    rows = db.execute(
+        select(KnowledgeCard, Employee.name, ComponentPin.severity)
+        .outerjoin(Employee, Employee.id == KnowledgeCard.author_id)
+        .outerjoin(ComponentPin, ComponentPin.card_id == KnowledgeCard.id)
+        .where(KnowledgeCard.component_id == component_id)
+        .order_by(KnowledgeCard.id)
+        .limit(limit)
+        .offset(offset)
+    ).all()
+    return [
+        {
+            "id": card.id,
+            "title": card.title,
+            "text": card.action,
+            "author": author or "Unknown",
+            # Cards captured outside the 3D map have no pin severity; chatter is the known risk.
+            "severity": severity or ("stop" if "chatter" in card.title.lower() else "watch"),
+            "verified": card.verified_by_id is not None,
+        }
+        for card, author, severity in rows
+    ]
+
+
 def component_knowledge(
     db: Session, component_id: int, limit: int = 20, offset: int = 0
 ) -> Optional[ComponentKnowledge]:
@@ -375,28 +385,7 @@ def component_knowledge(
     if not comp_out:
         return None
 
-    cards = (
-        db.execute(
-            select(KnowledgeCard)
-            .where(KnowledgeCard.component_id == component.id)
-            .limit(limit)
-            .offset(offset)
-        )
-        .scalars()
-        .all()
-    )
-
-    card_list = [
-        {
-            "id": c.id,
-            "title": c.title,
-            "text": c.action,
-            "author": "Ramesh (Master Machinist)",
-            "severity": "stop" if "chatter" in c.title.lower() else "watch",
-            "verified": True,
-        }
-        for c in cards
-    ]
+    card_list = _card_dicts(db, component.id, limit=limit, offset=offset)
 
     return ComponentKnowledge(
         component=comp_out,

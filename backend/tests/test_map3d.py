@@ -120,6 +120,11 @@ def test_create_component_pin(client, story, db) -> None:
     hits = fts_search(db, "drawbar clamping", machine_id=card.machine_id)
     assert ("card", card.id) in [(kind, rid) for kind, rid, _ in hits]
 
+    shown = client.get(f"/api/components/{spindle['id']}/knowledge").json()["cards"]
+    mine = next(c for c in shown if c["id"] == card.id)
+    assert (mine["author"], mine["verified"], mine["severity"]) == ("Ramesh Patil", False, "stop")
+    assert all(c["author"] != "Ramesh (Master Machinist)" for c in shown)
+
 
 def test_pin_needs_a_known_author_and_valid_severity(client, story) -> None:
     spindle = _spindle(client)
