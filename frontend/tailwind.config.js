@@ -123,17 +123,15 @@ export default {
         ],
         display: [
           'var(--font-display)',
-          'Syne',
-          'Outfit',
           '"Plus Jakarta Sans"',
+          'Outfit',
           'sans-serif',
         ],
         hero: [
           'var(--font-hero)',
           'var(--font-display)',
-          'Syne',
-          'Outfit',
           '"Plus Jakarta Sans"',
+          'Outfit',
           'sans-serif',
         ],
         serif: [
