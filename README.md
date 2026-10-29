@@ -1,4 +1,4 @@
-# Project Blueprint
+# Project Blueprint.....
 Knowledge transfer from old employees to new employees in CNC/VMC machining (Surjanna Hackathon, Problem 2).
 
 Docs: [PRD.md](PRD.md) · [PLAN.md](PLAN.md) · [AGENTS.md](AGENTS.md) · [ENGINEERING.md](ENGINEERING.md) · [TASKS.md](TASKS.md)
