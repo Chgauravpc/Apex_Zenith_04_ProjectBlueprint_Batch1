@@ -1,5 +1,6 @@
 """Reports (footnoted HTML) and read-only analytics on a real SQLite file."""
 
+import re
 import sqlite3
 from datetime import date
 
@@ -108,12 +109,24 @@ def test_unknown_question_offline_explains_limits(filedb, fake_llm) -> None:
 
 def test_handbook_has_footnoted_sources(filedb) -> None:
     html = reports.render_handbook(filedb, 1)
-    assert "VMC-3 — handbook for new employees" in html
+    assert "VMC-3 — playbook for new employees" in html
     assert "<sup>[1]</sup>" in html and "Card #" in html and "Ramesh Patil" in html
     assert "Spindle" in html and "feed" in html and "critical" in html
-    cited = html.count("<sup>[")
+    cited = {int(n) for n in re.findall(r"<sup>\[(\d+)\]</sup>", html)}
     listed = html.split("<h2>Sources</h2>")[1].count("<li>")
-    assert cited == listed > 10  # every tip has exactly one source line
+    assert cited == set(range(1, listed + 1)) and listed > 10  # one source line per card
+
+
+def test_playbook_has_safety_stop_signs_and_full_steps(filedb) -> None:
+    html = reports.render_handbook(filedb, 1)
+    before, rest = html.split("<h2>2. Stop signs</h2>")
+    assert "Safety on this machine" in before
+    stop_signs, steps = rest.split("<h2>3. Step by step</h2>")
+    assert "chatter" in stop_signs and "of the last" in stop_signs
+    procedure = steps.split("<h2>4. Approved limits</h2>")[0]
+    assert "Face milling FL-101 flange on VMC-3" in procedure
+    assert "CRITICAL" in procedure and "Tip from Ramesh Patil" in procedure
+    assert procedure.count("<tr") > 3  # header + every step
 
 
 def test_handbook_escapes_card_text(filedb) -> None:

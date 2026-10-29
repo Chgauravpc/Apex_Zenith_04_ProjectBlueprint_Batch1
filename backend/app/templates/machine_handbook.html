@@ -1,35 +1,66 @@
 <!doctype html>
 <html lang="en">
-<head><meta charset="utf-8"><title>{{ machine.name }} handbook</title>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>{{ machine.name }} playbook</title>
 <style>
   body { font: 14px/1.45 system-ui, "Noto Sans", "Noto Sans Devanagari", sans-serif; color: #1f2933; max-width: 900px; margin: 24px auto; padding: 0 16px; }
-  h1 { font-size: 22px; margin-bottom: 2px; } h2 { font-size: 17px; border-bottom: 1px solid #d0d7de; padding-bottom: 4px; margin-top: 28px; }
+  h1 { font-size: 22px; margin-bottom: 2px; } h2 { font-size: 17px; border-bottom: 2px solid #7a1f2b; padding-bottom: 4px; margin-top: 28px; color: #7a1f2b; }
+  h3 { font-size: 15px; margin-bottom: 6px; }
   .meta { color: #57606a; font-size: 12px; } table { border-collapse: collapse; width: 100%; } td, th { border: 1px solid #d0d7de; padding: 4px 8px; text-align: left; vertical-align: top; }
+  th { background: #f6f8fa; }
   .critical { color: #b42318; font-weight: 600; } .at_risk { color: #b54708; font-weight: 600; } .ok { color: #067647; }
   .why { color: #57606a; font-style: italic; } sup { color: #0969da; } ol.notes { font-size: 12px; color: #57606a; }
-  @media print { body { margin: 0; } a { color: inherit; } }
+  .box { border: 1px solid #d0d7de; border-radius: 8px; padding: 8px 14px; margin: 8px 0; }
+  .stop { border-color: #b42318; background: #fef3f2; } .caution { border-color: #b54708; background: #fffaeb; }
+  .step-crit { background: #fef3f2; } .tip { color: #344054; font-size: 13px; } .tag { font-size: 11px; font-weight: 600; color: #b42318; }
+  .print { float: right; padding: 6px 12px; border: 1px solid #7a1f2b; background: #7a1f2b; color: #fff; border-radius: 6px; cursor: pointer; }
+  @media print { body { margin: 0; } a { color: inherit; } .print { display: none; } h2 { break-after: avoid; } tr { break-inside: avoid; } }
 </style>
 </head>
 <body>
-<h1>{{ machine.name }} — handbook for new employees</h1>
+<button class="print" type="button" onclick="window.print()">Print / Save as PDF</button>
+<h1>{{ machine.name }} — playbook for new employees</h1>
 <p class="meta">{{ machine.type }} · {{ machine.rpm_min }}–{{ machine.rpm_max }} rpm · {{ machine.location or "" }} · generated {{ generated }}</p>
 {% if risk %}<p>Knowledge risk: <span class="{{ risk.status }}">{{ risk.status | replace("_", " ") }}</span> — {{ risk.holders }} person(s) hold the know-how{% if risk.expert_leaving_on %}; {{ risk.expert }} leaves on {{ risk.expert_leaving_on }}{% endif %}.</p>{% endif %}
 {% if experts %}<p>Ask: {% for e in experts %}{{ e.name }} ({{ e.cards }} verified cards){% if not loop.last %}, {% endif %}{% endfor %}</p>{% endif %}
 
-<h2>Approved limits</h2>
+<h2>1. Before you start</h2>
+{% if safety %}<p>Safety on this machine:</p><ul>{% for s in safety %}<li>{{ s }}</li>{% endfor %}</ul>{% else %}<p>No safety notes recorded in the approved procedures. Ask your supervisor before starting.</p>{% endif %}
+{% if open_warnings %}<p>Open warnings on this machine — read them before you start:</p>
+{% for w in open_warnings %}<div class="box {{ w.severity }}"><b>{{ w.severity | upper }}</b> ({{ w.created_at.strftime("%Y-%m-%d") }}): {{ w.message }}</div>{% endfor %}{% endif %}
+
+<h2>2. Stop signs</h2>
+{% if stop_signs %}<p>These came before past failures on {{ machine.name }}. If you notice one, stop the machine and tell your supervisor.</p>
+<table><tr><th>If you notice</th><th>It came before</th><th>How often</th></tr>
+{% for p in stop_signs %}<tr><td><b>{{ p.symptom }}</b></td><td>{{ p.failure_kind }}</td><td>{{ p.preceded_count }} of the last {{ p.total_failures }}</td></tr>{% endfor %}
+</table>{% else %}<p>No failure pattern recorded yet.</p>{% endif %}
+
+<h2>3. Step by step</h2>
+{% for p in procedures %}<h3>{{ p.procedure.title }} (v{{ p.procedure.version }})</h3>
+<table><tr><th>#</th><th>What to do</th><th>Settings</th><th>Check</th></tr>
+{% for row in p.steps %}{% set s = row.step %}<tr{% if s.critical %} class="step-crit"{% endif %}>
+<td>{{ s.step_no }}{% if s.critical %}<br><span class="tag">CRITICAL</span>{% endif %}</td>
+<td>{{ s.instruction }}{% if row.component %} <span class="meta">({{ row.component }})</span>{% endif %}
+{% if s.safety %}<br><b>Safety:</b> {{ s.safety }}{% endif %}
+{% if row.tip %}<br><span class="tip">Tip from {{ row.tip_author }}: <b>{{ row.tip.title }}</b> — {{ row.tip.action }}<sup>[{{ row.n }}]</sup></span>{% endif %}</td>
+<td>{% for k, v in (s.params or {}).items() %}{{ k | replace("_", " ") }}: {{ v }}{% if not loop.last %}<br>{% endif %}{% else %}–{% endfor %}</td>
+<td>{% if s.check_name %}{{ s.check_name }}: {{ s.tolerance_min if s.tolerance_min is not none else "–" }} – {{ s.tolerance_max if s.tolerance_max is not none else "–" }} {{ s.unit or "" }}{% else %}–{% endif %}</td>
+</tr>{% endfor %}
+</table>{% else %}<p>No approved procedure yet. Ask an old employee to record a setup video.</p>{% endfor %}
+
+<h2>4. Approved limits</h2>
 {% if limits %}<table><tr><th>Parameter</th><th>Material</th><th>Range</th><th>Why</th></tr>
 {% for row in limits %}<tr><td>{{ row.limit.param }}</td><td>{{ row.material }}</td><td>{{ row.limit.min_value if row.limit.min_value is not none else "–" }} – {{ row.limit.max_value if row.limit.max_value is not none else "–" }} {{ row.limit.unit }}</td><td>{{ row.limit.note or "" }}</td></tr>{% endfor %}
 </table>{% else %}<p>No limits recorded.</p>{% endif %}
 
-<h2>Know-how from experienced employees</h2>
+<h2>5. Know-how from experienced employees</h2>
 {% for section in sections %}<h3>{{ section.title }}</h3><ul>
 {% for item in section["items"] %}<li><b>{{ item.card.title }}</b>: {{ item.card.action }}{% if item.card.why %} <span class="why">Why: {{ item.card.why }}</span>{% endif %}<sup>[{{ item.n }}]</sup></li>
 {% endfor %}</ul>{% else %}<p>No verified know-how yet. Ask an old employee and record it.</p>{% endfor %}
 
-<h2>History</h2>
+<h2>6. History</h2>
 {% if breakdowns %}<p>Recent breakdowns:</p><ul>{% for b in breakdowns %}<li>{{ b.done_on }} — {{ b.description }}</li>{% endfor %}</ul>{% endif %}
 {% if rejects %}<p>QC rejects by defect:</p><ul>{% for defect, qty in rejects %}<li>{{ defect }}: {{ qty }} parts</li>{% endfor %}</ul>{% endif %}
-{% if procedures %}<p>Approved procedures:</p><ul>{% for p in procedures %}<li>{{ p.title }} (v{{ p.version }})</li>{% endfor %}</ul>{% endif %}
+{% if not breakdowns and not rejects %}<p>No breakdowns or rejects recorded.</p>{% endif %}
 
 <h2>Sources</h2>
 <ol class="notes">{% for f in footnotes %}<li>Card #{{ f.card_id }} by {{ f.author }}, {{ f.when }}, from {{ f.source }}{% if f.verified_by %}, verified by {{ f.verified_by }}{% endif %}.</li>{% endfor %}</ol>

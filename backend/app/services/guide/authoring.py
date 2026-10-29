@@ -30,7 +30,7 @@ def _short_title(text: str) -> str:
     return first if len(first) <= TITLE_CHARS else first[: TITLE_CHARS - 1].rstrip() + "…"
 
 
-def _tips(db: Session, machine_id: Optional[int]) -> Dict[int, Tuple[KnowledgeCard, str]]:
+def best_tips(db: Session, machine_id: Optional[int]) -> Dict[int, Tuple[KnowledgeCard, str]]:
     """Best verified old-employee card per component of the machine (one query)."""
     if machine_id is None:
         return {}
@@ -140,7 +140,7 @@ def get_procedure(db: Session, procedure_id: int) -> ProcedureOut:
             select(Component.id, Component.display_name).filter_by(machine_id=proc.machine_id)
         ).all()
     )
-    tips = _tips(db, proc.machine_id)
+    tips = best_tips(db, proc.machine_id)
     return ProcedureOut(
         **_summary(db, proc, len(steps)).model_dump(),
         steps=[step_out(s, comps, tips) for s in steps],

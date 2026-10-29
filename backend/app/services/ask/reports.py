@@ -1,4 +1,4 @@
-"""Printable reports (HTML → browser "Save as PDF"): machine handbook, handover, shift summary.
+"""Printable reports (HTML → browser "Save as PDF"): machine playbook, handover, shift summary.
 
 Every piece of know-how in a report carries a footnote to the card it came from, who
 gave it and when, so a new employee can always trace advice back to a person.
@@ -8,7 +8,7 @@ import logging
 from dataclasses import dataclass
 from datetime import date, datetime, time, timedelta
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from sqlalchemy import func, select
@@ -16,12 +16,13 @@ from sqlalchemy.orm import Session
 
 from app.errors import NotFound
 from app.models.erp import Employee, Machine, Maintenance, Material, QCReject
-from app.models.guardian import ParamLimit, Warning
-from app.models.guide import Procedure
+from app.models.guardian import FailurePrecursor, ParamLimit, Warning
+from app.models.guide import Procedure, ProcedureStep
 from app.models.knowledge import ActionItem, Document, KnowledgeCard
 from app.models.map3d import Component
 from app.models.ops import Event
 from app.services.ask.qa import machine_experts
+from app.services.guide.authoring import best_tips
 from app.services.transfer import handover
 
 logger = logging.getLogger(__name__)
@@ -47,14 +48,17 @@ class Footnote:
 
 
 class Footnotes:
-    """Numbers sources in the order they are cited."""
+    """Numbers sources in the order they are cited; a card cited twice keeps its number."""
 
     def __init__(self, names: Dict[int, str], docs: Dict[int, Document]) -> None:
         self.names = names
         self.docs = docs
         self.items: List[Footnote] = []
+        self._numbers: Dict[int, int] = {}
 
     def cite(self, card: KnowledgeCard) -> int:
+        if card.id in self._numbers:
+            return self._numbers[card.id]
         doc = self.docs.get(card.source_doc_id) if card.source_doc_id else None
         source = f"{doc.type} note #{doc.id}" if doc else "seeded know-how"
         self.items.append(
@@ -67,6 +71,7 @@ class Footnotes:
                 source=source,
             )
         )
+        self._numbers[card.id] = len(self.items)
         return len(self.items)
 
 
@@ -81,8 +86,53 @@ def _docs(db: Session, cards: List[KnowledgeCard]) -> Dict[int, Document]:
     return {d.id: d for d in db.execute(select(Document).where(Document.id.in_(ids))).scalars()}
 
 
+def _playbook_procedures(
+    db: Session,
+    machine: Machine,
+    comps: Dict[int, str],
+    tips: Dict[int, Tuple[KnowledgeCard, str]],
+    notes: Footnotes,
+) -> List[dict]:
+    """Approved procedures with every step, its settings, check and the old employee's tip."""
+    procedures = list(
+        db.execute(
+            select(Procedure)
+            .filter_by(machine_id=machine.id, status="approved")
+            .order_by(Procedure.title)
+        ).scalars()
+    )
+    steps: Dict[int, List[ProcedureStep]] = {p.id: [] for p in procedures}
+    if procedures:
+        for step in db.execute(
+            select(ProcedureStep)
+            .where(ProcedureStep.procedure_id.in_(steps))
+            .order_by(ProcedureStep.procedure_id, ProcedureStep.step_no)
+        ).scalars():
+            steps[step.procedure_id].append(step)
+    out = []
+    for proc in procedures:
+        rows, shown = [], set()
+        for step in steps[proc.id]:
+            tip = tips.get(step.component_id) if step.component_id else None
+            if tip and tip[0].id in shown:
+                tip = None  # each tip once, at the first step it applies to
+            elif tip:
+                shown.add(tip[0].id)
+            rows.append(
+                {
+                    "step": step,
+                    "component": comps.get(step.component_id),
+                    "tip": tip[0] if tip else None,
+                    "tip_author": tip[1] if tip else None,
+                    "n": notes.cite(tip[0]) if tip else None,
+                }
+            )
+        out.append({"procedure": proc, "steps": rows})
+    return out
+
+
 def render_handbook(db: Session, machine_id: int) -> str:
-    """Everything a new employee should know about one machine, with sources."""
+    """The machine playbook: everything a new employee must follow and know, with sources."""
     machine = db.get(Machine, machine_id)
     if machine is None:
         raise NotFound(f"machine {machine_id} not found")
@@ -100,7 +150,35 @@ def render_handbook(db: Session, machine_id: int) -> str:
             .order_by(KnowledgeCard.component_id, KnowledgeCard.score.desc(), KnowledgeCard.id)
         ).scalars()
     )
-    notes = Footnotes(_people(db), _docs(db, cards))
+    tips = best_tips(db, machine.id)
+    notes = Footnotes(_people(db), _docs(db, cards))  # tips are a subset of these cards
+    procedures = _playbook_procedures(
+        db, machine, {comp.id: comp.display_name for comp in comps}, tips, notes
+    )
+    safety = list(
+        dict.fromkeys(
+            row["step"].safety for p in procedures for row in p["steps"] if row["step"].safety
+        )
+    )
+    open_warnings = list(
+        db.execute(
+            select(Warning)
+            .where(
+                Warning.machine_id == machine.id,
+                Warning.status == "open",
+                Warning.severity.in_(("stop", "caution")),
+            )
+            .order_by(Warning.created_at.desc())
+            .limit(HISTORY_LIMIT)
+        ).scalars()
+    )
+    stop_signs = list(
+        db.execute(
+            select(FailurePrecursor)
+            .where(FailurePrecursor.machine_id == machine.id, FailurePrecursor.preceded_count > 0)
+            .order_by(FailurePrecursor.preceded_count.desc(), FailurePrecursor.symptom)
+        ).scalars()
+    )
     by_comp: Dict[Optional[int], List[dict]] = {}
     for c in cards:
         by_comp.setdefault(c.component_id, []).append({"card": c, "n": notes.cite(c)})
@@ -132,9 +210,6 @@ def render_handbook(db: Session, machine_id: int) -> str:
         .group_by(QCReject.defect)
         .order_by(func.sum(QCReject.quantity).desc())
     ).all()
-    procedures = list(
-        db.execute(select(Procedure).filter_by(machine_id=machine.id, status="approved")).scalars()
-    )
     risk = handover.knowledge_risk(db, machine.id)
     return _env.get_template("machine_handbook.html").render(
         machine=machine,
@@ -144,6 +219,9 @@ def render_handbook(db: Session, machine_id: int) -> str:
         breakdowns=breakdowns,
         rejects=rejects,
         procedures=procedures,
+        safety=safety,
+        open_warnings=open_warnings,
+        stop_signs=stop_signs,
         experts=machine_experts(db, machine.id),
         risk=risk[0] if risk else None,
         generated=datetime.now().strftime("%Y-%m-%d %H:%M"),
