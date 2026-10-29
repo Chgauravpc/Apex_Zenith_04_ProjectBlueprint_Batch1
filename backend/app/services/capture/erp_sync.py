@@ -55,13 +55,32 @@ def fetch_all(client: Any, doctype: str) -> List[Dict[str, Any]]:
             return rows
 
 
-def _upsert(db: Session, model: Any, external_id: str, values: Dict[str, Any]) -> Tuple[Any, str]:
-    """Create or update one row by external_id; returns (row, created|updated|unchanged)."""
-    row = db.execute(select(model).filter_by(external_id=external_id)).scalar_one_or_none()
+def _existing(db: Session, model: Any, docs: List[Dict[str, Any]]) -> Dict[str, Any]:
+    """Rows already synced for these ERP docs, by external_id (one query per batch)."""
+    names = [d["name"] for d in docs]
+    rows = db.execute(select(model).where(model.external_id.in_(names))).scalars()
+    return {row.external_id: row for row in rows}
+
+
+def _upsert(
+    db: Session,
+    model: Any,
+    external_id: str,
+    values: Dict[str, Any],
+    existing: Optional[Dict[str, Any]] = None,
+) -> Tuple[Any, str]:
+    """Create or update one row by external_id; returns (row, created|updated|unchanged).
+
+    Pass `existing` (from _existing) to skip the per-row lookup.
+    """
+    if existing is None:
+        existing = _existing(db, model, [{"name": external_id}])
+    row = existing.get(external_id)
     if row is None:
         row = model(external_id=external_id, **values)
         db.add(row)
         db.flush()
+        existing[external_id] = row  # a repeated doc in the same batch updates it
         return row, "created"
     changed = {k: v for k, v in values.items() if getattr(row, k) != v}
     for key, value in changed.items():
@@ -154,21 +173,28 @@ def _count(report: SyncReport, doctype: str, outcome: str) -> None:
     bucket[doctype] = bucket.get(doctype, 0) + 1
 
 
+UPSERT_MODELS = {"Workstation": Machine, "Employee": Employee, "Work Order": WorkOrder}
+
+
 def _apply_doctype(
     db: Session, doctype: str, docs: List[Dict[str, Any]], report: SyncReport
 ) -> None:
     ids = _Lookup(db)
+    model = UPSERT_MODELS.get(doctype)
+    existing = _existing(db, model, docs) if model is not None else {}
     for doc in docs:
         if doctype == "Workstation":
-            _, outcome = _upsert(db, Machine, doc["name"], _machine_values(doc))
+            _, outcome = _upsert(db, Machine, doc["name"], _machine_values(doc), existing)
         elif doctype == "Employee":
-            current = db.execute(select(Employee.role).filter_by(external_id=doc["name"]))
-            values = _employee_values(doc, current.scalar_one_or_none())
-            _, outcome = _upsert(db, Employee, doc["name"], values)
+            current = existing.get(doc["name"])
+            values = _employee_values(doc, current.role if current else None)
+            _, outcome = _upsert(db, Employee, doc["name"], values, existing)
         elif doctype == "Work Order":
             values = _work_order_values(doc, ids)
             outcome = (
-                "skipped" if values is None else _upsert(db, WorkOrder, doc["name"], values)[1]
+                "skipped"
+                if values is None
+                else _upsert(db, WorkOrder, doc["name"], values, existing)[1]
             )
         else:
             _, outcome = _save_reject(db, doc, ids)

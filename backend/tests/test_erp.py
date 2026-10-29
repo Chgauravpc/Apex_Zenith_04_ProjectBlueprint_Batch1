@@ -48,6 +48,15 @@ def test_sync_twice_creates_no_duplicates(db: Session, erp: TestClient) -> None:
     assert db.execute(select(Event).filter_by(kind="qc_reject")).scalars().first() is not None
 
 
+def test_repeated_doc_in_one_batch_updates_the_row_it_created(db: Session) -> None:
+    doc = {"name": "ERP-WS-NEW", "workstation_name": "VMC-9", "custom_rpm_max": 8000}
+    report = erp_sync.SyncReport()
+    erp_sync._apply_doctype(db, "Workstation", [doc, {**doc, "custom_rpm_max": 9000}], report)
+    machine = db.execute(select(Machine).filter_by(external_id="ERP-WS-NEW")).scalar_one()
+    assert machine.rpm_max == 9000
+    assert report.created == {"Workstation": 1} and report.updated == {"Workstation": 1}
+
+
 def test_sync_pages_through_large_doctypes(db: Session, erp: TestClient, monkeypatch) -> None:
     monkeypatch.setattr(erp_sync, "PAGE_SIZE", 2)
     rows = erp_sync.fetch_all(erp, "Employee")
