@@ -3,13 +3,26 @@ import { getReviewQueue, reviewCard } from '../api/capture';
 import LoadState from '../components/common/LoadState';
 import useApi from '../hooks/useApi';
 import { useAuthStore } from '../store/useAuthStore';
-import { t } from '../utils/i18n';
-import { CheckCircleIcon, SparklesIcon } from '../components/common/Icons';
+import { PageHead, Reveal, ExpertTag } from '../components/common';
+import { PERSONAS } from '../mock/data';
+import { BadgeCheck, Pencil, Star, ShieldAlert, CheckCircle } from 'lucide-react';
 
-const symptomLabel = (key) => (key ? key.replace(/_/g, ' ') : null);
+function Stars({ value = 4 }) {
+  return (
+    <div className="flex gap-1">
+      {[1, 2, 3, 4, 5].map((n) => (
+        <Star
+          key={n}
+          size={15}
+          className={n <= value ? 'fill-amber-400 text-amber-400' : 'text-slate-300'}
+        />
+      ))}
+    </div>
+  );
+}
 
 export default function Review() {
-  const { currentUser, language } = useAuthStore();
+  const { currentUser } = useAuthStore();
   const queue = useApi((signal) => getReviewQueue({ limit: 50 }, signal), []);
   const [cards, setCards] = useState([]);
 
@@ -24,7 +37,6 @@ export default function Review() {
   const [feedbackMsg, setFeedbackMsg] = useState(null);
   const [errorMsg, setErrorMsg] = useState(null);
 
-  // The backend lets only old employees and supervisors verify know-how.
   const canReview = currentUser.role !== 'new_employee';
 
   const startEdit = (card) => {
@@ -74,232 +86,171 @@ export default function Review() {
 
   const pendingCards = cards.filter((c) => c.status === 'pending');
   const approvedCards = cards.filter((c) => c.status === 'approved');
-  // Server total, minus the cards reviewed on this page since it loaded.
   const pendingTotal = queue.data
     ? queue.data.total - (queue.data.items.length - pendingCards.length)
     : 0;
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 pb-5">
-        <div>
-          <div className="flex items-center space-x-2.5">
-            <span className="w-9 h-9 rounded-xl bg-maroon-50 text-maroon-700 flex items-center justify-center border border-maroon-100 shadow-xs">
-              <CheckCircleIcon className="w-5 h-5 text-maroon-700" />
-            </span>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-              {t('navReview', language)}
-            </h1>
-          </div>
-          <p className="text-slate-500 text-xs sm:text-sm mt-1.5 font-medium leading-relaxed">
-            Sign-off queue for experienced employees. Verify, correct, or reject AI-extracted know-how before it reaches operators.
-          </p>
-        </div>
+    <div className="mx-auto max-w-5xl px-5 py-8 sm:px-8">
+      <PageHead
+        eyebrow="Trust layer · Validation queue"
+        title="Nothing goes live without a human's name on it."
+        sub="AI drafts the card. The veteran or supervisor verifies it — that's why the floor trusts the answers."
+      />
 
-        <span className="text-xs bg-maroon-50 border border-maroon-200 text-maroon-800 px-3.5 py-1.5 rounded-xl font-semibold font-mono shadow-xs flex items-center space-x-2 self-start sm:self-auto">
-          <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" aria-hidden="true" />
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+        <span className="inline-flex items-center gap-2 rounded-full border border-copper/30 bg-copper-light px-4 py-2 font-mono text-xs font-semibold text-copper">
+          <span className="h-2 w-2 rounded-full bg-copper animate-pulse" />
           <span>{pendingTotal} Cards Pending Verification</span>
         </span>
+
+        {!canReview && (
+          <span className="rounded-full bg-amber-50 px-4 py-2 text-xs font-medium text-amber-900 border border-amber-200">
+            Only an old employee or a supervisor can verify know-how. Switch role to review these cards.
+          </span>
+        )}
       </div>
 
-      {!canReview && (
-        <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-amber-900 text-xs font-medium">
-          Only an old employee or a supervisor can verify know-how. Switch role to review these cards.
-        </div>
-      )}
-
       {errorMsg && (
-        <div role="alert" className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-800 text-xs font-semibold flex items-center justify-between shadow-xs">
-          <span>{errorMsg}</span>
-          <button type="button" onClick={() => setErrorMsg(null)} className="text-rose-700 font-bold hover:text-rose-900">
-            ✕
-          </button>
+        <div role="alert" className="mb-6 rounded-2xl border border-red-200 bg-red-50 p-4 text-xs font-semibold text-red-800">
+          {errorMsg}
         </div>
       )}
-
-      <LoadState loading={queue.loading} error={queue.error} onRetry={queue.reload} label="Loading review queue…" />
 
       {feedbackMsg && (
-        <div className="p-3.5 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-800 text-xs font-semibold flex items-center justify-between shadow-xs">
-          <span className="flex items-center space-x-2">
-            <span className="text-emerald-700 font-bold">✓</span>
-            <span>{feedbackMsg}</span>
-          </span>
-          <button type="button" onClick={() => setFeedbackMsg(null)} className="text-emerald-700 font-bold hover:text-emerald-900 px-2 py-1">
-            ✕
-          </button>
+        <div role="status" className="mb-6 rounded-2xl border border-teal/30 bg-teal-light p-4 text-xs font-semibold text-teal">
+          {feedbackMsg}
         </div>
       )}
 
-      {/* Pending Review List */}
-      <div className="space-y-4">
-        {queue.loading || queue.error ? null : pendingCards.length === 0 ? (
-          <div className="bg-white border border-[#DADCE0] rounded-2xl p-8 text-center text-slate-500 text-sm shadow-card">
-            <SparklesIcon className="w-8 h-8 mx-auto mb-2 text-maroon-600" />
-            <span>All know-how cards in the review queue have been verified!</span>
+      <LoadState loading={queue.loading} error={queue.error} onRetry={queue.reload} label="Loading verification queue…" />
+
+      {/* Cards List */}
+      <div className="space-y-5">
+        {pendingCards.length === 0 && !queue.loading && (
+          <div className="rounded-3xl border border-dashed border-teal/40 bg-teal-light p-14 text-center">
+            <BadgeCheck size={36} className="mx-auto text-teal" />
+            <p className="mt-3 font-display text-xl font-bold text-ink">Queue clear.</p>
+            <p className="mt-1 text-sm text-slate-500">Every draft is verified. The floor can trust today's answers.</p>
           </div>
-        ) : (
-          pendingCards.map((card) => {
-            const isEditing = editingCardId === card.id;
+        )}
 
-            return (
-              <div
-                key={card.id}
-                className="bg-white border border-[#DADCE0] rounded-2xl p-6 shadow-card hover:border-slate-300 transition-all space-y-4"
-              >
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
-                  <div className="flex items-center space-x-2">
-                    <span className="px-2.5 py-0.5 rounded-md text-[10px] font-bold bg-amber-50 text-amber-900 border border-amber-200 uppercase tracking-wider">
-                      Pending Sign-off
-                    </span>
-                    <span className="text-xs font-bold text-slate-900">
-                      #{card.id} • {card.machine || 'Machine not set'}
-                      {card.component ? ` (${card.component})` : ''}
-                    </span>
-                  </div>
-
-                  <span className="text-slate-500 text-[11px]">
-                    Captured by: <strong className="text-slate-700">{card.author || 'Unknown'}</strong>
-                    {' '}• confidence {Math.round(card.confidence * 100)}%
+        {pendingCards.map((card) => {
+          const isEditing = editingCardId === card.id;
+          return (
+            <div
+              key={card.id}
+              data-testid="review-card-item"
+              className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition-all sm:p-7"
+            >
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-4">
+                <div>
+                  <span className="font-mono text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
+                    Card #{card.id} · {card.machine || 'Machine'} · {card.component || 'General'}
+                  </span>
+                  <h3 className="mt-1 font-display text-lg font-bold text-ink">{card.title}</h3>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className={`rounded-full px-2.5 py-1 font-mono text-[11px] font-semibold ${card.confidence >= 0.8 ? 'bg-teal-light text-teal' : 'bg-amber-50 text-amber-700 ring-1 ring-amber-200'}`}>
+                    AI Confidence: {Math.round((card.confidence || 0) * 100)}%
                   </span>
                 </div>
+              </div>
 
-                <div className="space-y-2">
-                  <div className="text-xs font-bold text-maroon-800 flex items-center space-x-1.5">
-                    <span>Symptom / Scenario:</span>
-                    <span className="text-slate-800 font-normal">
-                      {card.title}
-                      {card.symptom ? ` (${symptomLabel(card.symptom)})` : ''}
-                    </span>
+              <div className="py-4">
+                {isEditing ? (
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block font-mono text-[10px] uppercase text-slate-400 mb-1">Recommended Action:</label>
+                      <textarea
+                        value={editText}
+                        onChange={(e) => setEditText(e.target.value)}
+                        rows={3}
+                        className="w-full resize-none rounded-2xl border border-copper bg-canvas p-3 text-sm outline-none focus:ring-1 focus:ring-copper"
+                      />
+                    </div>
+                    <div>
+                      <label className="block font-mono text-[10px] uppercase text-slate-400 mb-1">Reason / Explanation:</label>
+                      <textarea
+                        value={editWhy}
+                        onChange={(e) => setEditWhy(e.target.value)}
+                        rows={2}
+                        className="w-full resize-none rounded-2xl border border-slate-200 bg-canvas p-3 text-sm outline-none"
+                      />
+                    </div>
+                    <div className="flex justify-end gap-2 pt-2">
+                      <button
+                        type="button"
+                        onClick={() => setEditingCardId(null)}
+                        className="rounded-full border border-slate-300 px-4 py-2 text-xs font-semibold text-slate-700 hover:border-ink"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="button"
+                        disabled={isSubmitting || !editText.trim()}
+                        onClick={() => handleApprove(card, true)}
+                        className="rounded-full bg-ink px-5 py-2 text-xs font-semibold text-white hover:bg-copper disabled:opacity-50"
+                      >
+                        Save Changes & Approve
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <p className="font-serif text-base italic leading-relaxed text-amber-950">
+                      "{card.action}"
+                    </p>
+                    {card.why && (
+                      <p className="text-xs text-slate-500">
+                        <strong className="text-slate-700">Why: </strong>{card.why}
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {!isEditing && (
+                <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-4">
+                  <div className="flex items-center gap-3">
+                    <ExpertTag person={PERSONAS.ramesh} />
+                    <Stars value={4} />
                   </div>
 
-                  {isEditing ? (
-                    <div className="space-y-3 bg-slate-50/70 p-5 rounded-xl border border-slate-200/90">
-                      <div>
-                        <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                          Correct Action:
-                        </label>
-                        <textarea
-                          rows={2}
-                          value={editText}
-                          onChange={(e) => setEditText(e.target.value)}
-                          className="w-full bg-white border border-slate-300 rounded-xl p-3 text-xs text-slate-800 focus:border-maroon-600 focus:ring-2 focus:ring-maroon-500/20 shadow-xs"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                          Why / Technical Explanation:
-                        </label>
-                        <textarea
-                          rows={2}
-                          value={editWhy}
-                          onChange={(e) => setEditWhy(e.target.value)}
-                          className="w-full bg-white border border-slate-300 rounded-xl p-3 text-xs text-slate-800 focus:border-maroon-600 focus:ring-2 focus:ring-maroon-500/20 shadow-xs"
-                        />
-                      </div>
-
-                      <div className="flex justify-end space-x-2 pt-1">
-                        <button
-                          type="button"
-                          onClick={() => setEditingCardId(null)}
-                          className="btn-touch px-4 py-2 bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 rounded-xl text-xs font-semibold shadow-xs transition"
-                        >
-                          Cancel
-                        </button>
-                        <button
-                          type="button"
-                          disabled={isSubmitting || !editText.trim()}
-                          onClick={() => handleApprove(card, true)}
-                          className="btn-touch px-5 py-2 bg-maroon-700 hover:bg-maroon-800 active:scale-[0.98] disabled:opacity-50 text-white font-semibold rounded-xl text-xs shadow-xs transition"
-                        >
-                          Save Changes & Approve
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="space-y-1.5 text-xs">
-                      <div className="text-slate-800">
-                        <strong className="text-slate-500 font-normal">Recommended Action: </strong>
-                        {card.action}
-                      </div>
-                      {card.why && (
-                        <div className="text-slate-700">
-                          <strong className="text-slate-500 font-normal">Why: </strong>
-                          {card.why}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-
-                {!isEditing && (
-                  <div className="flex items-center justify-between pt-3 border-t border-slate-100">
+                  <div className="flex items-center gap-2">
                     <button
                       type="button"
                       disabled={!canReview || isSubmitting}
                       onClick={() => handleReject(card)}
-                      className="btn-touch bg-white hover:bg-rose-50 text-rose-700 border border-rose-200 rounded-xl px-4 py-2 text-xs font-semibold shadow-xs active:scale-[0.98] transition disabled:opacity-40 disabled:hover:bg-white"
+                      className="rounded-full border border-red-200 px-4 py-2 text-xs font-semibold text-red-700 hover:bg-red-50 disabled:opacity-40"
                     >
                       Discard / Reject
                     </button>
-
-                    <div className="flex items-center space-x-2">
-                      <button
-                        type="button"
-                        disabled={!canReview}
-                        onClick={() => startEdit(card)}
-                        className="btn-touch bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 rounded-xl px-4 py-2 text-xs font-semibold shadow-xs active:scale-[0.98] transition disabled:opacity-40 disabled:hover:bg-white"
-                      >
-                        Edit Details
-                      </button>
-
-                      <button
-                        type="button"
-                        disabled={!canReview || isSubmitting}
-                        onClick={() => handleApprove(card, false)}
-                        className="btn-touch bg-maroon-700 hover:bg-maroon-800 text-white font-semibold rounded-xl px-5 py-2.5 text-xs shadow-sm active:scale-[0.98] transition disabled:opacity-40 disabled:hover:bg-maroon-700"
-                      >
-                        Approve & Verify
-                      </button>
-                    </div>
+                    <button
+                      type="button"
+                      data-testid="review-edit-btn"
+                      disabled={!canReview}
+                      onClick={() => startEdit(card)}
+                      className="rounded-full border border-slate-300 px-4 py-2 text-xs font-semibold text-slate-700 hover:border-ink disabled:opacity-40"
+                    >
+                      Edit Details
+                    </button>
+                    <button
+                      type="button"
+                      data-testid="review-approve-btn"
+                      disabled={!canReview || isSubmitting}
+                      onClick={() => handleApprove(card, false)}
+                      className="rounded-full bg-ink px-5 py-2.5 text-xs font-semibold text-white transition-colors duration-300 hover:bg-teal disabled:opacity-40"
+                    >
+                      Approve & Verify
+                    </button>
                   </div>
-                )}
-              </div>
-            );
-          })
-        )}
-      </div>
-
-      {/* Verified History Section */}
-      {approvedCards.length > 0 && (
-        <div className="space-y-3 pt-6 border-t border-slate-200">
-          <span className="text-xs font-bold uppercase tracking-wider text-slate-500 block">
-            Recently Verified Cards ({approvedCards.length}):
-          </span>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {approvedCards.map((c) => (
-              <div
-                key={c.id}
-                className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 space-y-1.5 text-xs shadow-xs"
-              >
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-slate-900 truncate">
-                    #{c.id} • {c.title}
-                  </span>
-                  <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                    Verified
-                  </span>
                 </div>
-                <p className="text-slate-700 leading-snug">{c.action}</p>
-                <span className="text-[10px] text-slate-500 block">
-                  Verified by: {c.verified_by || currentUser.name}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+              )}
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }

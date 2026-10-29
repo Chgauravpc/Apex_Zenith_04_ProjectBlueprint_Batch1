@@ -10,8 +10,8 @@ import { getProcedures, getShadowTrace, getTroubleshoot, recordStep, startRun } 
 import useApi from '../hooks/useApi';
 import { useAuthStore } from '../store/useAuthStore';
 import { useMachineStore } from '../store/useMachineStore';
-import { t } from '../utils/i18n';
-import { ClipboardIcon, PlayIcon, BranchIcon } from '../components/common/Icons';
+import { PageHead, Reveal } from '../components/common';
+import { Play, Film, GitFork } from 'lucide-react';
 
 const SEVERITY_RANK = { info: 0, caution: 1, stop: 2 };
 
@@ -26,7 +26,7 @@ const toBannerResult = (findings) => ({
 });
 
 export default function GuidedJob() {
-  const { currentUser, language } = useAuthStore();
+  const { currentUser } = useAuthStore();
   const { selectedMachineId, setActiveRunId } = useMachineStore();
   const procedures = useApi(
     (signal) => getProcedures({ machine_id: selectedMachineId, status: 'approved' }, signal),
@@ -81,7 +81,6 @@ export default function GuidedJob() {
     }
   };
 
-  // Every step is checked by the backend (Note Guardian rules); a stop keeps you on the step.
   const handleCompleteStep = async (stepData) => {
     let res;
     try {
@@ -123,138 +122,137 @@ export default function GuidedJob() {
   const handleRestart = () => {
     setRun(null);
     setActiveRunId(null);
+    setCurrentStepIndex(0);
+    setCompletedSteps([]);
+    setStepResult(null);
+    setWarningCount(0);
     setIsFinished(false);
   };
 
   const treeData = (tree.data || []).map((node) => ({
-    symptom: `${node.label} (${node.incidents} past incidents)`,
+    symptom: node.symptom && String(node.symptom).includes('incident')
+      ? node.symptom
+      : `${node.symptom || node.label} (${node.incidents_count ?? node.incidents ?? 0} past incidents)`,
     causes: node.causes,
   }));
 
   return (
-    <div className="space-y-6">
-      {/* Header with Skill Badge & Toggles */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-5">
-        <div>
-          <div className="flex flex-wrap items-center gap-2 mb-1.5">
-            <span className="w-9 h-9 rounded-xl bg-maroon-50 text-maroon-700 flex items-center justify-center border border-maroon-100 shadow-xs">
-              <ClipboardIcon className="w-5 h-5 text-maroon-700" />
-            </span>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">{t('navGuide', language)}</h1>
-            {run && (
-              <>
-                <span className="text-slate-300">•</span>
-                <SkillBadge level={run.skill_level} showDetails />
-              </>
-            )}
-          </div>
-          <p className="text-slate-500 text-xs sm:text-sm">
-            {procedure
-              ? `${procedure.title} (v${procedure.version}) on ${procedure.machine}`
-              : 'Pick an approved procedure and start a guided run.'}
-          </p>
-        </div>
+    <div className="mx-auto max-w-7xl px-5 py-8 sm:px-8">
+      <PageHead
+        eyebrow="Lane 03 · Step-by-step guidance"
+        title="The job, told at your level."
+        sub="Same procedure, different depth — L0 gets the story and the safety talk, L4 gets the checklist."
+      />
 
-        <div className="flex flex-wrap items-center gap-2.5">
-          <PlaybookLink machineId={procedure ? procedure.machine_id : selectedMachineId} />
-          {run && (
-            <>
+      {/* Run Header / Setup Info */}
+      {run && (
+        <Reveal delay={0.05}>
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="flex flex-wrap items-center gap-3">
+              <span className="font-display text-lg font-bold text-ink">
+                {procedure.title} (v{procedure.version || 1}) on {procedure.machine || 'VMC-3'}
+              </span>
+              <SkillBadge level={run.skill_level} role={currentUser.role} />
+              <span className="rounded-full bg-subtle px-3 py-1 font-mono text-xs text-slate-500">
+                Run #{run.run_id}
+              </span>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
               <button
                 type="button"
-                onClick={() => setShowShadowTrace(!showShadowTrace)}
-                className={`btn-touch px-3.5 py-1.5 rounded-xl text-xs font-semibold border transition-all flex items-center space-x-1.5 active:scale-[0.98] ${
+                onClick={() => setShowShadowTrace((v) => !v)}
+                className={`flex items-center gap-2 rounded-full px-4 py-2 text-xs font-semibold transition-colors duration-200 ${
                   showShadowTrace
-                    ? 'bg-maroon-50 text-maroon-800 border-maroon-200 shadow-xs'
-                    : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-300 shadow-xs'
+                    ? 'bg-ink text-white'
+                    : 'border border-slate-300 bg-white text-slate-700 hover:border-ink'
                 }`}
               >
-                <PlayIcon className={`w-4 h-4 ${showShadowTrace ? 'text-maroon-700' : 'text-slate-500'}`} />
+                <Film size={14} className={showShadowTrace ? 'text-copper' : ''} />
                 <span>ShadowTrace™</span>
               </button>
 
               <button
                 type="button"
-                onClick={() => setShowTroubleshoot(!showTroubleshoot)}
-                className={`btn-touch px-3.5 py-1.5 rounded-xl text-xs font-semibold border transition-all flex items-center space-x-1.5 active:scale-[0.98] ${
+                onClick={() => setShowTroubleshoot((v) => !v)}
+                className={`flex items-center gap-2 rounded-full px-4 py-2 text-xs font-semibold transition-colors duration-200 ${
                   showTroubleshoot
-                    ? 'bg-amber-50 text-amber-800 border-amber-200 shadow-xs'
-                    : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-300 shadow-xs'
+                    ? 'bg-ink text-white'
+                    : 'border border-slate-300 bg-white text-slate-700 hover:border-ink'
                 }`}
               >
-                <BranchIcon className={`w-4 h-4 ${showTroubleshoot ? 'text-amber-700' : 'text-slate-500'}`} />
+                <GitFork size={14} className={showTroubleshoot ? 'text-copper' : ''} />
                 <span>Troubleshoot</span>
               </button>
-            </>
-          )}
-        </div>
-      </div>
 
-      {!run && (
-        <div className="bg-white border border-[#DADCE0] rounded-2xl p-6 shadow-card hover:border-slate-300 transition-all space-y-4">
-          <LoadState
-            loading={procedures.loading}
-            error={procedures.error}
-            onRetry={procedures.reload}
-            label="Loading procedures…"
-          />
-          {procedures.data && procedures.data.length === 0 && (
-            <p className="text-xs text-slate-500">
-              No approved procedure for this machine yet. Record a setup video on Capture.
-            </p>
-          )}
-          {procedures.data && procedures.data.length > 0 && (
-            <>
-              <label htmlFor="procedure-select" className="block text-xs font-semibold text-slate-700">
-                Procedure:
-              </label>
-              <select
-                id="procedure-select"
-                value={chosenId || ''}
-                onChange={(e) => setProcedureId(Number(e.target.value))}
-                className="w-full bg-white border border-slate-300 text-slate-800 py-2 px-3 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-maroon-500/20 focus:border-maroon-600 shadow-xs"
-              >
-                {procedures.data.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.title} (v{p.version}, {p.steps_count} steps, by {p.author || 'unknown'})
-                  </option>
-                ))}
-              </select>
-              <button
-                type="button"
-                disabled={isStarting || !chosenId}
-                onClick={handleStart}
-                className="btn-touch px-6 py-2.5 bg-maroon-700 hover:bg-maroon-800 disabled:opacity-50 text-white font-bold rounded-xl text-sm shadow-sm transition-all"
-              >
-                {isStarting ? 'Starting…' : 'Start Guided Run →'}
-              </button>
-            </>
-          )}
-          {startError && (
-            <div role="alert" className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-800 text-xs font-medium">
-              {startError}
+              <PlaybookLink procedureId={procedure.id} />
             </div>
-          )}
-        </div>
+          </div>
+        </Reveal>
+      )}
+
+      {/* Procedure Selector & Start Run */}
+      {!run && (
+        <Reveal delay={0.08}>
+          <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+            <LoadState loading={procedures.loading} error={procedures.error} label="Loading setup procedures…" />
+
+            {procedures.data && (
+              <div className="space-y-4">
+                <label htmlFor="procedure-select" className="block font-mono text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
+                  Select Procedure:
+                </label>
+                <select
+                  id="procedure-select"
+                  data-testid="guided-job-selector"
+                  value={chosenId || ''}
+                  onChange={(e) => setProcedureId(Number(e.target.value))}
+                  className="w-full rounded-2xl border border-slate-200 bg-canvas px-4 py-3 text-sm font-medium text-ink outline-none focus:border-copper"
+                >
+                  {procedures.data.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.title} (v{p.version}, {p.steps_count} steps, by {p.author || 'unknown'})
+                    </option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  disabled={isStarting || !chosenId}
+                  onClick={handleStart}
+                  className="inline-flex items-center gap-2 rounded-full bg-ink px-7 py-3.5 text-sm font-semibold text-white transition-colors duration-300 hover:bg-copper disabled:opacity-50"
+                >
+                  <Play size={16} />
+                  <span>{isStarting ? 'Starting…' : 'Start Guided Run →'}</span>
+                </button>
+              </div>
+            )}
+            {startError && (
+              <div role="alert" className="mt-4 rounded-2xl border border-red-200 bg-red-50 p-4 text-xs font-medium text-red-800">
+                {startError}
+              </div>
+            )}
+          </div>
+        </Reveal>
       )}
 
       {/* Completion Banner */}
       {run && isFinished && (
-        <div className="bg-white border border-emerald-200 rounded-2xl p-8 text-center space-y-4 shadow-card">
-          <div className="w-16 h-16 bg-emerald-50 text-emerald-700 rounded-full flex items-center justify-center text-3xl mx-auto border border-emerald-200 shadow-xs font-bold">
+        <div className="rounded-3xl border border-teal/30 bg-teal-light p-10 text-center shadow-sm">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-teal text-2xl font-bold text-white shadow-sm">
             ✓
           </div>
-          <h2 className="text-2xl font-extrabold text-slate-900">Setup Run Completed Successfully!</h2>
-          <p className="text-slate-600 text-sm max-w-lg mx-auto">
+          <h2 className="mt-4 font-display text-2xl font-extrabold text-ink">Setup Run Completed Successfully!</h2>
+          <p className="mx-auto mt-2 max-w-lg text-sm text-slate-600">
             All {steps.length} steps of {procedure.title} are recorded.{' '}
             {warningCount === 0
               ? `Zero Guardian warnings raised. Great run, ${currentUser.name}!`
               : `${warningCount} Guardian warning(s) were raised; go through them with your knowledge buddy.`}
           </p>
-          <div className="pt-2">
+          <div className="mt-6">
             <button
               type="button"
               onClick={handleRestart}
-              className="btn-touch px-6 py-2.5 bg-maroon-700 hover:bg-maroon-800 text-white font-bold rounded-xl text-sm shadow-sm transition-all"
+              className="inline-flex items-center gap-2 rounded-full bg-ink px-7 py-3 text-sm font-semibold text-white transition-colors duration-300 hover:bg-copper"
             >
               Start New Run
             </button>
@@ -264,7 +262,7 @@ export default function GuidedJob() {
 
       {/* Main Layout */}
       {run && !isFinished && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-3">
           {/* Left Column: Step List */}
           <div className="space-y-4">
             <StepList
@@ -294,7 +292,7 @@ export default function GuidedJob() {
           </div>
 
           {/* Center & Right Column: Step View or Troubleshoot Tree */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="space-y-6 lg:col-span-2">
             <StepView
               key={currentStep ? currentStep.id : 'none'}
               step={currentStep}

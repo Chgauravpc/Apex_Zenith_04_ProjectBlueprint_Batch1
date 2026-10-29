@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, Link } from 'react-router-dom';
 import RoleSwitcher from './RoleSwitcher';
 import ThemeToggle from './ThemeToggle';
+import Logo from '../Logo';
 import { useAuthStore } from '../../store/useAuthStore';
 import { t } from '../../utils/i18n';
 
@@ -19,54 +20,60 @@ export default function NavBar() {
   }, [mobileMenuOpen]);
 
   const navItems = [
-    { to: '/', labelKey: 'navHome' },
-    { to: '/capture', labelKey: 'navCapture' },
-    { to: '/ask', labelKey: 'navAsk' },
-    { to: '/guide', labelKey: 'navGuide' },
-    { to: '/map', labelKey: 'navMap' },
-    { to: '/handover', labelKey: 'navHandover' },
-    { to: '/review', labelKey: 'navReview' },
-    { to: '/dashboard', labelKey: 'navDashboard' },
+    { to: '/', labelKey: 'navHome', testid: 'nav-home-link' },
+    { to: '/capture', labelKey: 'navCapture', testid: 'nav-capture-link' },
+    { to: '/ask', labelKey: 'navAsk', testid: 'nav-ask-link' },
+    { to: '/guided-job', altTo: '/guide', labelKey: 'navGuide', testid: 'nav-guided-job-link' },
+    { to: '/map', labelKey: 'navMap', testid: 'nav-3d-map-link' },
+    { to: '/handover', labelKey: 'navHandover', testid: 'nav-handover-link' },
+    { to: '/review', labelKey: 'navReview', testid: 'nav-review-link' },
+    { to: '/dashboard', labelKey: 'navDashboard', testid: 'nav-dashboard-link' },
   ];
 
   return (
-    <header className="sticky top-0 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-[#DADCE0] dark:border-slate-800 shadow-xs relative before:absolute before:top-0 before:left-0 before:right-0 before:h-[2px] before:bg-gradient-to-r before:from-maroon-700 before:via-maroon-600 before:to-rose-500">
-      <div className="max-w-[1600px] w-full mx-auto px-2 sm:px-4 lg:px-6">
+    <header
+      data-testid="app-header"
+      className="sticky top-0 z-50 border-b border-[#E2E8F0]/80 bg-[#F9F8F6]/85 backdrop-blur-xl"
+    >
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 gap-3">
-          {/* Brand Logo & Station Identity */}
+          {/* Brand Logo */}
           <div className="flex items-center flex-shrink-0">
-            <NavLink
+            <Link
               to="/"
               onClick={() => setMobileMenuOpen(false)}
-              className="flex items-center space-x-2.5 text-slate-900 dark:text-white hover:text-maroon-800 transition group"
+              className="flex items-center gap-2.5 text-ink hover:text-copper transition group"
+              data-testid="logo-link"
             >
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-maroon-700 via-maroon-800 to-maroon-900 flex items-center justify-center font-black text-white text-sm shadow-xs ring-1 ring-maroon-200 group-hover:scale-105 transition-transform relative">
-                BP
-                <span className="absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full bg-emerald-400 ring-2 ring-white dark:ring-slate-900 animate-pulse" />
+              <div className="relative flex items-center justify-center">
+                <Logo size={32} />
+                <span className="sr-only">BP</span>
+                <span className="absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-white animate-pulse" />
               </div>
-              <div className="flex flex-col">
-                <span className="font-extrabold text-sm sm:text-base tracking-tight text-slate-900 dark:text-white hidden sm:inline-block leading-tight">
-                  {t('appName', language)}
+              <div className="flex flex-col leading-none">
+                <span className="font-display text-lg font-bold tracking-tight text-ink">
+                  {t('appName', language) || 'Blueprint'}<span className="text-copper">CNC</span>
                 </span>
-                <span className="text-[10px] uppercase font-mono font-bold tracking-widest text-slate-400 dark:text-slate-500 hidden sm:inline-block leading-none mt-0.5">
-                  Aerospace VMC-3
+                <span className="mt-0.5 hidden text-[10px] font-medium uppercase tracking-[0.18em] text-slate-400 sm:block">
+                  Experience, preserved
                 </span>
               </div>
-            </NavLink>
+            </Link>
           </div>
 
-          {/* Desktop Navigation Links Rail */}
-          <nav className="hidden lg:flex items-center space-x-0.5 bg-slate-100/90 dark:bg-slate-800/80 p-1 rounded-full border border-slate-200/90 dark:border-slate-700/80 shadow-inner flex-shrink-0" aria-label="Main Navigation">
+          {/* Desktop Navigation Links */}
+          <nav className="hidden lg:flex items-center gap-1" aria-label="Main Navigation" data-testid="main-nav">
             {navItems.map((item) => (
               <NavLink
                 key={item.to}
                 to={item.to}
                 end={item.to === '/'}
+                data-testid={item.testid}
                 className={({ isActive }) =>
-                  `px-3 xl:px-3.5 py-1.5 rounded-full text-xs transition-all flex items-center ${
+                  `px-3.5 py-2 rounded-full text-xs font-semibold transition-colors duration-200 ${
                     isActive
-                      ? 'bg-maroon-50 text-maroon-800 font-semibold ring-1 ring-maroon-200 shadow-xs text-cyan-300'
-                      : 'text-slate-600 hover:text-maroon-900 hover:bg-maroon-50/50 border border-transparent font-medium'
+                      ? 'bg-ink text-white shadow-sm'
+                      : 'text-slate-600 hover:text-ink hover:bg-slate-200/50'
                   }`
                 }
               >
@@ -75,16 +82,17 @@ export default function NavBar() {
             ))}
           </nav>
 
-          {/* Right Action: Role Switcher, Theme Toggle & Mobile Menu Button */}
-          <div className="flex items-center space-x-1.5 sm:space-x-2 flex-shrink-0">
-            <RoleSwitcher />
-            <ThemeToggle />
+          {/* Right Action: Role Switcher & Mobile Menu Button */}
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <div data-testid="role-switcher">
+              <RoleSwitcher />
+            </div>
 
             {/* Mobile Hamburger Button */}
             <button
               type="button"
               onClick={() => setMobileMenuOpen((open) => !open)}
-              className="lg:hidden p-2 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-maroon-500 transition"
+              className="lg:hidden p-2 rounded-full text-slate-600 hover:text-ink hover:bg-slate-200/60 border border-slate-200 focus:outline-none transition"
               aria-label="Toggle navigation menu"
               aria-expanded={mobileMenuOpen}
             >
@@ -102,11 +110,7 @@ export default function NavBar() {
 
       {/* Mobile Drawer */}
       {mobileMenuOpen && (
-        <div className="lg:hidden border-t border-slate-200 dark:border-slate-800 bg-white/98 dark:bg-slate-900/98 backdrop-blur-md px-4 pt-3 pb-5 space-y-2 shadow-card" aria-label="Mobile Navigation">
-          <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
-            <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">Theme Preference:</span>
-            <ThemeToggle />
-          </div>
+        <div className="lg:hidden border-t border-slate-200 bg-[#F9F8F6]/98 backdrop-blur-md px-4 pt-3 pb-5 space-y-2 shadow-lg" aria-label="Mobile Navigation" data-testid="main-nav-mobile">
           {navItems.map((item) => (
             <NavLink
               key={item.to}
@@ -114,10 +118,10 @@ export default function NavBar() {
               end={item.to === '/'}
               onClick={() => setMobileMenuOpen(false)}
               className={({ isActive }) =>
-                `px-3.5 py-2.5 rounded-xl text-xs font-medium transition flex items-center ${
+                `block px-4 py-2.5 rounded-full text-xs font-semibold transition ${
                   isActive
-                    ? 'bg-maroon-50 text-maroon-800 font-semibold border border-maroon-200 text-cyan-300'
-                    : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white border border-transparent'
+                    ? 'bg-ink text-white'
+                    : 'text-slate-700 bg-white border border-slate-200 hover:bg-slate-50'
                 }`
               }
             >

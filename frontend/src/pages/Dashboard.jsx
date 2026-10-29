@@ -1,61 +1,66 @@
 import React, { useState } from 'react';
+import { AlertTriangle, TrendingDown, Clock } from 'lucide-react';
 import RiskHeatmap from '../components/dashboard/RiskHeatmap';
 import TransferMetrics from '../components/dashboard/TransferMetrics';
 import MachineTimeline from '../components/dashboard/MachineTimeline';
-import { useAuthStore } from '../store/useAuthStore';
-import { t } from '../utils/i18n';
-import { BarChartIcon, MapPinIcon, TrendingUpIcon, ClockIcon } from '../components/common/Icons';
+import { PageHead, Reveal } from '../components/common';
+
+const TABS = [
+  { id: 'heatmap', label: 'Knowledge Risk Heatmap', icon: AlertTriangle, testid: 'tab-heatmap' },
+  { id: 'metrics', label: 'Transfer & Quality ROI', icon: TrendingDown, testid: 'tab-metrics' },
+  { id: 'timeline', label: 'Machine Event Stream', icon: Clock, testid: 'tab-timeline' },
+];
 
 export default function Dashboard() {
-  const { language } = useAuthStore();
   const [activeTab, setActiveTab] = useState('heatmap');
 
-  const tabs = [
-    { id: 'heatmap', label: 'Knowledge Risk Heatmap', icon: <MapPinIcon className="w-3.5 h-3.5" /> },
-    { id: 'metrics', label: 'Transfer & Quality ROI', icon: <TrendingUpIcon className="w-3.5 h-3.5" /> },
-    { id: 'timeline', label: 'Machine Event Stream', icon: <ClockIcon className="w-3.5 h-3.5" /> },
-  ];
-
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 pb-5">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight flex items-center space-x-2.5">
-            <BarChartIcon className="w-6 h-6 text-maroon-700" />
-            <span>{t('navDashboard', language)}</span>
-          </h1>
-          <p className="text-slate-600 text-xs sm:text-sm mt-1.5 font-medium leading-relaxed">
-            Plant-wide operational dashboard. Track bus-factor-1 risks, handover velocity, and machine uptime.
-          </p>
-        </div>
-      </div>
+    <div className="mx-auto max-w-7xl px-5 py-8 sm:px-8">
+      <PageHead
+        eyebrow="Supervisor lens · Plant 2, A-shift"
+        title="See the risk before it retires."
+        sub="Vikram's morning view: where knowledge is thin, how fast it's moving, and whether new operators are standing on their own."
+      />
 
-      {/* Mode Tabs (Google Pill Segmented Control) */}
-      <div className="flex overflow-x-auto pb-1">
-        <div className="inline-flex p-1 bg-[#F1F3F4] border border-[#DADCE0] rounded-xl gap-1 shadow-xs">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              type="button"
-              onClick={() => setActiveTab(tab.id)}
-              className={`btn-touch px-3.5 py-2 rounded-lg text-xs font-semibold transition-all flex items-center space-x-2 whitespace-nowrap ${
-                activeTab === tab.id
-                  ? 'bg-white text-maroon-800 border border-[#DADCE0] shadow-xs font-semibold'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-white/60 border border-transparent'
-              }`}
-            >
-              <span className={activeTab === tab.id ? 'text-maroon-700' : 'text-slate-500'}>{tab.icon}</span>
-              <span>{tab.label}</span>
-            </button>
-          ))}
+      <Reveal delay={0.08}>
+        <div className="mb-8 flex flex-wrap gap-2">
+          {TABS.map((tab) => {
+            const Icon = tab.icon;
+            const active = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                data-testid={tab.testid}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex min-h-12 items-center gap-2.5 rounded-full px-5 py-3 text-sm font-semibold transition-colors duration-200 ${
+                  active
+                    ? 'bg-ink text-white'
+                    : 'border border-slate-200 bg-white text-slate-600 hover:border-slate-400'
+                }`}
+              >
+                <Icon size={17} className={active ? 'text-copper' : 'text-slate-400'} />
+                <span>{tab.label}</span>
+              </button>
+            );
+          })}
         </div>
-      </div>
+      </Reveal>
 
-      <div>
-        {activeTab === 'heatmap' && <RiskHeatmap />}
-        {activeTab === 'metrics' && <TransferMetrics />}
-        {activeTab === 'timeline' && <MachineTimeline />}
-      </div>
+      <Reveal delay={0.14}>
+        <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+          <div>
+            {activeTab === 'heatmap' && <RiskHeatmap />}
+            {activeTab === 'metrics' && <TransferMetrics />}
+            {activeTab === 'timeline' && <MachineTimeline />}
+          </div>
+        </div>
+      </Reveal>
+
+      <p className="mt-8 flex items-center gap-2 text-xs text-slate-400">
+        <Clock size={14} className="text-copper" />
+        Plant-wide operational dashboard. Live data from real shop floor logs, telemetry, and quality records.
+      </p>
     </div>
   );
 }
