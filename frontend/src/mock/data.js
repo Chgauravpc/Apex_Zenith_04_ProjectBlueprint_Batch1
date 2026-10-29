@@ -9,39 +9,43 @@ export const IMAGES = {
 };
 
 export const PERSONAS = {
+    // Same people and ids as backend/seed/seed.py (userId = employee id used in API calls).
     ramesh: {
         id: "ramesh",
-        name: "Ramesh Sharma",
+        userId: 1,
+        name: "Ramesh Patil",
         short: "Ramesh",
-        initials: "RS",
+        initials: "RP",
         role: "Senior Machinist · 28 yrs",
         badge: "Veteran Master",
-        detail: "Retires in 14 days",
+        detail: "Retires in 7 months",
         avatar: IMAGES.ramesh,
     },
     priya: {
         id: "priya",
-        name: "Priya Nair",
+        userId: 2,
+        name: "Priya Shinde",
         short: "Priya",
-        initials: "PN",
-        role: "Junior CNC Operator · 3 mo",
+        initials: "PS",
+        role: "Junior CNC Operator · 1 mo",
         badge: "Apprentice · L1",
-        detail: "Assigned: Haas VF-2",
+        detail: "Assigned: VMC-3",
         avatar: IMAGES.priya,
     },
-    vikram: {
-        id: "vikram",
-        name: "Vikram Patel",
-        short: "Vikram",
-        initials: "VP",
-        role: "Shift In-Charge",
+    anil: {
+        id: "anil",
+        userId: 4,
+        name: "Anil Kulkarni",
+        short: "Anil",
+        initials: "AK",
+        role: "Shop-Floor Supervisor",
         badge: "Operations Supervisor",
-        detail: "Plant 2 · A-Shift",
+        detail: "Bay A & B",
         avatar: IMAGES.machinist,
     },
 };
 
-export const ROLE_ORDER = ["ramesh", "priya", "vikram"];
+export const ROLE_ORDER = ["ramesh", "priya", "anil"];
 
 export const NAV = [
     { to: "/", label: "Home", testid: "nav-home-link" },

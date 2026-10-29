@@ -19,7 +19,7 @@ export default function Dashboard() {
       <PageHead
         eyebrow="Supervisor lens · Plant 2, A-shift"
         title="See the risk before it retires."
-        sub="Vikram's morning view: where knowledge is thin, how fast it's moving, and whether new operators are standing on their own."
+        sub="Anil's morning view: where knowledge is thin, how fast it's moving, and whether new operators are standing on their own."
       />
 
       <Reveal delay={0.08}>
