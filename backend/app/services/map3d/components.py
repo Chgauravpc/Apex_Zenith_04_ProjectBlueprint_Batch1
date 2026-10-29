@@ -12,12 +12,13 @@ from sqlalchemy.orm import Session
 
 from app.models.erp import Employee, Machine, Maintenance
 from app.models.guardian import Warning
+from app.models.guide import ProcedureStep
 from app.models.knowledge import KnowledgeCard
 from app.models.map3d import Component, ComponentPin
 from app.models.ops import Anomaly, SensorReading
 from app.schemas.map3d import ComponentKnowledge, ComponentOut, MachineLiveTelemetry
 
-# Default 3D metadata catalog for standard VMC machines
+# Default 3D metadata catalog for standard VMC machines, keyed by the seeded mesh_name
 VMC_COMPONENT_DEFAULTS: Dict[str, Dict[str, Any]] = {
     "spindle": {
         "display_name": "Spindle Assembly",
@@ -36,7 +37,7 @@ VMC_COMPONENT_DEFAULTS: Dict[str, Dict[str, Any]] = {
             "Coolant": "Through-Spindle + Ring Nozzles",
         },
     },
-    "tool_holder": {
+    "atc": {
         "display_name": "Tool Holder & ATC Magazine",
         "category": "Automatic Tool Changer",
         "description": (
@@ -52,7 +53,7 @@ VMC_COMPONENT_DEFAULTS: Dict[str, Dict[str, Any]] = {
             "Tool Change Time": "1.8 sec (Tool to Tool)",
         },
     },
-    "worktable": {
+    "table_vise": {
         "display_name": "T-Slot Worktable",
         "category": "Workholding & Kinematics",
         "description": (
@@ -217,9 +218,6 @@ def list_components(db: Session, machine_id: int) -> List[ComponentOut]:
         db.execute(select(Component).where(Component.machine_id == machine_id)).scalars().all()
     )
 
-    # Map database components by mesh_name
-    db_comp_map = {c.mesh_name: c for c in db_components}
-
     # Fetch live telemetry to drive component states
     telemetry = get_machine_telemetry(db, machine_id)
 
@@ -238,17 +236,36 @@ def list_components(db: Session, machine_id: int) -> List[ComponentOut]:
         if w.component_id:
             warnings_by_comp.setdefault(w.component_id, []).append(w)
 
+    # Breakdowns and procedures recorded against each part (two grouped queries, no N+1).
+    ids = [c.id for c in db_components]
+    breakdowns: Dict[int, List[Maintenance]] = {}
+    for row in db.execute(
+        select(Maintenance)
+        .where(Maintenance.component_id.in_(ids), Maintenance.kind == "breakdown")
+        .order_by(Maintenance.done_on.desc())
+    ).scalars():
+        breakdowns.setdefault(row.component_id, []).append(row)
+    procedures = dict(
+        db.execute(
+            select(
+                ProcedureStep.component_id, func.count(func.distinct(ProcedureStep.procedure_id))
+            )
+            .where(ProcedureStep.component_id.in_(ids))
+            .group_by(ProcedureStep.component_id)
+        ).all()
+    )
+
     results: List[ComponentOut] = []
 
-    # Iterate through standard VMC meshes and match with database rows
-    for mesh_name, meta in VMC_COMPONENT_DEFAULTS.items():
-        db_comp = db_comp_map.get(mesh_name)
-        comp_id = db_comp.id if db_comp else (len(results) + 1)
+    # The machine's real components; the 3D defaults only add descriptions, specs and positions.
+    for db_comp in sorted(db_components, key=lambda c: c.id):
+        mesh_name = db_comp.mesh_name
+        meta = VMC_COMPONENT_DEFAULTS.get(mesh_name, {})
 
         # Dynamic risk calculation based on live warnings & sensor telemetry
         risk = "low"
         comp_status = "Optimal / Normal"
-        comp_warnings = warnings_by_comp.get(comp_id, [])
+        comp_warnings = warnings_by_comp.get(db_comp.id, [])
 
         if mesh_name == "spindle":
             # Spindle reflects vibration, temp, and stop alerts dynamically
@@ -270,44 +287,30 @@ def list_components(db: Session, machine_id: int) -> List[ComponentOut]:
             risk = "medium"
             comp_status = "Caution Monitored"
 
-        # Query real KnowledgeCards pinned to this component
-        cards = _card_dicts(db, db_comp.id) if db_comp else []
-
-        # Query past failure incidents for this machine & component
-        incidents = []
-        incident_rows = (
-            db.execute(select(Maintenance).where(Maintenance.machine_id == machine_id).limit(5))
-            .scalars()
-            .all()
-        )
-        for inc in incident_rows:
-            incidents.append(
-                {
-                    "id": f"INC-{inc.id}",
-                    "date": inc.created_at.strftime("%Y-%m-%d") if inc.created_at else "2024-10-14",
-                    "type": "Mechanical Maintenance",
-                    "summary": inc.description,
-                    "root_cause": "Component wear under high radial feed rate",
-                    "resolution": "Inspected pre-load and re-calibrated zero reference",
-                    "downtime": "45 mins",
-                }
-            )
-
-        # Knowledge count summary
+        cards = _card_dicts(db, db_comp.id)
+        incidents = [
+            {
+                "id": f"INC-{row.id}",
+                "date": row.done_on.isoformat(),
+                "type": row.kind,
+                "summary": row.description,
+            }
+            for row in breakdowns.get(db_comp.id, [])
+        ]
         knowledge_count = {
-            "tips": max(len(cards), 3 if mesh_name == "spindle" else 1),
+            "tips": len(cards),
             "incidents": len(incidents),
-            "troubleshooting": 2,
-            "procedures": 1,
-            "total": max(len(cards), 3) + len(incidents) + 3,
+            "troubleshooting": 0,
+            "procedures": procedures.get(db_comp.id, 0),
+            "total": len(cards) + len(incidents) + procedures.get(db_comp.id, 0),
         }
 
         results.append(
             ComponentOut(
-                id=comp_id,
+                id=db_comp.id,
                 machine_id=machine_id,
                 mesh_name=mesh_name,
-                display_name=meta["display_name"],
+                display_name=meta.get("display_name", db_comp.display_name),
                 category=meta.get("category"),
                 description=meta.get("description"),
                 risk=risk,

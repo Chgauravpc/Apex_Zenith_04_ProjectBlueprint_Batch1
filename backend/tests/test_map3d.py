@@ -28,19 +28,43 @@ def test_list_machine_components(client, story) -> None:
     comps = res.json()
     assert len(comps) >= 6
 
+    # The machine's real components (seed/seed.py VMC_COMPONENTS), with real, unique ids.
     meshes = {c["mesh_name"] for c in comps}
-    assert "spindle" in meshes
-    assert "tool_holder" in meshes
-    assert "worktable" in meshes
-    assert "vise" in meshes
-    assert "control_panel" in meshes
-    assert "doors" in meshes
+    assert meshes == {
+        "spindle",
+        "atc",
+        "table_vise",
+        "coolant",
+        "axes",
+        "control_panel",
+        "chip_conveyor",
+    }
+    assert len({c["id"] for c in comps}) == len(comps)
 
     spindle = next(c for c in comps if c["mesh_name"] == "spindle")
     assert spindle["risk"] in ("low", "medium", "high")
     assert spindle["display_name"] == "Spindle Assembly"
     assert spindle["specs"] is not None
     assert "Max RPM" in spindle["specs"]
+
+
+def test_component_incidents_are_its_own_breakdowns(client, story, db) -> None:
+    from sqlalchemy import select
+
+    from app.models.erp import Maintenance
+
+    vmc = next(m for m in client.get("/api/machines").json() if m["name"] == "VMC-3")
+    for comp in client.get(f"/api/machines/{vmc['id']}/components").json():
+        rows = db.execute(
+            select(Maintenance).where(
+                Maintenance.component_id == comp["id"], Maintenance.kind == "breakdown"
+            )
+        ).scalars()
+        assert sorted(i["summary"] for i in comp["past_incidents"]) == sorted(
+            r.description for r in rows
+        )
+        assert comp["incident_count"] == len(comp["past_incidents"])
+        assert comp["knowledge_count"]["tips"] == len(comp["expert_tips"] or [])
 
 
 def test_get_component_knowledge(client, story) -> None:
