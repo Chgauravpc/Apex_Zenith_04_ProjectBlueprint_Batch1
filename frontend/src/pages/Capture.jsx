@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { Mic, Video, ScanLine, Type, UploadCloud } from 'lucide-react';
 import VoiceRecorder from '../components/capture/VoiceRecorder';
 import NoteEditor from '../components/capture/NoteEditor';

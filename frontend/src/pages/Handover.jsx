@@ -9,7 +9,7 @@ import useApi from '../hooks/useApi';
 import { useAuthStore } from '../store/useAuthStore';
 import { PageHead, Reveal, ExpertTag } from '../components/common';
 import { PERSONAS } from '../mock/data';
-import { CalendarClock, Mic, HelpCircle, Users } from 'lucide-react';
+import { CalendarClock, Mic, HelpCircle } from 'lucide-react';
 
 const TASK_PAGES = { record_setup: '/capture', validate: '/review' };
 
@@ -61,7 +61,7 @@ export default function Handover() {
             <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-slate-400">Handover countdown</p>
             <div className="mt-3 flex items-end gap-3">
               <p data-testid="handover-countdown-badge" className="font-mono text-7xl font-semibold leading-none">{daysLeft}</p>
-              <p className="pb-2 text-sm text-slate-300">days until<br />Ramesh's last shift</p>
+              <p className="pb-2 text-sm text-slate-300">days until<br />Ramesh&apos;s last shift</p>
             </div>
             <ExpertTag person={PERSONAS.ramesh} className="mt-5 border-white/20 bg-white/10 [&_span]:text-amber-200" />
           </div>

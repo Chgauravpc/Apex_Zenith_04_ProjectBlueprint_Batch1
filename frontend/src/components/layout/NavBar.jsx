@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink, Link } from 'react-router-dom';
 import RoleSwitcher from './RoleSwitcher';
-import ThemeToggle from './ThemeToggle';
 import Logo from '../Logo';
 import { useAuthStore } from '../../store/useAuthStore';
 import { t } from '../../utils/i18n';

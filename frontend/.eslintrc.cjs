@@ -27,4 +27,11 @@ module.exports = {
     'react/prop-types': 'off',
     'no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
   },
+  overrides: [
+    {
+      // react-three-fiber scenes use three.js props (position, args, castShadow ...) on JSX.
+      files: ['src/pages/MachineMap.jsx', 'src/components/map3d/**/*.jsx'],
+      rules: { 'react/no-unknown-property': 'off' },
+    },
+  ],
 };

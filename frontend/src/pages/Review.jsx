@@ -3,9 +3,9 @@ import { getReviewQueue, reviewCard } from '../api/capture';
 import LoadState from '../components/common/LoadState';
 import useApi from '../hooks/useApi';
 import { useAuthStore } from '../store/useAuthStore';
-import { PageHead, Reveal, ExpertTag } from '../components/common';
+import { PageHead, ExpertTag } from '../components/common';
 import { PERSONAS } from '../mock/data';
-import { BadgeCheck, Pencil, Star, ShieldAlert, CheckCircle } from 'lucide-react';
+import { BadgeCheck, Star } from 'lucide-react';
 
 function Stars({ value = 4 }) {
   return (
@@ -85,7 +85,6 @@ export default function Review() {
     });
 
   const pendingCards = cards.filter((c) => c.status === 'pending');
-  const approvedCards = cards.filter((c) => c.status === 'approved');
   const pendingTotal = queue.data
     ? queue.data.total - (queue.data.items.length - pendingCards.length)
     : 0;
@@ -131,7 +130,7 @@ export default function Review() {
           <div className="rounded-3xl border border-dashed border-teal/40 bg-teal-light p-14 text-center">
             <BadgeCheck size={36} className="mx-auto text-teal" />
             <p className="mt-3 font-display text-xl font-bold text-ink">Queue clear.</p>
-            <p className="mt-1 text-sm text-slate-500">All know-how cards in the review queue have been verified! Every draft is verified, so the floor can trust today's answers.</p>
+            <p className="mt-1 text-sm text-slate-500">All know-how cards in the review queue have been verified! Every draft is verified, so the floor can trust today&apos;s answers.</p>
           </div>
         )}
 
@@ -199,7 +198,7 @@ export default function Review() {
                 ) : (
                   <div className="space-y-2">
                     <p className="font-serif text-base italic leading-relaxed text-amber-950">
-                      "{card.action}"
+                      &quot;{card.action}&quot;
                     </p>
                     {card.why && (
                       <p className="text-xs text-slate-500">
