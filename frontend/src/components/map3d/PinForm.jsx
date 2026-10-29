@@ -8,7 +8,7 @@ import { useAuthStore } from '../../store/useAuthStore';
  * Reference: PRD.md §9.4 and TASKS.md T21.
  */
 export default function PinForm({ component, isOpen, onClose, onSubmit }) {
-  const { role } = useAuthStore();
+  const { currentUser } = useAuthStore();
   const [title, setTitle] = useState('');
   const [knowledgeType, setKnowledgeType] = useState('tip'); // 'tip' | 'incident' | 'procedure'
   const [text, setText] = useState('');
@@ -18,12 +18,7 @@ export default function PinForm({ component, isOpen, onClose, onSubmit }) {
 
   if (!isOpen || !component) return null;
 
-  const defaultAuthor =
-    role === 'old_employee'
-      ? 'Ramesh (Old Employee)'
-      : role === 'supervisor'
-      ? 'Shop Supervisor'
-      : 'Priya (New Employee)';
+  const defaultAuthor = currentUser.name;
 
   const handleVoiceToggle = () => {
     if (!isRecording) {
@@ -60,13 +55,14 @@ export default function PinForm({ component, isOpen, onClose, onSubmit }) {
         description: text.trim(),
         text: text.trim(),
         severity,
+        author_id: currentUser.id,
         author: defaultAuthor,
         date: new Date().toLocaleDateString('en-GB', {
           day: '2-digit',
           month: 'short',
           year: 'numeric',
         }),
-        verified: role === 'old_employee',
+        verified: false, // waits in the review queue like every new card
       });
       setTitle('');
       setText('');
