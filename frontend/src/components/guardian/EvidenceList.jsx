@@ -12,18 +12,18 @@ export default function EvidenceList({ evidence = [], expertFix, authorName = 'O
   }
 
   return (
-    <div className="mt-3 pt-3 border-t border-slate-700/60 text-xs text-slate-300 space-y-2.5">
+    <div className="mt-3 pt-3 border-t border-slate-200 text-xs text-slate-700 space-y-2.5">
       {/* Old Employee Advice */}
       {expertFix && (
-        <div className="bg-slate-900/80 border border-cyan-500/30 rounded-lg p-2.5 flex items-start space-x-2">
-          <span className="text-cyan-400 text-sm mt-0.5" aria-hidden="true">
+        <div className="bg-teal-50/80 border border-teal-200 rounded-lg p-2.5 flex items-start space-x-2">
+          <span className="text-teal-600 text-sm mt-0.5" aria-hidden="true">
             💡
           </span>
           <div>
-            <div className="font-semibold text-cyan-300">
+            <div className="font-semibold text-teal-900">
               {authorName}’s Recommended Action:
             </div>
-            <p className="text-slate-200 mt-0.5 leading-relaxed">{expertFix}</p>
+            <p className="text-slate-800 mt-0.5 leading-relaxed">{expertFix}</p>
           </div>
         </div>
       )}
@@ -31,7 +31,7 @@ export default function EvidenceList({ evidence = [], expertFix, authorName = 'O
       {/* Cited Historical Evidence */}
       {evidence.length > 0 && (
         <div>
-          <div className="font-semibold text-slate-400 uppercase tracking-wider text-[11px] mb-1.5 flex items-center space-x-1.5">
+          <div className="font-semibold text-slate-600 uppercase tracking-wider text-[11px] mb-1.5 flex items-center space-x-1.5">
             <span>📚</span>
             <span>Cited Evidence ({evidence.length} record{evidence.length > 1 ? 's' : ''}):</span>
           </div>
@@ -42,10 +42,10 @@ export default function EvidenceList({ evidence = [], expertFix, authorName = 'O
               return (
                 <li
                   key={itemId}
-                  className="bg-slate-900/60 border border-slate-800 rounded-md p-2 transition"
+                  className="bg-white border border-slate-200 rounded-md p-2 transition shadow-2xs"
                 >
                   <div className="flex items-center justify-between gap-2">
-                    <span className="font-medium text-slate-200">
+                    <span className="font-medium text-slate-800">
                       #{item.id || idx + 1} — {item.kind || 'Incident'}: {item.title || item.summary || 'Historical Record'}
                     </span>
                     {item.date && (
@@ -59,12 +59,12 @@ export default function EvidenceList({ evidence = [], expertFix, authorName = 'O
                       <button
                         type="button"
                         onClick={() => setExpandedId(isExpanded ? null : itemId)}
-                        className="text-[11px] text-cyan-400 hover:underline font-medium"
+                        className="text-[11px] text-teal-700 hover:underline font-medium"
                       >
                         {isExpanded ? 'Hide details' : 'Show details'}
                       </button>
                       {isExpanded && (
-                        <p className="mt-1 text-slate-300 text-xs bg-slate-950 p-2 rounded border border-slate-800 leading-normal">
+                        <p className="mt-1 text-slate-700 text-xs bg-slate-50 p-2 rounded border border-slate-200 leading-normal">
                           {item.detail}
                         </p>
                       )}

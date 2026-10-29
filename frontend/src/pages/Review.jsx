@@ -94,7 +94,7 @@ export default function Review() {
       <PageHead
         eyebrow="Trust layer · Validation queue"
         title="Nothing goes live without a human's name on it."
-        sub="AI drafts the card. The veteran or supervisor verifies it — that's why the floor trusts the answers."
+        sub="Sign-off queue for experienced employees. AI drafts the card. The veteran or supervisor verifies it — that's why the floor trusts the answers."
       />
 
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
@@ -189,7 +189,7 @@ export default function Review() {
                         type="button"
                         disabled={isSubmitting || !editText.trim()}
                         onClick={() => handleApprove(card, true)}
-                        className="rounded-full bg-ink px-5 py-2 text-xs font-semibold text-white hover:bg-copper disabled:opacity-50"
+                        className="rounded-full bg-copper hover:bg-copper/90 px-5 py-2 text-xs font-semibold text-white transition-colors duration-300 shadow-xs disabled:opacity-50"
                       >
                         Save Changes & Approve
                       </button>
@@ -230,7 +230,7 @@ export default function Review() {
                       data-testid="review-edit-btn"
                       disabled={!canReview}
                       onClick={() => startEdit(card)}
-                      className="rounded-full border border-slate-300 px-4 py-2 text-xs font-semibold text-slate-700 hover:border-ink disabled:opacity-40"
+                      className="rounded-full border border-slate-300 px-4 py-2 text-xs font-semibold text-slate-700 hover:border-copper disabled:opacity-40"
                     >
                       Edit Details
                     </button>
@@ -239,7 +239,7 @@ export default function Review() {
                       data-testid="review-approve-btn"
                       disabled={!canReview || isSubmitting}
                       onClick={() => handleApprove(card, false)}
-                      className="rounded-full bg-ink px-5 py-2.5 text-xs font-semibold text-white transition-colors duration-300 hover:bg-teal disabled:opacity-40"
+                      className="rounded-full bg-teal hover:bg-teal/90 px-5 py-2.5 text-xs font-semibold text-white transition-colors duration-300 shadow-xs disabled:opacity-40"
                     >
                       Approve & Verify
                     </button>

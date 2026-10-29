@@ -162,26 +162,26 @@ export default function GuidedJob() {
               <button
                 type="button"
                 onClick={() => setShowShadowTrace((v) => !v)}
-                className={`flex items-center gap-2 rounded-full px-4 py-2 text-xs font-semibold transition-colors duration-200 ${
+                className={`flex items-center gap-2 rounded-full px-4 py-2 text-xs font-semibold transition-all duration-200 ${
                   showShadowTrace
-                    ? 'bg-ink text-white'
-                    : 'border border-slate-300 bg-white text-slate-700 hover:border-ink'
+                    ? 'border border-maroon-300 bg-white text-maroon-800 font-bold shadow-xs'
+                    : 'border border-slate-300 bg-white text-slate-700 hover:border-slate-400'
                 }`}
               >
-                <Film size={14} className={showShadowTrace ? 'text-copper' : ''} />
+                <Film size={14} className={showShadowTrace ? 'text-maroon-700' : 'text-slate-400'} />
                 <span>ShadowTrace™</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => setShowTroubleshoot((v) => !v)}
-                className={`flex items-center gap-2 rounded-full px-4 py-2 text-xs font-semibold transition-colors duration-200 ${
+                className={`flex items-center gap-2 rounded-full px-4 py-2 text-xs font-semibold transition-all duration-200 ${
                   showTroubleshoot
-                    ? 'bg-ink text-white'
-                    : 'border border-slate-300 bg-white text-slate-700 hover:border-ink'
+                    ? 'border border-maroon-300 bg-white text-maroon-800 font-bold shadow-xs'
+                    : 'border border-slate-300 bg-white text-slate-700 hover:border-slate-400'
                 }`}
               >
-                <GitFork size={14} className={showTroubleshoot ? 'text-copper' : ''} />
+                <GitFork size={14} className={showTroubleshoot ? 'text-maroon-700' : 'text-slate-400'} />
                 <span>Troubleshoot</span>
               </button>
 
@@ -219,7 +219,7 @@ export default function GuidedJob() {
                   type="button"
                   disabled={isStarting || !chosenId}
                   onClick={handleStart}
-                  className="inline-flex items-center gap-2 rounded-full bg-ink px-7 py-3.5 text-sm font-semibold text-white transition-colors duration-300 hover:bg-copper disabled:opacity-50"
+                  className="inline-flex items-center gap-2 rounded-full bg-copper hover:bg-copper/90 px-7 py-3.5 text-sm font-semibold text-white transition-colors duration-300 shadow-xs disabled:opacity-50"
                 >
                   <Play size={16} />
                   <span>{isStarting ? 'Starting…' : 'Start Guided Run →'}</span>
@@ -252,7 +252,7 @@ export default function GuidedJob() {
             <button
               type="button"
               onClick={handleRestart}
-              className="inline-flex items-center gap-2 rounded-full bg-ink px-7 py-3 text-sm font-semibold text-white transition-colors duration-300 hover:bg-copper"
+              className="inline-flex items-center gap-2 rounded-full bg-copper hover:bg-copper/90 px-7 py-3 text-sm font-semibold text-white transition-colors duration-300 shadow-xs"
             >
               Start New Run
             </button>

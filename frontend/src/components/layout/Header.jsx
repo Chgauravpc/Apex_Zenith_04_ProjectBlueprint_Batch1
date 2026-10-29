@@ -75,14 +75,14 @@ export default function Header() {
                                 }}
                                 className={`flex h-11 items-center gap-2 rounded-full px-3 transition-colors duration-200 ${
                                     active
-                                        ? "bg-ink text-white"
+                                        ? "bg-white text-maroon-800 font-bold shadow-xs border border-slate-200"
                                         : "text-slate-500 hover:bg-slate-100 hover:text-ink"
                                 }`}
                                 title={`${p.name} — ${p.badge}`}
                             >
                                 <span
                                     className={`flex h-6 w-6 items-center justify-center rounded-full font-mono text-[10px] font-semibold ${
-                                        active ? "bg-copper text-white" : "bg-slate-200 text-slate-600"
+                                        active ? "bg-maroon-700 text-white" : "bg-slate-200 text-slate-600"
                                     }`}
                                 >
                                     {p.initials}
@@ -103,7 +103,7 @@ export default function Header() {
                         className={({ isActive }) =>
                             `whitespace-nowrap rounded-full px-3.5 py-2 text-sm font-medium transition-colors duration-200 ${
                                 isActive
-                                    ? "bg-ink text-white"
+                                    ? "bg-white text-maroon-800 font-bold shadow-xs border border-maroon-200/60"
                                     : "bg-white text-slate-600 ring-1 ring-slate-200"
                             }`
                         }

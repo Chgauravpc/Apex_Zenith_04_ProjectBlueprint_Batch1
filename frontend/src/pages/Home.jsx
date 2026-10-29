@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { MaskedLine, Reveal, Eyebrow, Marquee, RiskChip, EASE } from "@/components/common";
 import { useRole } from "@/store/RoleContext";
+import { useAuthStore } from "@/store/useAuthStore";
 import { IMAGES, PERSONAS, ROLE_ORDER, STATS, KNOWHOW_CARDS, TIMELINE } from "@/mock/data";
 
 function Hero() {
@@ -230,7 +231,7 @@ function RoleLens() {
                                 key={id}
                                 onClick={() => setRoleId(id)}
                                 className={`rounded-full px-4 py-2 text-xs font-semibold transition-colors ${
-                                    roleId === id ? "bg-ink text-white" : "text-slate-500 hover:text-ink"
+                                    roleId === id ? "bg-copper text-white shadow-xs font-bold" : "text-slate-500 hover:text-ink"
                                 }`}
                             >
                                 {PERSONAS[id].short}
@@ -355,16 +356,16 @@ function Bento() {
                             to={a.to}
                             className={`group flex h-full flex-col justify-between rounded-3xl border p-7 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl ${
                                 a.big
-                                    ? "relative overflow-hidden bg-gradient-to-br from-ink to-slate-900 text-white border-ink"
-                                    : "border-slate-200 bg-white"
+                                    ? "relative overflow-hidden bg-gradient-to-br from-amber-50/70 via-white to-canvas border-copper/30 shadow-md text-ink"
+                                    : "border-slate-200 bg-white text-ink"
                             }`}
                         >
                             <div>
-                                <div className={`flex h-12 w-12 items-center justify-center rounded-2xl ${a.big ? "bg-maroon-700 text-white" : "bg-maroon-50 text-maroon-700 dark:bg-maroon-950/80 dark:text-maroon-400"}`}>
+                                <div className={`flex h-12 w-12 items-center justify-center rounded-2xl ${a.big ? "bg-copper text-white" : "bg-maroon-50 text-maroon-700 dark:bg-maroon-950/80 dark:text-maroon-400"}`}>
                                     <a.icon size={22} />
                                 </div>
-                                <h3 className={`mt-6 font-display text-xl font-bold ${a.big ? "text-white" : "text-ink"}`}>{a.title}</h3>
-                                <p className={`mt-2 text-sm leading-relaxed ${a.big ? "text-slate-300" : "text-slate-500"}`}>{a.desc}</p>
+                                <h3 className="mt-6 font-display text-xl font-bold text-ink">{a.title}</h3>
+                                <p className="mt-2 text-sm leading-relaxed text-slate-500">{a.desc}</p>
                             </div>
                             <span className="mt-6 inline-flex items-center gap-1.5 text-xs font-semibold text-maroon-700 dark:text-maroon-400">
                                 Explore <ArrowRight size={14} className="transition-transform group-hover:translate-x-1" />
@@ -422,8 +423,32 @@ function LegacyStrip() {
 }
 
 export default function Home() {
+    const { currentUser } = useAuthStore();
     return (
         <div>
+            {currentUser && (
+                <div className="mx-auto max-w-7xl px-5 pt-6 sm:px-8">
+                    <div className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div>
+                            <span className="text-[11px] font-bold uppercase tracking-wider text-maroon-700">
+                                Shop-Floor Context
+                            </span>
+                            <h2 className="text-lg sm:text-xl font-bold text-ink mt-0.5">
+                                Welcome back, {currentUser.name}
+                            </h2>
+                            <p className="text-slate-500 text-xs mt-0.5">
+                                Active Shift · {currentUser.role?.replace('_', ' ').toUpperCase()} · Station VMC-3
+                            </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-800 border border-emerald-200">
+                                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                                Station Online
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            )}
             <Hero />
             <Marquee />
             <RoleLens />

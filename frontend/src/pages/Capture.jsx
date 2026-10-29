@@ -21,11 +21,11 @@ export default function Capture() {
       <PageHead
         eyebrow="Lane 01 · Capture"
         title="Know-how in, manuals never."
-        sub="Voice, video, logbooks and quick notes — every source becomes a structured card credited to its author."
+        sub="Frictionless knowledge capture for CNC/VMC machinists. Voice, video, logbooks and quick notes — every source becomes a structured card credited to its author."
       />
 
       <Reveal delay={0.08}>
-        <div className="mb-8 flex flex-wrap gap-2">
+        <div className="mb-8 inline-flex flex-wrap gap-2 p-1.5 rounded-2xl bg-[#F1F3F4] border border-slate-200/80">
           {TABS.map((tab) => {
             const Icon = tab.icon;
             const active = activeTab === tab.id;
@@ -35,13 +35,13 @@ export default function Capture() {
                 type="button"
                 data-testid={tab.testid}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex min-h-12 items-center gap-2.5 rounded-full px-5 py-3 text-sm font-semibold transition-colors duration-200 ${
+                className={`flex min-h-12 items-center gap-2.5 rounded-xl px-5 py-3 text-sm font-semibold transition-all duration-200 ${
                   active
-                    ? 'bg-ink text-white'
-                    : 'border border-slate-200 bg-white text-slate-600 hover:border-slate-400'
+                    ? 'bg-white text-maroon-800 font-bold shadow-xs border border-maroon-200/60'
+                    : 'text-slate-600 hover:text-slate-900 font-medium hover:bg-white/60'
                 }`}
               >
-                <Icon size={17} className={active ? 'text-copper' : 'text-slate-400'} />
+                <Icon size={17} className={active ? 'text-maroon-700' : 'text-slate-400'} />
                 <span>{tab.label}</span>
               </button>
             );

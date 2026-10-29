@@ -282,10 +282,12 @@ export default function MachineMap() {
               data-testid="three-risk-toggle-btn"
               onClick={() => setRiskMode((r) => !r)}
               className={`flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-semibold shadow-2xs transition ${
-                riskMode ? 'bg-ink text-white' : 'bg-canvas text-slate-700 border border-slate-200'
+                riskMode
+                  ? 'bg-rose-50 text-rose-800 border border-rose-300 font-bold shadow-xs'
+                  : 'bg-canvas text-slate-700 border border-slate-200 hover:bg-slate-100'
               }`}
             >
-              <Flame size={13} className={riskMode ? 'text-copper' : ''} />
+              <Flame size={13} className={riskMode ? 'text-rose-600' : 'text-slate-500'} />
               <span>Risk Heat {riskMode ? 'On' : 'Off'}</span>
             </button>
 
@@ -379,7 +381,7 @@ export default function MachineMap() {
                   onMouseLeave={() => setHoveredMesh(null)}
                   className={`btn-touch shrink-0 px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all flex items-center space-x-2 ${
                     isSelected
-                      ? 'bg-ink text-white font-bold shadow-xs ring-2 ring-copper/50'
+                      ? 'bg-white text-maroon-800 font-bold shadow-xs border border-maroon-300 ring-2 ring-maroon-500/20'
                       : 'bg-canvas hover:bg-slate-100 text-slate-700 border border-slate-200 shadow-2xs'
                   }`}
                 >
@@ -393,7 +395,7 @@ export default function MachineMap() {
                   <span
                     className={`shrink-0 text-[10px] px-1.5 py-0.5 rounded-full font-mono font-bold ${
                       isSelected
-                        ? 'bg-white/20 text-white'
+                        ? 'bg-maroon-100 text-maroon-900'
                         : 'bg-slate-200/80 text-slate-700'
                     }`}
                   >

@@ -1,7 +1,5 @@
-import { applyHostFonts } from "@modelcontextprotocol/ext-apps";
-
 /**
- * Aesthetic Typography Presets supported via MCP Apps SDK applyHostFonts.
+ * Aesthetic Typography Presets.
  * Replaced quirky wide fonts with ultra-clean, high-end geometric typography:
  * - Plus Jakarta Sans & Outfit: Modern, balanced, razor-sharp geometric aesthetic
  * - Space Grotesk: Clean tech-industrial aesthetic
@@ -60,22 +58,12 @@ export const AESTHETIC_HOST_FONTS_CSS = FONT_PRESETS.modern.css;
 export function initMcpFonts(presetKey = "modern", customCss = null) {
   if (typeof window === "undefined") return;
   const fontCss = customCss || FONT_PRESETS[presetKey]?.css || AESTHETIC_HOST_FONTS_CSS;
-  try {
-    // If style already exists, update textContent for hot changes
-    const existing = document.getElementById("__mcp-host-fonts");
-    if (existing) {
-      existing.textContent = fontCss;
-      return;
-    }
-    applyHostFonts(fontCss);
-  } catch (err) {
-    const styleId = "__mcp-host-fonts";
-    let style = document.getElementById(styleId);
-    if (!style) {
-      style = document.createElement("style");
-      style.id = styleId;
-      document.head.appendChild(style);
-    }
-    style.textContent = fontCss;
+  const styleId = "__mcp-host-fonts";
+  let style = document.getElementById(styleId);
+  if (!style) {
+    style = document.createElement("style");
+    style.id = styleId;
+    document.head.appendChild(style);
   }
+  style.textContent = fontCss;
 }

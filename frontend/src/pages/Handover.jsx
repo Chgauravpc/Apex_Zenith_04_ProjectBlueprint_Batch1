@@ -56,28 +56,28 @@ export default function Handover() {
 
       {/* Top Countdown Banner */}
       <Reveal delay={0.05}>
-        <div className="mb-8 grid gap-6 rounded-3xl border border-ink bg-gradient-to-br from-ink to-slate-900 p-8 text-white shadow-xl lg:grid-cols-12">
+        <div className="mb-8 grid gap-6 rounded-3xl border border-slate-200 bg-white p-8 text-ink shadow-sm lg:grid-cols-12">
           <div className="lg:col-span-5">
             <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-slate-400">Handover countdown</p>
             <div className="mt-3 flex items-end gap-3">
-              <p data-testid="handover-countdown-badge" className="font-mono text-7xl font-semibold leading-none">{daysLeft}</p>
-              <p className="pb-2 text-sm text-slate-300">days until<br />Ramesh&apos;s last shift</p>
+              <p data-testid="handover-countdown-badge" className="font-mono text-7xl font-semibold leading-none text-copper">{daysLeft}</p>
+              <p className="pb-2 text-sm text-slate-600">days until<br />Ramesh&apos;s last shift</p>
             </div>
-            <ExpertTag person={PERSONAS.ramesh} className="mt-5 border-white/20 bg-white/10 [&_span]:text-amber-200" />
+            <ExpertTag person={PERSONAS.ramesh} className="mt-5 border-amber-200 bg-amber-50 text-slate-800 [&_span]:text-amber-900" />
           </div>
           <div className="flex flex-col justify-center lg:col-span-7">
-            <div className="flex items-center justify-between font-mono text-xs text-slate-400">
+            <div className="flex items-center justify-between font-mono text-xs text-slate-500">
               <span>Knowledge digitised</span>
-              <span className="text-copper">{progress}%</span>
+              <span className="text-copper font-bold">{progress}%</span>
             </div>
-            <div className="mt-2 h-3 overflow-hidden rounded-full bg-white/10">
+            <div className="mt-2 h-3 overflow-hidden rounded-full bg-slate-100">
               <div className="h-full rounded-full bg-copper" style={{ width: `${progress}%` }} />
             </div>
             <div className="mt-4 grid grid-cols-3 gap-4 text-center">
               {[["2", "bus-factor-1 machines"], ["9", "critical gaps left"], ["3", "buddies paired"]].map(([v, l]) => (
-                <div key={l} className="rounded-2xl bg-white/5 p-3 ring-1 ring-white/10">
+                <div key={l} className="rounded-2xl bg-canvas p-3 border border-slate-200">
                   <p className="font-mono text-2xl font-semibold text-copper">{v}</p>
-                  <p className="mt-0.5 text-[11px] text-slate-300">{l}</p>
+                  <p className="mt-0.5 text-[11px] text-slate-500">{l}</p>
                 </div>
               ))}
             </div>
@@ -87,7 +87,7 @@ export default function Handover() {
 
       {/* Mode Tabs */}
       <Reveal delay={0.08}>
-        <div className="mb-8 flex flex-wrap gap-2">
+        <div className="mb-8 inline-flex flex-wrap gap-2 p-1.5 rounded-2xl bg-[#F1F3F4] border border-slate-200/80">
           {tabs.map((tab) => {
             const Icon = tab.icon;
             const active = activeTab === tab.id;
@@ -97,13 +97,13 @@ export default function Handover() {
                 type="button"
                 data-testid={tab.testid}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex min-h-12 items-center gap-2.5 rounded-full px-5 py-3 text-sm font-semibold transition-colors duration-200 ${
+                className={`flex min-h-12 items-center gap-2.5 rounded-xl px-5 py-3 text-sm font-semibold transition-all duration-200 ${
                   active
-                    ? 'bg-ink text-white'
-                    : 'border border-slate-200 bg-white text-slate-600 hover:border-slate-400'
+                    ? 'bg-white text-maroon-800 font-bold shadow-xs border border-maroon-200/60'
+                    : 'text-slate-600 hover:text-slate-900 font-medium hover:bg-white/60'
                 }`}
               >
-                <Icon size={17} className={active ? 'text-copper' : 'text-slate-400'} />
+                <Icon size={17} className={active ? 'text-maroon-700' : 'text-slate-400'} />
                 <span>{tab.label}</span>
               </button>
             );

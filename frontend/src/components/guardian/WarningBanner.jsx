@@ -3,20 +3,20 @@ import EvidenceList from './EvidenceList';
 
 const SEVERITY_CONFIG = {
   stop: {
-    container: 'bg-red-950/90 border-red-500/80 text-red-100',
+    container: 'bg-rose-50 border-rose-300 text-rose-950 shadow-sm',
     badge: 'bg-red-600 text-white',
     icon: '⛔',
     label: 'STOP — CRITICAL WARNING',
   },
   caution: {
-    container: 'bg-amber-950/90 border-amber-500/80 text-amber-100',
+    container: 'bg-amber-50 border-amber-300 text-amber-950 shadow-sm',
     badge: 'bg-amber-500 text-slate-950',
     icon: '⚠️',
     label: 'CAUTION — RISK DETECTED',
   },
   info: {
-    container: 'bg-cyan-950/90 border-cyan-500/80 text-cyan-100',
-    badge: 'bg-cyan-600 text-white',
+    container: 'bg-teal-50 border-teal-300 text-teal-950 shadow-sm',
+    badge: 'bg-teal-600 text-white',
     icon: 'ℹ️',
     label: 'OPERATIONAL NOTE',
   },
@@ -60,15 +60,15 @@ export default function WarningBanner({ result, onDismiss }) {
               )}
             </div>
 
-            <p className="mt-1.5 text-sm sm:text-base font-semibold text-slate-100 leading-snug">
+            <p className="mt-1.5 text-sm sm:text-base font-semibold text-slate-900 leading-snug">
               {primaryWarning.message || primaryWarning}
             </p>
 
             {result.warnings.length > 1 && (
-              <ul className="mt-2 space-y-1 text-xs text-slate-300">
+              <ul className="mt-2 space-y-1 text-xs text-slate-700">
                 {result.warnings.slice(1).map((w, idx) => (
                   <li key={idx} className="flex items-center space-x-1.5">
-                    <span className="text-slate-400">•</span>
+                    <span className="text-slate-500">•</span>
                     <span>{w.message || w}</span>
                   </li>
                 ))}
@@ -82,7 +82,7 @@ export default function WarningBanner({ result, onDismiss }) {
             <button
               type="button"
               onClick={() => setShowEvidence(!showEvidence)}
-              className="text-xs px-2.5 py-1 rounded bg-slate-800/80 hover:bg-slate-700 text-slate-200 border border-slate-700 transition"
+              className="text-xs px-2.5 py-1 rounded bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 shadow-2xs transition"
               aria-expanded={showEvidence}
             >
               {showEvidence ? 'Hide Evidence' : `View Evidence (${result.evidence.length})`}
