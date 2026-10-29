@@ -185,7 +185,7 @@ export default function GuidedJob() {
                 <span>Troubleshoot</span>
               </button>
 
-              <PlaybookLink procedureId={procedure.id} />
+              <PlaybookLink machineId={procedure.machine_id} />
             </div>
           </div>
         </Reveal>
