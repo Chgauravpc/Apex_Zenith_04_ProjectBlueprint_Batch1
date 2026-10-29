@@ -31,6 +31,7 @@ SIGNED_URL_REUSE_MARGIN = 300  # hand out a cached URL only while it has 5+ minu
 MAX_CACHED_URLS = 1000
 
 _client: Optional[httpx.Client] = None
+_client_lock = threading.Lock()
 _signed: Dict[str, Tuple[str, float]] = {}  # key -> (url, expires at, monotonic)
 _signed_lock = threading.Lock()
 
@@ -71,11 +72,20 @@ def local_path(key: str) -> Path:
     return path
 
 
+class StorageRequestFailed(ProviderUnavailable):
+    """Supabase Storage refused or could not be reached; `status` is the HTTP code, if any."""
+
+    def __init__(self, message: str, status: Optional[int] = None) -> None:
+        super().__init__(message)
+        self.status = status
+
+
 def _http() -> httpx.Client:
     global _client
-    if _client is None:
-        _client = httpx.Client(timeout=TIMEOUT)
-    return _client
+    with _client_lock:  # one shared connection pool, even when threads start together
+        if _client is None:
+            _client = httpx.Client(timeout=TIMEOUT)
+        return _client
 
 
 def _supabase() -> Tuple[str, str, str]:
@@ -99,7 +109,7 @@ def _request(method: str, url: str, key: str, **kwargs) -> httpx.Response:  # no
     headers = {"Authorization": f"Bearer {service_key}", "apikey": service_key}
     headers.update(kwargs.pop("headers", {}))
     body_path: Optional[Path] = kwargs.pop("body_path", None)
-    reason = ""
+    reason, status = "", None
     for attempt in range(RETRIES + 1):
         try:
             if body_path is not None:
@@ -112,13 +122,14 @@ def _request(method: str, url: str, key: str, **kwargs) -> httpx.Response:  # no
         else:
             if response.status_code < 300:
                 return response
-            reason = f"HTTP {response.status_code}"
+            status = response.status_code
+            reason = f"HTTP {status}"
             if response.status_code not in RETRYABLE_STATUS:
                 break
         if attempt < RETRIES:
             time.sleep(RETRY_WAIT_SECONDS[min(attempt, len(RETRY_WAIT_SECONDS) - 1)])
     logger.warning("supabase storage %s %s failed: %s", method, key, reason)
-    raise ProviderUnavailable(f"file storage unavailable ({reason})")
+    raise StorageRequestFailed(f"file storage unavailable ({reason})", status)
 
 
 def persist(path: Path) -> None:
@@ -167,8 +178,8 @@ def signed_url(key: str) -> str:
             key,
             json={"expiresIn": SIGNED_URL_SECONDS},
         )
-    except ProviderUnavailable as exc:
-        if "HTTP 400" in str(exc) or "HTTP 404" in str(exc):  # Supabase: object not found
+    except StorageRequestFailed as exc:
+        if exc.status in (400, 404):  # Supabase answers 400 or 404 for a missing object
             raise NotFound("media not found") from exc
         raise
     signed = response.json().get("signedURL")
