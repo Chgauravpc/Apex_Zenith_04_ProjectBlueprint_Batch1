@@ -1,420 +1,462 @@
-import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { getReviewQueue } from '../api/capture';
-import { getBriefing } from '../api/guide';
-import { getHandoverPlan, getMetrics, getRisk, getRoutedQuestions } from '../api/transfer';
-import useApi from '../hooks/useApi';
-import { useAuthStore } from '../store/useAuthStore';
-import { useMachineStore } from '../store/useMachineStore';
-import PlaybookLink from '../components/common/PlaybookLink';
-import { PageHead, Reveal } from '../components/common';
+import { useRef } from "react";
+import { Link } from "react-router-dom";
+import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
 import {
-  Mic,
-  Lightbulb,
-  ClipboardList,
-  ShieldAlert,
-  Search,
-  Users,
-  CheckCircle,
-  HelpCircle,
-  BarChart,
-  Boxes,
-  TrendingUp,
-  Sparkles,
-  ArrowRight,
-  ArrowUpRight,
-} from 'lucide-react';
+    Mic, MessageSquareText, Boxes, ClipboardList, ArrowRight, ArrowUpRight,
+    CalendarClock, ShieldAlert, Gauge, FileCheck2, Sparkles, Wrench,
+} from "lucide-react";
+import { MaskedLine, Reveal, Eyebrow, Marquee, RiskChip, EASE } from "@/components/common";
+import { useRole } from "@/store/RoleContext";
+import { IMAGES, PERSONAS, ROLE_ORDER, STATS, KNOWHOW_CARDS, TIMELINE } from "@/mock/data";
 
-// Each role's cards come from its own endpoints; a failed call only blanks its card.
-const LOADERS = {
-  new_employee: (user, signal) => ({ briefing: getBriefing(user.id, signal) }),
-  old_employee: (user, signal) => ({
-    plan: getHandoverPlan(user.id, signal),
-    review: getReviewQueue({ limit: 1 }, signal),
-    routed: getRoutedQuestions({ employee_id: user.id }, signal),
-  }),
-  supervisor: (user, signal) => ({ risk: getRisk(signal), metrics: getMetrics(signal) }),
-};
+function Hero() {
+    return (
+        <section className="relative overflow-hidden pt-10 pb-20 sm:pt-14 sm:pb-28">
+            {/* Background Radial Shades (21st.dev Hero 3 pattern - id: 11428) */}
+            <div aria-hidden="true" className="pointer-events-none absolute inset-0 size-full overflow-hidden -z-10">
+                <div className="absolute inset-0 bg-[radial-gradient(45%_60%_at_20%_0%,rgba(128,0,32,0.12),transparent)] dark:bg-[radial-gradient(45%_60%_at_20%_0%,rgba(128,0,32,0.22),transparent)]" />
+                <div className="absolute top-1/4 right-0 h-96 w-96 rounded-full bg-maroon-700/10 dark:bg-maroon-500/15 blur-3xl" />
+            </div>
 
-async function loadHome(user, signal) {
-  const calls = (LOADERS[user.role] || (() => ({})))(user, signal);
-  const keys = Object.keys(calls);
-  const settled = await Promise.allSettled(keys.map((k) => calls[k]));
-  return Object.fromEntries(keys.map((k, i) => [k, settled[i].value || null]));
+            <div className="mx-auto max-w-7xl px-5 sm:px-8">
+                {/* Left-Aligned Hero Content */}
+                <div className="relative z-10 flex max-w-3xl flex-col gap-5 sm:gap-6">
+                    {/* Headline - High-impact large display with White & Maroon styling */}
+                    <h1
+                        data-testid="hero-reveal-title"
+                        className="text-balance font-display font-black text-5xl sm:text-6xl md:text-7xl lg:text-[5.25rem] xl:text-[5.75rem] tracking-tight text-ink dark:text-white leading-[1.02] sm:leading-[1.02]"
+                    >
+                        Experience walks out
+                        <br className="hidden sm:inline" />{" "}
+                        the door.{" "}
+                        <span className="font-serif font-normal italic text-maroon-700 dark:text-maroon-400">
+                            We make it stay.
+                        </span>
+                    </h1>
+
+                    {/* Subtext */}
+                    <p className="max-w-2xl text-base sm:text-lg leading-relaxed text-slate-600 dark:text-slate-300">
+                        Apex Zenith captures veteran machinists' tacit know-how — audio nuances, vibration signatures, logbook sketches — and returns it to operators as verified procedures and real-time guardrails before scrap happens.
+                    </p>
+
+                    {/* CTA Actions - White and Maroon Theme */}
+                    <div className="flex flex-wrap items-center gap-4 pt-1">
+                        <Link
+                            to="/capture"
+                            data-testid="hero-cta-capture"
+                            className="group inline-flex h-12 sm:h-14 items-center gap-2.5 rounded-full bg-maroon-700 hover:bg-maroon-800 dark:bg-maroon-700 dark:hover:bg-maroon-600 text-white px-8 py-3.5 text-sm sm:text-base font-semibold transition-all duration-300 shadow-md shadow-maroon-900/20 hover:shadow-lg hover:shadow-maroon-900/30"
+                        >
+                            <Mic size={18} />
+                            Capture know-how
+                            <ArrowRight size={17} className="transition-transform duration-300 group-hover:translate-x-1" />
+                        </Link>
+                        <Link
+                            to="/ask"
+                            data-testid="hero-cta-ask"
+                            className="inline-flex h-12 sm:h-14 items-center gap-2.5 rounded-full border border-maroon-200 dark:border-maroon-800 bg-white/95 dark:bg-slate-900/90 px-8 py-3.5 text-sm sm:text-base font-semibold text-maroon-950 dark:text-maroon-100 transition-all duration-300 hover:border-maroon-700 dark:hover:border-maroon-500 hover:bg-maroon-50/50 dark:hover:bg-maroon-950/40 shadow-xs"
+                        >
+                            <MessageSquareText size={18} className="text-maroon-700 dark:text-maroon-400" />
+                            Ask Experience
+                        </Link>
+                    </div>
+
+                    {/* Quick Metric Stats Bar */}
+                    <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-6 max-w-xl pt-4 border-t border-slate-100 dark:border-slate-800/80">
+                        {STATS.map((s) => (
+                            <div key={s.label}>
+                                <div className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-ink dark:text-white">
+                                    {s.value}
+                                    <span className="text-maroon-700 dark:text-maroon-400">{s.unit}</span>
+                                </div>
+                                <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400 font-medium">{s.label}</p>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
+                {/* 21st.dev Signature Hero 3 Dashboard Mockup Preview */}
+                <div className="relative mt-12 sm:mt-16 lg:mt-20">
+                    {/* Ambient Radial Glow */}
+                    <div
+                        className="absolute -inset-x-20 inset-y-0 -translate-y-1/4 scale-110 rounded-full bg-[radial-gradient(ellipse_at_center,rgba(128,0,32,0.20),transparent_70%)] blur-[70px] pointer-events-none"
+                        aria-hidden="true"
+                    />
+
+                    {/* Dashboard Frame */}
+                    <div className="relative mx-auto max-w-6xl overflow-hidden rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 p-2 sm:p-3 shadow-2xl backdrop-blur-xl ring-1 ring-slate-900/5 dark:ring-white/10">
+                        
+                        {/* Mockup Console Window Header */}
+                        <div className="flex items-center justify-between px-3 py-2 border-b border-slate-100 dark:border-slate-800 mb-2">
+                            <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-1.5">
+                                    <span className="w-2.5 h-2.5 rounded-full bg-rose-500/80" />
+                                    <span className="w-2.5 h-2.5 rounded-full bg-amber-500/80" />
+                                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500/80" />
+                                </div>
+                                <span className="text-[11px] font-mono text-slate-400 dark:text-slate-500 ml-2 hidden sm:inline-block">
+                                    Apex Zenith CNC · Shop Floor Console • Station VMC-3
+                                </span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                    Live Audio Guardrail Active
+                                </span>
+                            </div>
+                        </div>
+
+                        {/* Mockup Dashboard Content Grid */}
+                        <div className="grid grid-cols-1 md:grid-cols-12 gap-3 p-1">
+                            {/* Column 1: Live Machine Image & Spindle Telemetry HUD */}
+                            <div className="md:col-span-4 relative aspect-[4/3] md:aspect-auto md:min-h-[280px] overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-900 group">
+                                <img
+                                    src={IMAGES.hero}
+                                    alt="Machinist inspecting CNC spindle"
+                                    className="h-full w-full object-cover grayscale-[25%] contrast-[105%] group-hover:scale-105 transition-transform duration-700"
+                                />
+                                <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/30 to-transparent" />
+                                
+                                <div className="absolute top-3 left-3 flex items-center gap-1.5 bg-black/60 backdrop-blur-md px-2 py-1 rounded-md text-[10px] font-mono text-white">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                                    Haas VF-2 · VMC-03
+                                </div>
+
+                                <div className="absolute bottom-3 left-3 right-3 text-white">
+                                    <p className="font-mono text-[9px] uppercase tracking-wider text-maroon-600 dark:text-maroon-400 font-semibold">Active Spindle Telemetry</p>
+                                    <div className="flex items-center justify-between text-xs font-semibold mt-1">
+                                        <span>4,200 RPM</span>
+                                        <span className="text-emerald-400">Runout: 0.002mm</span>
+                                        <span className="text-slate-300">Temp: 44°C</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Column 2: Active Operation & Tolerances */}
+                            <div className="md:col-span-4 flex flex-col justify-between p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/40">
+                                <div>
+                                    <div className="flex items-center justify-between text-xs mb-2">
+                                        <span className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                                            <Wrench size={13} className="text-maroon-700" />
+                                            Operation Step 3 of 6
+                                        </span>
+                                        <span className="text-[10px] font-mono bg-white dark:bg-slate-800 px-2 py-0.5 rounded border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300">
+                                            SS304 Flange
+                                        </span>
+                                    </div>
+                                    <p className="text-xs text-slate-600 dark:text-slate-300 font-medium leading-relaxed">
+                                        Face roughing at 850 mm/min feed. Acoustic chatter monitoring continuously calibrated to 820 Hz threshold.
+                                    </p>
+                                </div>
+
+                                <div className="space-y-1.5 mt-3 pt-3 border-t border-slate-200/80 dark:border-slate-700/80">
+                                    <div className="flex items-center justify-between text-[11px]">
+                                        <span className="text-slate-500">Coolant Pressure</span>
+                                        <span className="font-mono font-semibold text-slate-900 dark:text-white">4.8 bar ✓</span>
+                                    </div>
+                                    <div className="flex items-center justify-between text-[11px]">
+                                        <span className="text-slate-500">Insert Wear Indicator</span>
+                                        <span className="font-mono font-semibold text-emerald-600 dark:text-emerald-400">92% Life OK</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Column 3: Veteran Ramesh Patil Tacit Rule Card */}
+                            <div className="md:col-span-4 flex flex-col justify-between p-3.5 rounded-xl border border-amber-200/80 dark:border-amber-900/50 bg-amber-50/80 dark:bg-amber-950/30">
+                                <div>
+                                    <div className="flex items-center justify-between mb-2">
+                                        <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-maroon-900 dark:text-maroon-300">
+                                            <span className="w-1.5 h-1.5 rounded-full bg-maroon-700 pin-pulse" />
+                                            Ramesh's Rule #104
+                                        </span>
+                                        <span className="text-[10px] text-amber-800 dark:text-amber-400 font-mono">38 yrs exp</span>
+                                    </div>
+                                    <p className="font-serif text-xs italic leading-relaxed text-amber-950 dark:text-amber-200">
+                                        "The wall rings like a bell at 4,200. Drop 150 RPM — never the feed. That SS304 chatter howl precedes bearing thermal trip."
+                                    </p>
+                                </div>
+
+                                <div className="mt-3 pt-2.5 border-t border-amber-200/60 dark:border-amber-900/40 flex items-center justify-between text-[10px] text-amber-900/80 dark:text-amber-300/80">
+                                    <span>Verified by Anil K.</span>
+                                    <span className="font-mono font-semibold">14 Incidents Prevented</span>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </section>
+    );
 }
 
-const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
+function RoleLens() {
+    const { roleId, setRoleId, persona } = useRole();
+
+    const lenses = {
+        ramesh: {
+            title: "Ramesh Sharma's Handover Cockpit",
+            subtitle: "Veteran Master · Retiring in 14 days",
+            stat: "14 days",
+            statLabel: "until knowledge leaves",
+            actions: [
+                { label: "Record Voice Note", desc: "Speak in Hindi, Marathi, or English", to: "/capture", icon: Mic },
+                { label: "Exit Interview Queue", desc: "Answer Priya's routed questions", to: "/handover", icon: CalendarClock },
+                { label: "Verify Draft Cards", desc: "Approve AI-extracted knowledge", to: "/review", icon: FileCheck2 },
+            ],
+            quote: "I've run this VF-2 since the day it was uncrated in '96. Every vibration tells me what's about to happen.",
+        },
+        priya: {
+            title: "Priya Nair's Learning Dashboard",
+            subtitle: "Apprentice · Level 1 · 3 months on floor",
+            stat: "L1 → L2",
+            statLabel: "qualification target",
+            actions: [
+                { label: "Ask Ramesh's Experience", desc: "Cited advice on any material or tool", to: "/ask", icon: MessageSquareText },
+                { label: "Start Guided Setup", desc: "Step-by-step job with ShadowTrace", to: "/guided-job", icon: ClipboardList },
+                { label: "Inspect 3D Machine", desc: "See where knowledge is concentrated", to: "/map", icon: Boxes },
+            ],
+            quote: "When a tool chatters, the manual says 'reduce feeds and speeds.' Ramesh told me exactly which 150 RPM to drop.",
+        },
+        vikram: {
+            title: "Vikram Patel's Risk Matrix",
+            subtitle: "Shift In-Charge · Plant 2 Operations",
+            stat: "62%",
+            statLabel: "Ramesh know-how covered",
+            actions: [
+                { label: "Shop Risk Heatmap", desc: "See uncaptured critical components", to: "/dashboard", icon: Gauge },
+                { label: "Handover Progress", desc: "Track knowledge transfer metrics", to: "/handover", icon: CalendarClock },
+                { label: "Quality Audit Trail", desc: "Zero unexplained scrap incidents", to: "/review", icon: ShieldAlert },
+            ],
+            quote: "If Ramesh leaves without writing down the flange trick, we lose 40 minutes on every changeover.",
+        },
+    };
+
+    const cur = lenses[roleId] || lenses.priya;
+
+    return (
+        <section className="mx-auto max-w-7xl px-5 py-20 sm:px-8">
+            <Reveal>
+                <div className="flex flex-wrap items-end justify-between gap-4">
+                    <div>
+                        <Eyebrow>Perspective switcher</Eyebrow>
+                        <h2 className="mt-3 font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">
+                            One plant. Three lenses.
+                        </h2>
+                    </div>
+                    <div className="flex rounded-full border border-slate-200 bg-white p-1">
+                        {ROLE_ORDER.map((id) => (
+                            <button
+                                key={id}
+                                onClick={() => setRoleId(id)}
+                                className={`rounded-full px-4 py-2 text-xs font-semibold transition-colors ${
+                                    roleId === id ? "bg-ink text-white" : "text-slate-500 hover:text-ink"
+                                }`}
+                            >
+                                {PERSONAS[id].short}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            </Reveal>
+
+            <AnimatePresence mode="wait">
+                <motion.div
+                    key={roleId}
+                    initial={{ opacity: 0, y: 16 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -16 }}
+                    transition={{ duration: 0.45, ease: EASE }}
+                    className="mt-8 rounded-3xl border border-slate-200 bg-white p-8 shadow-sm lg:p-10"
+                >
+                    <div className="grid gap-8 lg:grid-cols-12">
+                        <div className="lg:col-span-5">
+                            <div className="flex items-center gap-3">
+                                <img src={persona.avatar} alt="" className="h-12 w-12 rounded-full object-cover ring-2 ring-maroon-700/30" />
+                                <div>
+                                    <h3 className="font-display text-xl font-bold text-ink">{cur.title}</h3>
+                                    <p className="text-xs text-slate-500">{cur.subtitle}</p>
+                                </div>
+                            </div>
+                            <blockquote className="mt-6 border-l-2 border-maroon-700 pl-4 font-serif text-lg italic text-slate-700">
+                                "{cur.quote}"
+                            </blockquote>
+                            <div className="mt-6 rounded-2xl bg-canvas p-4">
+                                <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Key Metric</span>
+                                <div className="mt-1 font-display text-2xl font-extrabold text-ink">{cur.stat}</div>
+                                <p className="text-xs text-slate-500">{cur.statLabel}</p>
+                            </div>
+                        </div>
+
+                        <div className="grid gap-4 sm:grid-cols-3 lg:col-span-7">
+                            {cur.actions.map((act) => (
+                                <Link
+                                    key={act.label}
+                                    to={act.to}
+                                    className="group flex flex-col justify-between rounded-2xl border border-slate-200 bg-canvas p-5 transition-all duration-200 hover:border-maroon-700/60 hover:bg-white hover:shadow-md"
+                                >
+                                    <div>
+                                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-maroon-50 text-maroon-700 dark:bg-maroon-950/80 dark:text-maroon-400">
+                                            <act.icon size={20} />
+                                        </div>
+                                        <h4 className="mt-4 font-display text-base font-bold text-ink">{act.label}</h4>
+                                        <p className="mt-1 text-xs leading-relaxed text-slate-500">{act.desc}</p>
+                                    </div>
+                                    <span className="mt-4 inline-flex items-center gap-1 text-xs font-semibold text-maroon-700 dark:text-maroon-400 group-hover:underline">
+                                        Open <ArrowRight size={13} className="transition-transform group-hover:translate-x-0.5" />
+                                    </span>
+                                </Link>
+                            ))}
+                        </div>
+                    </div>
+                </motion.div>
+            </AnimatePresence>
+        </section>
+    );
+}
+
+function Bento() {
+    const actions = [
+        {
+            title: "Multi-Modal Capture",
+            desc: "Voice notes in Hindi, setup video clips, hand-drawn logbook sketches. AI transcribes, translates, and structures each into an atomic card.",
+            icon: Mic,
+            to: "/capture",
+            big: true,
+        },
+        {
+            title: "Cited Expert QA",
+            desc: "Semantic retrieval over shop floor logs. Always cites the card number, author, and timestamp. Never generates an ungrounded parameter.",
+            icon: MessageSquareText,
+            to: "/ask",
+        },
+        {
+            title: "3D Machine Knowledge Map",
+            desc: "Interactive digital twin. Click the spindle, fixture, or carousel to inspect associated know-how, past failures, and unrecorded risks.",
+            icon: Boxes,
+            to: "/map",
+        },
+        {
+            title: "Adaptive Guided Jobs",
+            desc: "Depth toggles from L0 apprentice story mode to L4 speed checklist. ShadowTrace overlays veteran footage on tricky alignment steps.",
+            icon: ClipboardList,
+            to: "/guided-job",
+        },
+        {
+            title: "Note Guardian",
+            desc: "Validates entered parameters against historical tolerances before saving. Flags dangerous speeds or missing coolant steps instantly.",
+            icon: ShieldAlert,
+            to: "/capture",
+        },
+        {
+            title: "Exit Handover Cockpit",
+            desc: "Structured retirement roadmap. Auto-interviews veteran on high-risk gaps and routes questions directly to their priority inbox.",
+            icon: CalendarClock,
+            to: "/handover",
+        },
+    ];
+
+    return (
+        <section className="mx-auto max-w-7xl px-5 py-20 sm:px-8">
+            <Reveal>
+                <Eyebrow>Six core capabilities</Eyebrow>
+                <h2 className="mt-3 font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">
+                    Built for the shop floor, not the boardroom.
+                </h2>
+                <p className="mt-3 max-w-xl text-base text-slate-500">
+                    High-contrast light interface, oversized touch targets, multilingual input, and zero hallucinated machining parameters.
+                </p>
+            </Reveal>
+
+            <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                {actions.map((a, i) => (
+                    <Reveal key={a.title} delay={i * 0.08}>
+                        <Link
+                            to={a.to}
+                            className={`group flex h-full flex-col justify-between rounded-3xl border p-7 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl ${
+                                a.big
+                                    ? "relative overflow-hidden bg-gradient-to-br from-ink to-slate-900 text-white border-ink"
+                                    : "border-slate-200 bg-white"
+                            }`}
+                        >
+                            <div>
+                                <div className={`flex h-12 w-12 items-center justify-center rounded-2xl ${a.big ? "bg-maroon-700 text-white" : "bg-maroon-50 text-maroon-700 dark:bg-maroon-950/80 dark:text-maroon-400"}`}>
+                                    <a.icon size={22} />
+                                </div>
+                                <h3 className={`mt-6 font-display text-xl font-bold ${a.big ? "text-white" : "text-ink"}`}>{a.title}</h3>
+                                <p className={`mt-2 text-sm leading-relaxed ${a.big ? "text-slate-300" : "text-slate-500"}`}>{a.desc}</p>
+                            </div>
+                            <span className="mt-6 inline-flex items-center gap-1.5 text-xs font-semibold text-maroon-700 dark:text-maroon-400">
+                                Explore <ArrowRight size={14} className="transition-transform group-hover:translate-x-1" />
+                            </span>
+                        </Link>
+                    </Reveal>
+                ))}
+            </div>
+        </section>
+    );
+}
+
+function LegacyStrip() {
+    const card = KNOWHOW_CARDS[0];
+    return (
+        <section className="border-t border-slate-200 bg-white">
+            <div className="mx-auto grid max-w-7xl gap-12 px-5 py-20 sm:px-8 lg:grid-cols-2">
+                <Reveal>
+                    <Eyebrow>Transfer, don't replace</Eyebrow>
+                    <h2 className="mt-3 font-display text-2xl font-bold tracking-tight text-ink sm:text-3xl">
+                        Every answer names its source. Every warning shows its evidence.
+                    </h2>
+                    <p className="mt-4 max-w-md text-base leading-relaxed text-slate-500">
+                        Blueprint never pretends to be the expert. It carries Ramesh's voice to
+                        Priya's machine — with the why, the proof, and the final call left to her.
+                    </p>
+                    <div className="mt-6 flex flex-wrap gap-2 font-mono text-xs text-slate-500">
+                        {["No answer without a citation", "Audit log for every AI action", "Veteran validates low confidence"].map((t) => (
+                            <span key={t} className="flex items-center gap-1.5 rounded-full bg-subtle px-3 py-1.5">
+                                <FileCheck2 size={13} className="text-teal" /> {t}
+                            </span>
+                        ))}
+                    </div>
+                </Reveal>
+                <Reveal delay={0.12}>
+                    <div className="rounded-3xl border border-slate-200 bg-canvas p-7">
+                        <div className="flex items-center justify-between">
+                            <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Card #{card.id}</p>
+                            <RiskChip level="low" />
+                        </div>
+                        <h3 className="mt-3 font-display text-xl font-semibold text-ink">{card.title}</h3>
+                        <p className="mt-3 font-serif text-lg italic leading-relaxed text-amber-900">"{card.why}"</p>
+                        <div className="mt-5 flex items-center gap-3 border-t border-slate-200 pt-4">
+                            <img src={card.author.avatar} alt="" className="h-9 w-9 rounded-full object-cover" />
+                            <div>
+                                <p className="text-sm font-semibold text-ink">{card.author.name}</p>
+                                <p className="text-xs text-slate-500">Logged {card.date} · confidence {card.confidence}%</p>
+                            </div>
+                        </div>
+                    </div>
+                </Reveal>
+            </div>
+        </section>
+    );
+}
 
 export default function Home() {
-  const { currentUser } = useAuthStore();
-  const home = useApi((signal) => loadHome(currentUser, signal), [currentUser.id]);
-  const { machines, loadMachines } = useMachineStore();
-
-  useEffect(() => {
-    loadMachines();
-  }, [loadMachines]);
-
-  const myMachine = (machines || []).find((m) => m.name === currentUser.machine);
-  const d = home.data || {};
-  const loadingText = home.loading ? 'Loading…' : null;
-
-  const briefing = d.briefing;
-  const briefingText =
-    loadingText ||
-    (briefing
-      ? `${briefing.jobs.length ? `${plural(briefing.jobs.length, 'job')} today on ` : 'Your machines: '}` +
-        `${briefing.machines.join(', ') || 'none assigned'}. ` +
-        `${plural(briefing.open_warnings.length, 'open warning')} and ` +
-        `${plural(briefing.known_issues.length, 'recent reject')} to know before you start.`
-      : 'Briefing not available right now.');
-  const guardText =
-    loadingText ||
-    (briefing
-      ? briefing.open_warnings.length
-        ? `${plural(briefing.open_warnings.length, 'open warning')}: ${briefing.open_warnings[0]}`
-        : 'No open warnings on your machines. Every note you save is checked against history.'
-      : 'Note Guardian checks every note you save against machine history.');
-
-  const plan = d.plan;
-  const tasksLeft = plan ? plan.tasks.filter((task) => task.status !== 'done').length : 0;
-  const planText =
-    loadingText ||
-    (plan
-      ? `Exit in ${plan.days_left} days: ${plural(tasksLeft, 'task')} left, handover ${plan.progress}% done.`
-      : 'No handover plan: you are not leaving soon.');
-  const reviewText =
-    loadingText ||
-    (d.review
-      ? `${plural(d.review.total, 'captured card')} await your review and sign-off.`
-      : 'Review queue not available right now.');
-  const firstRouted = d.routed && d.routed.items[0];
-  const routedText =
-    loadingText ||
-    (firstRouted
-      ? `${firstRouted.asked_by || 'A new employee'} asked: “${firstRouted.question}”`
-      : 'No questions waiting for you.');
-
-  const critical = (d.risk || []).filter((c) => c.component_id !== null && c.status === 'critical');
-  const leaving = critical.filter((c) => c.cards > 0);
-  const unrecorded = critical.length - leaving.length;
-  const experts = [...new Set(leaving.map((c) => c.expert).filter(Boolean))];
-  const riskParts = [
-    leaving.length && `${plural(leaving.length, 'machine part')} known only by people leaving (${experts.join(', ')})`,
-    unrecorded && `${plural(unrecorded, 'part')} with nothing recorded`,
-  ].filter(Boolean);
-  const riskText =
-    loadingText ||
-    (d.risk
-      ? riskParts.length
-        ? `At risk: ${riskParts.join('; ')}.`
-        : 'No machine part depends on one leaving person.'
-      : 'Risk data not available right now.');
-  const metricsText =
-    loadingText ||
-    (d.metrics
-      ? `Coverage ${d.metrics.coverage}% • ${d.metrics.guardian_stops} Guardian stops • ` +
-        `${d.metrics.questions_answered}/${d.metrics.questions_routed} routed questions answered.`
-      : 'Metrics not available right now.');
-
-  return (
-    <div className="mx-auto max-w-7xl px-5 py-8 sm:px-8 space-y-8">
-      {/* Welcome Banner */}
-      <Reveal delay={0.05}>
-        <div className="relative overflow-hidden bg-white border border-slate-200/90 shadow-sm rounded-3xl p-6 sm:p-8">
-          <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-            <div>
-              <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-slate-50 text-slate-700 text-xs font-semibold mb-3 border border-slate-200/80 font-mono shadow-2xs">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" aria-hidden="true" />
-                <span>Active Shift</span>
-                <span className="text-slate-400">•</span>
-                <span>Machine: {currentUser.machine}</span>
-              </div>
-              <h1 className="text-2xl sm:text-3xl font-extrabold text-ink tracking-tight font-display">
-                Welcome back, {currentUser.name}
-              </h1>
-              <p className="text-slate-600 text-sm mt-1.5 font-medium">
-                {currentUser.roleLabel} • {currentUser.experience} on shop floor
-              </p>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-3">
-              <PlaybookLink machineId={myMachine && myMachine.id} machineName={myMachine && myMachine.name} />
-              <Link
-                to="/capture"
-                className="btn-touch px-5 py-2.5 bg-ink hover:bg-copper text-white font-semibold rounded-full shadow-2xs transition-colors flex items-center space-x-2 text-sm"
-              >
-                <Mic className="w-4 h-4 text-white" />
-                <span>Record Know-How</span>
-              </Link>
-              <Link
-                to="/ask"
-                className="btn-touch px-5 py-2.5 bg-canvas hover:bg-slate-100 border border-slate-200 text-ink font-semibold rounded-full shadow-2xs transition-colors flex items-center space-x-2 text-sm"
-              >
-                <Lightbulb className="w-4 h-4 text-copper" />
-                <span>Ask Experience</span>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </Reveal>
-
-      {/* Role-Adaptive Live Workflow Cards */}
-      <Reveal delay={0.1}>
+    return (
         <div>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xs font-mono font-bold uppercase tracking-wider text-slate-400">
-              Personalized Shift Feed · {currentUser.roleLabel}
-            </h2>
-            <span className="text-xs text-copper font-medium">Live Database Sync</span>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            {currentUser.role === 'new_employee' && (
-              <>
-                <div className="group bg-white hover:bg-slate-50/50 border border-slate-200/80 hover:border-copper/40 rounded-3xl p-6 shadow-sm hover:shadow-md transition-all flex flex-col justify-between">
-                  <div>
-                    <div className="w-10 h-10 rounded-2xl bg-copper/10 border border-copper/20 flex items-center justify-center text-xl mb-3 text-copper">
-                      <ClipboardList className="w-5 h-5" />
-                    </div>
-                    <h3 className="text-base font-bold text-ink">Daily Briefing</h3>
-                    <p className="text-slate-600 text-xs sm:text-sm mt-1.5 leading-relaxed">
-                      {briefingText}
+            <Hero />
+            <Marquee />
+            <RoleLens />
+            <Bento />
+            <LegacyStrip />
+            <footer className="border-t border-slate-200 bg-canvas">
+                <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 px-5 py-8 sm:px-8">
+                    <p className="text-sm text-slate-500">
+                        <span className="font-display font-bold text-ink dark:text-white">Apex<span className="text-maroon-700 dark:text-maroon-400">Zenith</span></span>
+                        {" "}· Problem 02 — Knowledge Transfer
                     </p>
-                  </div>
-                  <Link
-                    to="/guide"
-                    className="inline-flex items-center mt-5 text-xs font-semibold text-copper hover:underline"
-                  >
-                    Start Guided Job →
-                  </Link>
+                    <p className="font-mono text-xs text-slate-400">transfer knowledge, don't replace people</p>
                 </div>
-
-                <div className="group bg-white hover:bg-slate-50/50 border border-slate-200/80 hover:border-copper/40 rounded-3xl p-6 shadow-sm hover:shadow-md transition-all flex flex-col justify-between">
-                  <div>
-                    <div className="w-10 h-10 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-xl mb-3 text-emerald-700">
-                      <ShieldAlert className="w-5 h-5" />
-                    </div>
-                    <h3 className="text-base font-bold text-ink">Active Guardrails</h3>
-                    <p className="text-slate-600 text-xs sm:text-sm mt-1.5 leading-relaxed">
-                      {guardText}
-                    </p>
-                  </div>
-                  <Link
-                    to="/capture"
-                    className="inline-flex items-center mt-5 text-xs font-semibold text-copper hover:underline"
-                  >
-                    Log Shift Note →
-                  </Link>
-                </div>
-
-                <div className="group bg-white hover:bg-slate-50/50 border border-slate-200/80 hover:border-copper/40 rounded-3xl p-6 shadow-sm hover:shadow-md transition-all flex flex-col justify-between">
-                  <div>
-                    <div className="w-10 h-10 rounded-2xl bg-amber-50 border border-amber-100 flex items-center justify-center text-xl mb-3 text-amber-700">
-                      <Search className="w-5 h-5" />
-                    </div>
-                    <h3 className="text-base font-bold text-ink">Chatter & Chips</h3>
-                    <p className="text-slate-600 text-xs sm:text-sm mt-1.5 leading-relaxed">
-                      Record sound or photo to find stable RPM sweet spots or chip overheat.
-                    </p>
-                  </div>
-                  <Link
-                    to="/ask"
-                    className="inline-flex items-center mt-5 text-xs font-semibold text-copper hover:underline"
-                  >
-                    Diagnose Issue →
-                  </Link>
-                </div>
-              </>
-            )}
-
-            {currentUser.role === 'old_employee' && (
-              <>
-                <div className="group bg-white hover:bg-slate-50/50 border border-slate-200/80 hover:border-copper/40 rounded-3xl p-6 shadow-sm hover:shadow-md transition-all flex flex-col justify-between">
-                  <div>
-                    <div className="w-10 h-10 rounded-2xl bg-copper/10 border border-copper/20 flex items-center justify-center text-xl mb-3 text-copper">
-                      <Users className="w-5 h-5" />
-                    </div>
-                    <h3 className="text-base font-bold text-ink">Handover Plan</h3>
-                    <p className="text-slate-600 text-xs sm:text-sm mt-1.5 leading-relaxed">
-                      {planText}
-                    </p>
-                  </div>
-                  <Link
-                    to="/handover"
-                    className="inline-flex items-center mt-5 text-xs font-semibold text-copper hover:underline"
-                  >
-                    View Handover Plan →
-                  </Link>
-                </div>
-
-                <div className="group bg-white hover:bg-slate-50/50 border border-slate-200/80 hover:border-copper/40 rounded-3xl p-6 shadow-sm hover:shadow-md transition-all flex flex-col justify-between">
-                  <div>
-                    <div className="w-10 h-10 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-xl mb-3 text-emerald-700">
-                      <CheckCircle className="w-5 h-5" />
-                    </div>
-                    <h3 className="text-base font-bold text-ink">Verification Queue</h3>
-                    <p className="text-slate-600 text-xs sm:text-sm mt-1.5 leading-relaxed">
-                      {reviewText}
-                    </p>
-                  </div>
-                  <Link
-                    to="/review"
-                    className="inline-flex items-center mt-5 text-xs font-semibold text-copper hover:underline"
-                  >
-                    Open Review Queue →
-                  </Link>
-                </div>
-
-                <div className="group bg-white hover:bg-slate-50/50 border border-slate-200/80 hover:border-copper/40 rounded-3xl p-6 shadow-sm hover:shadow-md transition-all flex flex-col justify-between">
-                  <div>
-                    <div className="w-10 h-10 rounded-2xl bg-purple-50 border border-purple-100 flex items-center justify-center text-xl mb-3 text-purple-700">
-                      <HelpCircle className="w-5 h-5" />
-                    </div>
-                    <h3 className="text-base font-bold text-ink">Questions for You</h3>
-                    <p className="text-slate-600 text-xs sm:text-sm mt-1.5 leading-relaxed">
-                      {routedText}
-                    </p>
-                  </div>
-                  <Link
-                    to="/handover"
-                    className="inline-flex items-center mt-5 text-xs font-semibold text-copper hover:underline"
-                  >
-                    Answer by Voice →
-                  </Link>
-                </div>
-              </>
-            )}
-
-            {currentUser.role === 'supervisor' && (
-              <>
-                <div className="group bg-white hover:bg-slate-50/50 border border-slate-200/80 hover:border-copper/40 rounded-3xl p-6 shadow-sm hover:shadow-md transition-all flex flex-col justify-between">
-                  <div>
-                    <div className="w-10 h-10 rounded-2xl bg-rose-50 border border-rose-100 flex items-center justify-center text-xl mb-3 text-rose-700">
-                      <BarChart className="w-5 h-5" />
-                    </div>
-                    <h3 className="text-base font-bold text-ink">Knowledge-at-Risk</h3>
-                    <p className="text-slate-600 text-xs sm:text-sm mt-1.5 leading-relaxed">
-                      {riskText}
-                    </p>
-                  </div>
-                  <Link
-                    to="/dashboard"
-                    className="inline-flex items-center mt-5 text-xs font-semibold text-copper hover:underline"
-                  >
-                    View Risk Heatmap →
-                  </Link>
-                </div>
-
-                <div className="group bg-white hover:bg-slate-50/50 border border-slate-200/80 hover:border-copper/40 rounded-3xl p-6 shadow-sm hover:shadow-md transition-all flex flex-col justify-between">
-                  <div>
-                    <div className="w-10 h-10 rounded-2xl bg-copper/10 border border-copper/20 flex items-center justify-center text-xl mb-3 text-copper">
-                      <Boxes className="w-5 h-5" />
-                    </div>
-                    <h3 className="text-base font-bold text-ink">Machine Health Map</h3>
-                    <p className="text-slate-600 text-xs sm:text-sm mt-1.5 leading-relaxed">
-                      Interactive 3D model with incident heatmaps and pinned tips.
-                    </p>
-                  </div>
-                  <Link
-                    to="/map"
-                    className="inline-flex items-center mt-5 text-xs font-semibold text-copper hover:underline"
-                  >
-                    Explore 3D Map →
-                  </Link>
-                </div>
-
-                <div className="group bg-white hover:bg-slate-50/50 border border-slate-200/80 hover:border-copper/40 rounded-3xl p-6 shadow-sm hover:shadow-md transition-all flex flex-col justify-between">
-                  <div>
-                    <div className="w-10 h-10 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-xl mb-3 text-emerald-700">
-                      <TrendingUp className="w-5 h-5" />
-                    </div>
-                    <h3 className="text-base font-bold text-ink">Transfer Metrics</h3>
-                    <p className="text-slate-600 text-xs sm:text-sm mt-1.5 leading-relaxed">
-                      {metricsText}
-                    </p>
-                  </div>
-                  <Link
-                    to="/dashboard"
-                    className="inline-flex items-center mt-5 text-xs font-semibold text-copper hover:underline"
-                  >
-                    Open ROI Analytics →
-                  </Link>
-                </div>
-              </>
-            )}
-          </div>
+            </footer>
         </div>
-      </Reveal>
-
-      {/* Product Lanes Quick Access Bento Grid */}
-      <Reveal delay={0.15}>
-        <div>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xs font-mono font-bold uppercase tracking-wider text-slate-400">
-              Full Knowledge Architecture
-            </h2>
-            <span className="text-xs text-slate-400">6 Core Manufacturing Modules</span>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {[
-              {
-                to: '/capture',
-                title: 'Lane 01 · Multimodal Capture',
-                desc: 'Voice in Hindi/Marathi/English, setup video, logbook OCR, and vibration sensors.',
-                icon: Mic,
-              },
-              {
-                to: '/ask',
-                title: 'Lane 02 · Grounded Search & AI',
-                desc: 'Cited answers from verified cards with receipts, Chatter Doctor, and chip thermal diagnosis.',
-                icon: Search,
-              },
-              {
-                to: '/map',
-                title: 'Lane 03 · 3D Machine Map',
-                desc: 'Procedural 3D CNC digital twin with component-level fault histories and tacit wisdom.',
-                icon: Boxes,
-              },
-              {
-                to: '/guided-job',
-                title: 'Lane 04 · Adaptive Guided SOPs',
-                desc: 'Operator step execution with ShadowTrace replay and Note Guardian tolerance gates.',
-                icon: ClipboardList,
-              },
-              {
-                to: '/handover',
-                title: 'Lane 05 · Retirement Handover',
-                desc: 'Retirement countdown, structured tacit AI exit interviews, and apprentice routing.',
-                icon: Users,
-              },
-              {
-                to: '/dashboard',
-                title: 'Lane 06 · Operations Dashboard',
-                desc: 'Bus-factor-1 risk heatmaps, machine timeline event stream, and transfer ROI analytics.',
-                icon: BarChart,
-              },
-            ].map((lane) => (
-              <Link
-                key={lane.title}
-                to={lane.to}
-                className="group p-5 rounded-3xl border border-slate-200 bg-canvas hover:bg-white hover:border-copper/40 transition-all shadow-2xs hover:shadow-md flex flex-col justify-between"
-              >
-                <div>
-                  <div className="w-9 h-9 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-copper group-hover:bg-copper group-hover:text-white transition-colors mb-3">
-                    <lane.icon size={18} />
-                  </div>
-                  <h4 className="font-display font-bold text-sm text-ink">{lane.title}</h4>
-                  <p className="text-xs text-slate-500 mt-1 leading-relaxed">{lane.desc}</p>
-                </div>
-                <span className="mt-4 inline-flex items-center text-xs font-semibold text-copper group-hover:translate-x-1 transition-transform">
-                  Enter Module <ArrowRight size={13} className="ml-1" />
-                </span>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </Reveal>
-    </div>
-  );
+    );
 }

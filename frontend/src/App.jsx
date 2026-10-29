@@ -43,7 +43,7 @@ function LoadingFallback() {
     <div className="flex items-center justify-center min-h-[50vh]">
       <div className="flex flex-col items-center space-y-3 font-mono text-xs text-slate-400">
         <div className="w-8 h-8 border-2 border-slate-200 border-t-copper rounded-full animate-spin" />
-        <span>Loading Blueprint...</span>
+        <span className="text-slate-500 text-sm font-medium">Loading Blueprint...</span>
       </div>
     </div>
   );
@@ -53,9 +53,9 @@ export default function App() {
   return (
     <RoleProvider>
       <SmoothScroll />
-      <div className="min-h-screen bg-canvas text-ink flex flex-col font-sans">
+      <div className="min-h-screen bg-white bg-canvas text-slate-900 text-ink flex flex-col font-sans">
         <NavBar />
-        <main className="flex-1">
+        <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <ErrorBoundary title="Section Error">
             <Suspense fallback={<LoadingFallback />}>
               <Routes>
@@ -65,15 +65,14 @@ export default function App() {
                 <Route path="/guided-job" element={<GuidedJob />} />
                 <Route path="/guide" element={<GuidedJob />} />
                 <Route path="/map" element={<MachineMap />} />
-                <Route path="/map3d" element={<MachineMap />} />
                 <Route path="/handover" element={<Handover />} />
                 <Route path="/review" element={<Review />} />
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route
                   path="*"
                   element={
-                    <div className="text-center py-20">
-                      <h2 className="font-display text-2xl font-bold text-ink">Page Not Found</h2>
+                    <div className="text-center py-16">
+                      <h2 className="font-display text-2xl font-bold text-slate-900 text-ink">Page Not Found</h2>
                       <p className="text-slate-500 mt-2 text-sm">The requested route does not exist.</p>
                     </div>
                   }
@@ -82,6 +81,19 @@ export default function App() {
             </Suspense>
           </ErrorBoundary>
         </main>
+        <footer className="border-t border-[#DADCE0] bg-white/90 dark:bg-slate-900/90 backdrop-blur-sm py-4 text-xs text-slate-500">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-2 text-center sm:text-left">
+            <div className="flex items-center space-x-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" aria-hidden="true" />
+              <span className="font-medium text-slate-700 dark:text-slate-300">
+                Project Blueprint — CNC/VMC Machine Knowledge Transfer
+              </span>
+            </div>
+            <div className="text-slate-500 font-mono text-[11px]">
+              Offline-first Shop Floor Assistant • v0.1.0
+            </div>
+          </div>
+        </footer>
       </div>
       <Toaster position="bottom-right" toastOptions={{ style: { background: "#11161B", color: "#fff", border: "none" } }} />
     </RoleProvider>
