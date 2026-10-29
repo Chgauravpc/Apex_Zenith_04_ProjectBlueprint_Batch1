@@ -41,7 +41,7 @@ def get_component_knowledge(
     offset: int = Query(0, ge=0),
     db: Session = Depends(get_db),
 ) -> ComponentKnowledge:
-    """Retrieve verified knowledge cards, historical incidents, and troubleshooting for a component."""
+    """Retrieve knowledge cards, past incidents, and troubleshooting for a component."""
     data = components.component_knowledge(db, component_id, limit=limit, offset=offset)
     if not data:
         raise NotFound("Component", component_id)
