@@ -117,7 +117,51 @@
 }
 
 .gooey-nav__item[data-active] .gooey-nav__link {
-  color: var(--gn-ink);
+  color: #800020 !important;
+}
+
+/* High-contrast active navigation link and icon styling for maximum visibility */
+.gooey-nav__link.text-maroon-800,
+.gooey-nav__item[data-active] .gooey-nav__link,
+.gooey-nav__item[data-active] a.gooey-nav__link,
+.gooey-nav__item[data-active] button.gooey-nav__link {
+  color: #800020 !important;
+  font-weight: 600 !important;
+}
+
+.dark .gooey-nav__link.text-maroon-800,
+.dark .gooey-nav__item[data-active] .gooey-nav__link,
+.dark .gooey-nav__item[data-active] a.gooey-nav__link {
+  color: #ffffff !important;
+}
+
+.gooey-nav__list--active {
+  color: #800020 !important;
+}
+
+.dark .gooey-nav__list--active {
+  color: #ffffff !important;
+}
+
+.gooey-nav__list--active .gooey-nav__link {
+  color: inherit !important;
+  font-weight: 600 !important;
+}
+
+.gooey-nav__item[data-active] .gooey-nav__link svg,
+.gooey-nav__item[data-active] .gooey-nav__icon svg,
+.gooey-nav__list--active svg {
+  color: #800020 !important;
+  stroke: #800020 !important;
+  opacity: 1 !important;
+}
+
+.dark .gooey-nav__item[data-active] .gooey-nav__link svg,
+.dark .gooey-nav__item[data-active] .gooey-nav__icon svg,
+.dark .gooey-nav__list--active svg {
+  color: #ffffff !important;
+  stroke: #ffffff !important;
+  opacity: 1 !important;
 }
 
 .gooey-nav__link:focus-visible {

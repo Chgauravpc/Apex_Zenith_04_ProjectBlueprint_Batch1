@@ -22,15 +22,31 @@ function Hero() {
                 {/* Full-Width Centered Hero Content (Not divided into 2 parts) */}
                 <div className="relative z-10 mx-auto flex max-w-4xl flex-col items-center text-center gap-6 sm:gap-7">
                     
-                    {/* Headline - 3 Distinct Lines with White & Maroon Styling */}
+                    {/* Live Shop Floor Tacit Transfer Active Badge */}
+                    <Link
+                        to="/map"
+                        className="group inline-flex items-center gap-2.5 rounded-full border border-slate-200/90 dark:border-slate-800 bg-white/95 dark:bg-slate-900/90 px-3.5 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-300 shadow-xs hover:border-maroon-300 dark:hover:border-maroon-700 transition"
+                    >
+                        <span className="inline-flex items-center gap-1.5 rounded-full bg-rose-50 dark:bg-maroon-950/70 border border-rose-200/60 dark:border-maroon-800/60 px-2.5 py-0.5 text-[11px] font-bold text-maroon-800 dark:text-maroon-300 tracking-wider">
+                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                            LIVE SHOP FLOOR
+                        </span>
+                        <span className="text-slate-600 dark:text-slate-300 font-normal">
+                            Aerospace VMC-3 Tacit Transfer Active
+                        </span>
+                        <span className="text-slate-300 dark:text-slate-600">|</span>
+                        <ArrowRight size={13} className="text-slate-400 group-hover:text-maroon-700 dark:group-hover:text-maroon-400 group-hover:translate-x-0.5 transition" />
+                    </Link>
+
+                    {/* Headline - Clean 2 Lines with White & Maroon Styling */}
                     <h1
                         data-testid="hero-reveal-title"
-                        className="text-balance font-display font-black text-5xl sm:text-6xl md:text-7xl lg:text-[5.5rem] xl:text-[6.25rem] tracking-tight text-ink dark:text-white leading-[1.02] sm:leading-[1.02]"
+                        className="text-balance font-display font-black text-5xl sm:text-6xl md:text-7xl lg:text-[5.5rem] xl:text-[6.25rem] tracking-tight text-ink dark:text-white leading-[1.04] sm:leading-[1.04]"
                     >
                         Experience walks out
                         <br />
-                        the door.
-                        <span className="block font-serif font-normal italic text-maroon-700 dark:text-maroon-400 mt-2 sm:mt-3">
+                        the door.{' '}
+                        <span className="font-serif font-normal italic text-maroon-700 dark:text-maroon-400">
                             We make it stay.
                         </span>
                     </h1>

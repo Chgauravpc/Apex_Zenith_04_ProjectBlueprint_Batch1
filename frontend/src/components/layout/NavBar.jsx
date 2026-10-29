@@ -99,14 +99,14 @@ export default function NavBar() {
                     to: item.to,
                     altTo: item.altTo,
                     testid: item.testid,
-                    icon: <Icon className="w-3.5 h-3.5 shrink-0 opacity-80" aria-hidden="true" />,
+                    icon: <Icon className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />,
                   };
                 })}
                 activeIndex={activeIndex}
                 initialActiveIndex={activeIndex >= 0 ? activeIndex : 0}
                 theme="light"
                 color="#800020"
-                activeTextColor="#ffffff"
+                activeTextColor="#800020"
                 colors={['#800020', '#9f1239', '#be123c', '#e11d48', '#fda4af']}
                 size="sm"
                 frame={true}
