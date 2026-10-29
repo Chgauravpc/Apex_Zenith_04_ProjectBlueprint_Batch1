@@ -13,12 +13,12 @@ cd backend && python -m venv .venv && .venv\Scripts\activate && pip install -r r
 copy .env.example .env   # add GROQ_API_KEY, OPENROUTER_API_KEY
 cd ../frontend && npm install
 ```
-Status: folder structure only. Source files contain header comments describing what they will hold; implement them task by task (`TASKS.md`).
+Status: all features built and tested (backend `pytest`, frontend `vitest`); see `TASKS.md` for the task list.
 
 ## Deploy (free tiers)
 Backend on **Render**, database and files on **Supabase**, frontend on **Vercel**, embeddings on **Cloudflare Workers AI**. Full plan, reasons and status: [DEPLOYMENT.md](DEPLOYMENT.md). Secrets go only in `backend/.env` (git-ignored) and the Render dashboard, never in the repo.
 
-1. **Supabase** (region Singapore, next to Render)
+1. **Supabase** (ours is in Stockholm, eu-north-1; [`render.yaml`](render.yaml) puts Render in Frankfurt, the nearest Render region. Keep the two close.)
    - Create a project. Copy the **pooler** connection string (Connect → Session or Transaction pooler; the direct string is IPv6-only and Render cannot reach it).
    - Storage → create a **private** bucket named `media`.
    - Project Settings → API: copy the project URL and the `service_role` key.

@@ -70,13 +70,16 @@ Real implementation (no stubs or mocks in app code), real check run and its outp
 - App on Postgres: tables created, seed loaded, Hindi question → Ramesh's card #2; Marathi question → Suresh's Lathe-2 card #29, and with the VMC-3 filter → card #7; rejecting a card removed its index row (1 → 0).
 - Not verified: Supabase itself (pooler, RLS, latency); that is phase 6.
 
-### Phase 6: Supabase setup and seed
+### Phase 6: Supabase setup and seed (done)
 - **You do:** create the project in a region close to Render; copy the **pooler** connection string (the direct one is IPv6-only and Render has no IPv6) into `backend/.env` as `DATABASE_URL`. Never paste it or the password into chat or the repo.
 - Enable row-level security on every table with no policies so the public API cannot read employee data (small SQL script; a file outside PRD §8, to be flagged).
 - Run the seed once from your laptop with `EMBEDDING_PROVIDER=cloudflare`: it creates the tables, loads the data and embeds every card. Do not re-run it on every start.
 - **Check:** row counts per table, 4096-byte vectors present, a search returns results with `search_mode: semantic`.
+- **Result:** project in Stockholm (eu-north-1), Postgres 17, Session pooler. RLS on every table (`init_db` enables it). Seed loaded, 41 cards all with 4096-byte vectors, and every feature filled with demo activity through the real code (warnings, guided runs, routed questions, an interview, sensor anomalies, a meeting, a video procedure, ERP sync, a Marathi voice note).
+- Fixed on the way: passwords with `@` in `DATABASE_URL`, `SUPABASE_URL` pasted with `/rest/v1/`, pooler-dropped connections (keepalives, `pool_recycle=60`, small pool), orphaned transactions holding locks (`idle_in_transaction_session_timeout` 5 min), analytics counting timeline events as breakdowns (table notes in the prompt).
+- From the laptop each new connection to Stockholm takes 16–22 s (network path); expected to be fast from Render in Frankfurt. Measure in phase 9.
 
-### Phase 7: Supabase Storage (optional, last before deploy)
+### Phase 7: Supabase Storage (done)
 - **Files:** new `services/storage.py` (outside PRD §8, to be flagged), `utils/files.py`, `services/capture/video.py`, `services/ask/search.py` (`media_url`), `main.py`, `config.py`, tests.
 - **Steps:**
   1. Settings: `STORAGE_BACKEND=local|supabase`, `SUPABASE_URL`, `SUPABASE_SERVICE_KEY`, `SUPABASE_BUCKET`.
@@ -84,13 +87,15 @@ Real implementation (no stubs or mocks in app code), real check run and its outp
   3. Serve through signed URLs with expiry; the `/media/...` route redirects to one.
   4. Cap upload size and clip length and compress, to fit the free quota (about 1 GB total, about 50 MB per file: verify).
 - **Real check:** upload a photo, restart the server, confirm it still loads.
+- **Result:** private bucket `media` holds 15 files; `/media/...` redirects (307) to a signed URL; local mode serves the file with Range support. Video cap 50 MB.
 
-### Phase 8: Deploy config
+### Phase 8: Deploy config (done)
 - **Files:** `render.yaml`, `frontend/vercel.json`, `frontend/src/api/client.js` (base URL from `VITE_API_URL`), `.env.example`, README deploy section.
 - **Render:** pin the Python version (Render's default is newer than numpy 1.26.4 supports); build installs `requirements-base.txt`; start with `uvicorn app.main:app --host 0.0.0.0 --port $PORT`; health check `/api/health`. Environment: `DATABASE_URL`, `GROQ_API_KEY`, `OPENROUTER_API_KEY`, `EMBEDDING_PROVIDER=cloudflare`, `CF_ACCOUNT_ID`, `CF_API_TOKEN`, `FRONTEND_ORIGIN`, `STORAGE_BACKEND`, `SUPABASE_*`. Secrets live only in the Render dashboard.
 - **Vercel:** root directory `frontend`, Vite preset, SPA fallback rewrite, `VITE_API_URL` pointing at Render. Check the frontend for hardcoded `/media` URLs. The 30 s axios timeout is shorter than a Render cold start (~50 s), so the first request needs a retry or a longer timeout.
 - **Optional:** keep-alive ping (GitHub Actions cron) so Render and Supabase do not sleep or pause.
 - **You do:** create the Render and Vercel accounts and choose the Free and Hobby plans.
+- **Result:** `render.yaml` (Python 3.11.9, region frankfurt, one worker), `frontend/vercel.json`, wake-up ping and one GET retry in `client.js`, keep-alive workflow. A Render-like Docker build (Python 3.11) passed the tests and the health check.
 
 ### Phase 9: Rehearsal (on the live URLs, from a phone)
 1. First request after sleep: measure the cold start.
