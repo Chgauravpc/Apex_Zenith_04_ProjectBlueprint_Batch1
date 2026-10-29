@@ -1,4 +1,3 @@
-import { FaReact } from 'react-icons/fa';
 import React, { lazy, Suspense } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import NavBar from './components/layout/NavBar';
@@ -63,7 +62,7 @@ export default function App() {
             <span className="font-medium text-slate-700">Project Blueprint — CNC/VMC Machine Knowledge Transfer</span>
           </div>
           <div className="text-slate-500 font-mono text-[11px]">
-            Offline-first Shop Floor Assistant • v0.1.0 • <span className="inline-flex items-center gap-1 text-slate-600 dark:text-slate-400 font-sans"><FaReact className="w-3.5 h-3.5 text-cyan-500 animate-[spin_10s_linear_infinite]" /> React</span>
+            Offline-first Shop Floor Assistant • v0.1.0
           </div>
         </div>
       </footer>

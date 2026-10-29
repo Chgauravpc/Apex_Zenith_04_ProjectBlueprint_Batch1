@@ -211,9 +211,3 @@ export function MapPinIcon({ className = 'w-4 h-4', ...props }) {
     </svg>
   );
 }
-
-import { FaReact } from 'react-icons/fa';
-
-export function ReactIcon({ className = 'w-4 h-4', ...props }) {
-  return <FaReact className={className} {...props} />;
-}
