@@ -1,3 +1,4 @@
+import { FaReact } from 'react-icons/fa';
 import React, { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
 import RoleSwitcher from './RoleSwitcher';
@@ -46,6 +47,7 @@ export default function NavBar() {
               </div>
               <div className="flex flex-col">
                 <span className="font-extrabold text-sm sm:text-base tracking-tight text-slate-900 dark:text-white hidden sm:inline-block leading-tight">
+                  <FaReact className="w-4 h-4 text-cyan-500 animate-[spin_12s_linear_infinite]" title="React" />
                   {t('appName', language)}
                 </span>
                 <span className="text-[10px] uppercase font-mono font-bold tracking-widest text-slate-400 dark:text-slate-500 hidden sm:inline-block leading-none mt-0.5">

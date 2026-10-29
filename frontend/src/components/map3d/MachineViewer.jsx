@@ -209,59 +209,81 @@ export default function MachineViewer({
           })}
       </Canvas>
 
-      {/* Top Left HUD: Machine Info & Live Telemetry */}
-      <div className="absolute top-4 left-4 z-10 flex flex-col space-y-2 pointer-events-auto">
-        <div className="flex items-center space-x-2 bg-white/95 backdrop-blur-md border border-slate-200/80 px-3.5 py-1.5 rounded-xl shadow-sm">
-          <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
-          <span className="text-xs font-bold text-slate-900 tracking-wide">
-            VMC-3 • 3D MACHINE MAP
-          </span>
-          <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-200 font-bold">
-            ONLINE
-          </span>
-        </div>
-
-        {/* Selection indicator pill with quick reset */}
-        {selectedData ? (
-          <div className="flex items-center space-x-2 bg-white/95 backdrop-blur-md border border-maroon-200 px-3.5 py-1.5 rounded-xl shadow-sm animate-fade-in">
-            <span className="w-2 h-2 rounded-full bg-rose-600 animate-ping" />
-            <span className="text-xs font-semibold text-slate-700">
-              Selected: <span className="font-bold text-maroon-800">{selectedData.display_name}</span>
+      {/* Top Left HUD: Machine Info & Live Telemetry (Vertically Aligned Glassmorphic Card) */}
+      <div className="absolute top-4 left-4 z-10 flex flex-col items-start gap-2 max-w-xs pointer-events-auto">
+        <div className="w-full backdrop-blur-xl bg-white/60 dark:bg-slate-900/65 border border-white/50 dark:border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.12)] rounded-2xl p-3 flex flex-col items-start gap-2.5 ring-1 ring-white/30 dark:ring-white/5">
+          {/* Header Row: Machine Title & Online Indicator */}
+          <div className="flex items-center justify-between w-full">
+            <div className="flex items-center space-x-2">
+              <span className="relative flex h-2.5 w-2.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500" />
+              </span>
+              <span className="text-xs font-black text-slate-900 dark:text-white tracking-wide">
+                VMC-3 • 3D MAP
+              </span>
+            </div>
+            <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded-full bg-emerald-500/15 dark:bg-emerald-500/25 text-emerald-800 dark:text-emerald-300 border border-emerald-500/30 font-bold backdrop-blur-xs">
+              ONLINE
             </span>
-            {onResetSelection && (
-              <button
-                type="button"
-                onClick={onResetSelection}
-                className="ml-1.5 text-[11px] font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 px-2 py-0.5 rounded-md border border-slate-300 transition shadow-2xs"
-                title="Reset Selection"
-              >
-                ↺ Clear
-              </button>
-            )}
           </div>
-        ) : hoveredName ? (
-          <div className="bg-white/95 backdrop-blur-md border border-slate-200 px-3 py-1 rounded-lg text-xs font-medium text-slate-700 shadow-xs">
-            Hovering: <span className="font-semibold text-maroon-700">{hoveredName}</span>{' '}
-            <span className="text-[10px] text-slate-500">(Click to select)</span>
+
+          {/* Machine Sub-telemetry Line */}
+          <div className="text-[11px] text-slate-500 dark:text-slate-400 font-medium flex items-center space-x-2 border-t border-slate-200/60 dark:border-slate-800/80 pt-1.5 w-full">
+            <span>Bay A • Cell 2</span>
+            <span>•</span>
+            <span className="font-mono font-semibold text-maroon-700 dark:text-rose-400">12,000 RPM</span>
           </div>
-        ) : (
-          <div className="bg-white/90 backdrop-blur-sm border border-slate-200 px-3 py-1 rounded-lg text-[11px] text-slate-600 shadow-xs">
-            Click on spindle, tool holder, worktable, vise, control panel, or doors to inspect
-          </div>
-        )}
+
+          {/* Interactive State Readout */}
+          {selectedData ? (
+            <div className="w-full flex items-center justify-between space-x-2 bg-maroon-50/80 dark:bg-maroon-950/60 backdrop-blur-md border border-maroon-200/70 dark:border-maroon-800/70 px-2.5 py-1.5 rounded-xl shadow-2xs animate-fade-in">
+              <div className="flex items-center space-x-2 min-w-0">
+                <span className="w-2 h-2 rounded-full bg-rose-600 animate-pulse shrink-0" />
+                <span className="text-xs text-slate-700 dark:text-slate-300 truncate">
+                  Selected: <span className="font-bold text-maroon-800 dark:text-rose-300">{selectedData.display_name}</span>
+                </span>
+              </div>
+              {onResetSelection && (
+                <button
+                  type="button"
+                  onClick={onResetSelection}
+                  className="shrink-0 text-[10px] font-bold text-maroon-700 dark:text-rose-300 bg-white/80 dark:bg-slate-800/80 hover:bg-white dark:hover:bg-slate-700 px-2 py-0.5 rounded-md border border-maroon-200 dark:border-maroon-700 transition shadow-2xs"
+                  title="Reset Selection"
+                >
+                  ↺ Clear
+                </button>
+              )}
+            </div>
+          ) : hoveredName ? (
+            <div className="w-full bg-white/60 dark:bg-slate-800/60 backdrop-blur-md border border-white/60 dark:border-white/10 px-2.5 py-1.5 rounded-xl text-xs font-medium text-slate-700 dark:text-slate-300 shadow-2xs">
+              Hovering: <span className="font-bold text-maroon-700 dark:text-rose-400">{hoveredName}</span>{' '}
+              <span className="text-[10px] text-slate-500 dark:text-slate-400">(Click to inspect)</span>
+            </div>
+          ) : (
+            <div className="w-full bg-white/40 dark:bg-slate-800/40 backdrop-blur-xs border border-white/40 dark:border-white/10 px-2.5 py-1.5 rounded-xl text-[11px] text-slate-600 dark:text-slate-400 leading-snug">
+              Click spindle, table, vise, ATC, pendant, or doors to inspect
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* Top Right Controls: Presets & Toggles */}
-      <div className="absolute top-4 right-4 z-10 flex flex-wrap items-center justify-end gap-1.5 max-w-sm pointer-events-auto">
+      {/* Top Right Controls: Presets & Toggles (Compact Glassmorphic Toolbar) */}
+      <div className="absolute top-4 right-4 z-10 flex flex-col items-stretch gap-1 w-36 pointer-events-auto backdrop-blur-xl bg-white/20 dark:bg-slate-900/40 p-1.5 rounded-xl border border-white/40 dark:border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.08)] ring-1 ring-white/30 dark:ring-white/5">
+        <div className="flex items-center justify-between px-1.5 py-0.5 text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider border-b border-white/30 dark:border-white/10 pb-1 mb-0.5">
+          <span>Controls</span>
+          <span className="text-[8px] font-mono opacity-70">3D</span>
+        </div>
+
         {/* Reset Selection button if a part is active */}
         {selectedComponent && onResetSelection && (
           <button
             type="button"
             onClick={onResetSelection}
-            className="btn-touch px-3 py-1.5 text-xs font-bold rounded-lg bg-maroon-800 hover:bg-maroon-900 text-white border border-maroon-900 shadow-xs transition flex items-center space-x-1"
+            className="w-full py-1 px-2 text-[11px] font-medium rounded-lg bg-rose-600/80 hover:bg-rose-600 active:bg-rose-700 text-white border border-rose-300/50 shadow-sm shadow-rose-600/20 backdrop-blur-md transition-all duration-150 flex items-center justify-center text-center"
             title="Reset Component Selection"
           >
-            <span>↺ Reset Selection</span>
+            <span className="truncate">Reset Selection</span>
           </button>
         )}
 
@@ -269,56 +291,56 @@ export default function MachineViewer({
         <button
           type="button"
           onClick={onToggleDoors}
-          className={`btn-touch px-3 py-1.5 text-xs font-medium rounded-lg border shadow-xs transition flex items-center space-x-1.5 ${
+          className={`w-full py-1 px-2 text-[11px] font-medium rounded-lg border backdrop-blur-md transition-all duration-150 flex items-center justify-center text-center ${
             doorsOpen
-              ? 'bg-amber-600 hover:bg-amber-700 text-white border-amber-700'
-              : 'bg-white/95 hover:bg-slate-50 text-slate-700 border-slate-200/90'
+              ? 'bg-amber-500/80 hover:bg-amber-500 text-white border-amber-300/50 shadow-sm shadow-amber-500/20'
+              : 'bg-white/30 hover:bg-white/55 active:bg-white/70 dark:bg-white/5 dark:hover:bg-white/15 text-slate-800 dark:text-slate-100 border-white/50 dark:border-white/10 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)]'
           }`}
           title={doorsOpen ? 'Close Enclosure Doors' : 'Open Enclosure Doors to View Inside'}
         >
-          <span>{doorsOpen ? '🚪 Doors: Open' : '🚪 Doors: Closed'}</span>
+          <span className="truncate">{doorsOpen ? 'Doors: Open' : 'Doors: Closed'}</span>
         </button>
 
         {/* Toggle Wireframe Button */}
         <button
           type="button"
           onClick={() => setWireframe(!wireframe)}
-          className={`btn-touch px-3 py-1.5 text-xs font-medium rounded-lg border shadow-xs transition ${
+          className={`w-full py-1 px-2 text-[11px] font-medium rounded-lg border backdrop-blur-md transition-all duration-150 flex items-center justify-center text-center ${
             wireframe
-              ? 'bg-maroon-700 text-white border-maroon-800'
-              : 'bg-white/95 hover:bg-slate-50 text-slate-700 border-slate-200/90'
+              ? 'bg-maroon-700/80 hover:bg-maroon-700 text-white border-rose-300/40 shadow-sm shadow-rose-900/20'
+              : 'bg-white/30 hover:bg-white/55 active:bg-white/70 dark:bg-white/5 dark:hover:bg-white/15 text-slate-800 dark:text-slate-100 border-white/50 dark:border-white/10 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)]'
           }`}
           title="Toggle Wireframe / X-Ray Mode"
         >
-          <span>📐 {wireframe ? 'Shaded' : 'X-Ray'}</span>
+          <span className="truncate">{wireframe ? 'Shaded' : 'X-Ray'}</span>
         </button>
 
         {/* Toggle Auto-Rotate Button */}
         <button
           type="button"
           onClick={() => setAutoRotate(!autoRotate)}
-          className={`btn-touch px-3 py-1.5 text-xs font-medium rounded-lg border shadow-xs transition ${
+          className={`w-full py-1 px-2 text-[11px] font-medium rounded-lg border backdrop-blur-md transition-all duration-150 flex items-center justify-center text-center ${
             autoRotate
-              ? 'bg-maroon-700 text-white border-maroon-800'
-              : 'bg-white/95 hover:bg-slate-50 text-slate-700 border-slate-200/90'
+              ? 'bg-maroon-700/80 hover:bg-maroon-700 text-white border-rose-300/40 shadow-sm shadow-rose-900/20'
+              : 'bg-white/30 hover:bg-white/55 active:bg-white/70 dark:bg-white/5 dark:hover:bg-white/15 text-slate-800 dark:text-slate-100 border-white/50 dark:border-white/10 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)]'
           }`}
           title="Toggle Turntable 360° Rotation"
         >
-          <span>🔄 {autoRotate ? 'Stop' : 'Rotate'}</span>
+          <span className="truncate">{autoRotate ? 'Stop' : 'Rotate'}</span>
         </button>
 
         {/* Toggle Pins Button */}
         <button
           type="button"
           onClick={() => setShowPins(!showPins)}
-          className={`btn-touch px-3 py-1.5 text-xs font-medium rounded-lg border shadow-xs transition ${
+          className={`w-full py-1 px-2 text-[11px] font-medium rounded-lg border backdrop-blur-md transition-all duration-150 flex items-center justify-center text-center ${
             showPins
-              ? 'bg-maroon-700 text-white border-maroon-800'
-              : 'bg-white/95 hover:bg-slate-50 text-slate-700 border-slate-200/90'
+              ? 'bg-maroon-700/80 hover:bg-maroon-700 text-white border-rose-300/40 shadow-sm shadow-rose-900/20'
+              : 'bg-white/30 hover:bg-white/55 active:bg-white/70 dark:bg-white/5 dark:hover:bg-white/15 text-slate-800 dark:text-slate-100 border-white/50 dark:border-white/10 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)]'
           }`}
           title="Toggle Component Knowledge Pins"
         >
-          <span>📍 Pins</span>
+          <span className="truncate">Pins</span>
         </button>
 
         {/* Toggle Pin Density if Pins are visible */}
@@ -326,14 +348,14 @@ export default function MachineViewer({
           <button
             type="button"
             onClick={() => setPinMode((prev) => (prev === 'compact' ? 'expanded' : 'compact'))}
-            className={`btn-touch px-2.5 py-1.5 text-xs font-medium rounded-lg border shadow-xs transition ${
+            className={`w-full py-1 px-2 text-[11px] font-medium rounded-lg border backdrop-blur-md transition-all duration-150 flex items-center justify-center text-center ${
               pinMode === 'compact'
-                ? 'bg-white/95 hover:bg-slate-50 text-slate-700 border-slate-200/90'
-                : 'bg-maroon-50 text-maroon-800 border-maroon-300 font-semibold'
+                ? 'bg-white/30 hover:bg-white/55 active:bg-white/70 dark:bg-white/5 dark:hover:bg-white/15 text-slate-800 dark:text-slate-100 border-white/50 dark:border-white/10 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)]'
+                : 'bg-maroon-700/80 text-white border-rose-300/40 shadow-sm'
             }`}
             title={pinMode === 'compact' ? 'Expand all pins' : 'Collapse pins to compact labels'}
           >
-            <span>{pinMode === 'compact' ? '🔍 Compact' : '📖 Expanded'}</span>
+            <span className="truncate">{pinMode === 'compact' ? 'Compact' : 'Expanded'}</span>
           </button>
         )}
 
@@ -341,30 +363,30 @@ export default function MachineViewer({
         <button
           type="button"
           onClick={() => setStudioMode((prev) => ((prev || globalTheme) === 'dark' ? 'light' : 'dark'))}
-          className={`btn-touch px-3 py-1.5 text-xs font-medium rounded-lg border shadow-xs transition ${
+          className={`w-full py-1 px-2 text-[11px] font-medium rounded-lg border backdrop-blur-md transition-all duration-150 flex items-center justify-center text-center ${
             isDarkStudio
-              ? 'bg-slate-800 text-slate-200 border-slate-700 hover:bg-slate-700'
-              : 'bg-white/95 hover:bg-slate-50 text-slate-700 border-slate-200/90'
+              ? 'bg-slate-800/80 hover:bg-slate-800 text-slate-100 border-slate-600/50 shadow-sm'
+              : 'bg-white/30 hover:bg-white/55 active:bg-white/70 dark:bg-white/5 dark:hover:bg-white/15 text-slate-800 dark:text-slate-100 border-white/50 dark:border-white/10 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)]'
           }`}
           title={isDarkStudio ? 'Switch to Light CAD Studio' : 'Switch to Dark Titanium Studio'}
         >
-          <span>{isDarkStudio ? '☀️ Studio: Dark' : '🎨 Studio: Light'}</span>
+          <span className="truncate">{isDarkStudio ? 'Studio: Dark' : 'Studio: Light'}</span>
         </button>
 
         {/* Reset View Button */}
         <button
           type="button"
           onClick={handleResetCamera}
-          className="btn-touch px-3 py-1.5 text-xs font-medium rounded-lg bg-white/95 hover:bg-slate-50 text-slate-700 border border-slate-200/90 shadow-xs transition"
+          className="w-full py-1 px-2 text-[11px] font-medium rounded-lg bg-white/30 hover:bg-white/55 active:bg-white/70 dark:bg-white/5 dark:hover:bg-white/15 text-slate-800 dark:text-slate-100 border border-white/50 dark:border-white/10 backdrop-blur-md transition-all duration-150 flex items-center justify-center text-center shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)]"
           title="Reset Camera to Default"
         >
-          <span>🎯 Camera</span>
+          <span className="truncate">Camera</span>
         </button>
       </div>
 
       {/* Bottom Floating Camera Presets Bar */}
-      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 flex items-center space-x-1 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border border-slate-200/80 dark:border-slate-800 px-2.5 py-1.5 rounded-full shadow-md max-w-[95%] overflow-x-auto">
-        <span className="shrink-0 text-[11px] font-bold text-slate-500 uppercase tracking-wider px-2 hidden sm:inline">
+      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 flex items-center space-x-1 bg-white/60 dark:bg-slate-900/65 backdrop-blur-xl border border-white/50 dark:border-white/10 px-3 py-1.5 rounded-full shadow-lg max-w-[95%] overflow-x-auto ring-1 ring-white/30 dark:ring-white/5">
+        <span className="shrink-0 text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider px-2 hidden sm:inline">
           View:
         </span>
         {[
@@ -382,7 +404,7 @@ export default function MachineViewer({
             className={`shrink-0 whitespace-nowrap px-3 py-1 text-xs font-medium rounded-full transition ${
               cameraPreset === p.key
                 ? 'bg-maroon-700 text-white font-semibold shadow-xs ring-1 ring-maroon-400'
-                : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800'
+                : 'text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-slate-800'
             }`}
           >
             {p.label}
@@ -391,7 +413,7 @@ export default function MachineViewer({
       </div>
 
       {/* Bottom Left Navigation Tips */}
-      <div className="absolute bottom-4 left-4 z-10 hidden md:block text-[10px] text-slate-600 dark:text-slate-400 pointer-events-none bg-white/90 dark:bg-slate-900/90 px-2.5 py-1 rounded-md border border-slate-200 dark:border-slate-800 shadow-xs backdrop-blur-sm">
+      <div className="absolute bottom-4 left-4 z-10 hidden md:block text-[10px] text-slate-600 dark:text-slate-400 pointer-events-none bg-white/60 dark:bg-slate-900/65 backdrop-blur-xl px-3 py-1.5 rounded-xl border border-white/50 dark:border-white/10 shadow-sm text-slate-700 dark:text-slate-300 ring-1 ring-white/30 dark:ring-white/5">
         Rotate: Left Click + Drag • Pan: Right Click + Drag • Zoom: Scroll
       </div>
     </div>

@@ -262,7 +262,7 @@ export default function MachineMap() {
           />
 
           {/* Quick Select Component Filter Pills Bar with Reset option */}
-          <div className="bg-white border border-slate-200/90 p-2.5 rounded-xl shadow-xs flex items-center gap-2 overflow-x-auto">
+          <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border border-slate-200/90 dark:border-slate-800 p-2.5 rounded-xl shadow-xs flex items-center gap-2 overflow-x-auto">
             <span className="shrink-0 text-xs font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap pl-1">
               Components:
             </span>

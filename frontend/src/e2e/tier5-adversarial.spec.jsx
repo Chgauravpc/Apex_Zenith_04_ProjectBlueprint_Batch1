@@ -319,7 +319,7 @@ describe('Tier 5 Adversarial Stress & Hardening Coverage Suite', () => {
       await waitFor(() => {
         expect(screen.getByText(/Sign-off queue for experienced employees/i)).toBeDefined();
       });
-      expect(screen.getByText(/1 Cards Pending Verification/i)).toBeDefined();
+      await waitFor(() => expect(screen.getByText(/1 Cards Pending Verification/i)).toBeDefined());
     });
   });
 
