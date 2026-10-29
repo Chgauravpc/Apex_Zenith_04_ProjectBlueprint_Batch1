@@ -234,3 +234,21 @@ def test_audit_shortens_long_text(db: Session) -> None:
 
     entry = audit(db, "card.extracted", note="x" * 900)
     assert len(entry.detail["note"]) == MAX_DETAIL_CHARS + 1
+
+
+def test_init_db_adds_new_optional_columns_to_existing_tables() -> None:
+    """A database made before a model gained an optional field gets that column on start-up."""
+    from sqlalchemy import inspect, text
+
+    from app.database import init_db, make_engine
+
+    engine = make_engine("sqlite://")
+    init_db(engine)
+    with engine.begin() as conn:
+        conn.execute(text('ALTER TABLE "documents" DROP COLUMN "language"'))
+
+    init_db(engine)
+
+    columns = {c["name"] for c in inspect(engine).get_columns("documents")}
+    assert "language" in columns
+    init_db(engine)  # nothing left to add the second time

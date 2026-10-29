@@ -16,7 +16,7 @@ from datetime import datetime, timezone
 from typing import Any, Iterator, List, Optional, Tuple
 from urllib.parse import quote, unquote
 
-from sqlalchemy import DateTime, ForeignKey, Integer, create_engine, event, text
+from sqlalchemy import DateTime, ForeignKey, Integer, create_engine, event, inspect, text
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column, sessionmaker
 from sqlalchemy.pool import StaticPool
@@ -156,6 +156,7 @@ def init_db(bind: Optional[Engine] = None) -> None:
     target = bind or engine
     Base.metadata.create_all(bind=target)
     with target.begin() as conn:
+        _add_missing_columns(conn)
         if is_postgres(conn):
             for statement in _PG_FTS_DDL:
                 conn.execute(text(statement))
@@ -172,6 +173,25 @@ def init_db(bind: Optional[Engine] = None) -> None:
                 f'tokenize="{FTS_TOKENIZER}")'
             )
         )
+
+
+def _add_missing_columns(conn: Any) -> None:
+    """Add new nullable columns to tables that already exist (create_all skips those tables).
+
+    There are no migrations; this keeps an existing SQLite file or Supabase database in step
+    when a model gains an optional field. Required columns still need a manual change.
+    """
+    inspector = inspect(conn)
+    for table in Base.metadata.sorted_tables:
+        if not inspector.has_table(table.name):
+            continue
+        present = {c["name"] for c in inspector.get_columns(table.name)}
+        for column in table.columns:
+            if column.name in present or not column.nullable or column.primary_key:
+                continue
+            kind = column.type.compile(dialect=conn.dialect)
+            conn.execute(text(f'ALTER TABLE "{table.name}" ADD COLUMN "{column.name}" {kind}'))
+            logger.info("added column %s.%s", table.name, column.name)
 
 
 _PG_FTS_DDL = (
