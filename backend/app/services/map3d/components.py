@@ -5,7 +5,7 @@ risk calculation, and linked knowledge. Reference: TASKS.md T12 and PRD.md §9.4
 """
 
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
@@ -18,7 +18,7 @@ from app.models.map3d import Component, ComponentPin
 from app.models.ops import Anomaly, SensorReading
 from app.schemas.map3d import ComponentKnowledge, ComponentOut, MachineLiveTelemetry
 
-# Default 3D metadata catalog for standard VMC machines, keyed by the seeded mesh_name
+# Default 3D metadata catalog for standard VMC machines, keyed by the 3D model node name
 VMC_COMPONENT_DEFAULTS: Dict[str, Dict[str, Any]] = {
     "spindle": {
         "display_name": "Spindle Assembly",
@@ -37,7 +37,7 @@ VMC_COMPONENT_DEFAULTS: Dict[str, Dict[str, Any]] = {
             "Coolant": "Through-Spindle + Ring Nozzles",
         },
     },
-    "atc": {
+    "tool_holder": {
         "display_name": "Tool Holder & ATC Magazine",
         "category": "Automatic Tool Changer",
         "description": (
@@ -53,7 +53,7 @@ VMC_COMPONENT_DEFAULTS: Dict[str, Dict[str, Any]] = {
             "Tool Change Time": "1.8 sec (Tool to Tool)",
         },
     },
-    "table_vise": {
+    "worktable": {
         "display_name": "T-Slot Worktable",
         "category": "Workholding & Kinematics",
         "description": (
@@ -211,6 +211,33 @@ def get_machine_telemetry(db: Session, machine_id: int) -> MachineLiveTelemetry:
     )
 
 
+# 3D model node -> the seeded component (seed/seed.py) whose records it shows. Nodes with no
+# component in the database (the doors) are left out rather than given a made-up id.
+NODE_COMPONENT = {
+    "spindle": "spindle",
+    "tool_holder": "atc",
+    "worktable": "table_vise",
+    "vise": "table_vise",
+    "control_panel": "control_panel",
+    "machine_body": "axes",
+}
+
+
+def _scene_parts(db_components: List[Component]) -> List[Tuple[str, Component]]:
+    """(mesh_name, real component): 3D model nodes first, then parts the model does not draw."""
+    by_mesh = {c.mesh_name: c for c in db_components}
+    parts = [
+        (node, by_mesh[mesh])
+        for node in VMC_COMPONENT_DEFAULTS
+        if (mesh := NODE_COMPONENT.get(node)) in by_mesh
+    ]
+    shown = {c.id for _, c in parts}
+    parts += [
+        (c.mesh_name, c) for c in sorted(db_components, key=lambda c: c.id) if c.id not in shown
+    ]
+    return parts
+
+
 def list_components(db: Session, machine_id: int) -> List[ComponentOut]:
     """Retrieve machine components with live dynamic risk levels, telemetry, and pinned cards."""
     # Query database components
@@ -258,8 +285,7 @@ def list_components(db: Session, machine_id: int) -> List[ComponentOut]:
     results: List[ComponentOut] = []
 
     # The machine's real components; the 3D defaults only add descriptions, specs and positions.
-    for db_comp in sorted(db_components, key=lambda c: c.id):
-        mesh_name = db_comp.mesh_name
+    for mesh_name, db_comp in _scene_parts(db_components):
         meta = VMC_COMPONENT_DEFAULTS.get(mesh_name, {})
 
         # Dynamic risk calculation based on live warnings & sensor telemetry

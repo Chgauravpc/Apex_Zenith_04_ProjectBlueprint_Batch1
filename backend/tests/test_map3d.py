@@ -17,7 +17,7 @@ def story(db, tmp_path, monkeypatch):
     seed(db, date.today())
 
 
-def test_list_machine_components(client, story) -> None:
+def test_list_machine_components(client, story, db) -> None:
     """Lists components for VMC-3 with risk levels, live telemetry, and specs."""
     machines = client.get("/api/machines").json()
     vmc = next(m for m in machines if m["name"] == "VMC-3")
@@ -28,24 +28,29 @@ def test_list_machine_components(client, story) -> None:
     comps = res.json()
     assert len(comps) >= 6
 
-    # The machine's real components (seed/seed.py VMC_COMPONENTS), with real, unique ids.
+    # The 3D model's nodes, each backed by a real component, plus parts the model does not draw.
     meshes = {c["mesh_name"] for c in comps}
-    assert meshes == {
-        "spindle",
-        "atc",
-        "table_vise",
-        "coolant",
-        "axes",
-        "control_panel",
-        "chip_conveyor",
-    }
-    assert len({c["id"] for c in comps}) == len(comps)
+    assert {"spindle", "tool_holder", "worktable", "vise", "control_panel"} <= meshes
+    assert {"coolant", "chip_conveyor"} <= meshes
+    assert "doors" not in meshes  # no component in the database, so no made-up id
 
     spindle = next(c for c in comps if c["mesh_name"] == "spindle")
     assert spindle["risk"] in ("low", "medium", "high")
     assert spindle["display_name"] == "Spindle Assembly"
     assert spindle["specs"] is not None
     assert "Max RPM" in spindle["specs"]
+
+    from sqlalchemy import select
+
+    from app.models.map3d import Component
+
+    real = {
+        c.id: c.mesh_name
+        for c in db.execute(select(Component).where(Component.machine_id == vmc["id"])).scalars()
+    }
+    assert all(c["id"] in real for c in comps)
+    by_mesh = {c["mesh_name"]: c["id"] for c in comps}
+    assert real[by_mesh["tool_holder"]] == "atc" and real[by_mesh["vise"]] == "table_vise"
 
 
 def test_component_incidents_are_its_own_breakdowns(client, story, db) -> None:
