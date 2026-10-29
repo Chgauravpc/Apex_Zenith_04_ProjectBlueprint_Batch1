@@ -122,7 +122,16 @@ export default {
           'sans-serif',
         ],
         display: [
+          'var(--font-display)',
           'Outfit',
+          '"Plus Jakarta Sans"',
+          'sans-serif',
+        ],
+        hero: [
+          'var(--font-hero)',
+          'var(--font-display)',
+          'Outfit',
+          '"Plus Jakarta Sans"',
           'sans-serif',
         ],
         serif: [

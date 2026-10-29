@@ -1,4 +1,5 @@
-import { useRef } from "react";
+import { useRef, useEffect } from "react";
+import { initMcpFonts } from "@/utils/mcpFonts";
 import { Link } from "react-router-dom";
 import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
 import {
@@ -10,6 +11,10 @@ import { useRole } from "@/store/RoleContext";
 import { IMAGES, PERSONAS, ROLE_ORDER, STATS, KNOWHOW_CARDS, TIMELINE } from "@/mock/data";
 
 function Hero() {
+    useEffect(() => {
+        initMcpFonts();
+    }, []);
+
     return (
         <section className="relative overflow-hidden pt-12 pb-24 sm:pt-16 sm:pb-32">
             {/* Background Ambient Radial Glow */}
@@ -25,7 +30,8 @@ function Hero() {
                     {/* Headline - Aesthetic Typography with Bold Statement & Editorial Serif Below */}
                     <h1
                         data-testid="hero-reveal-title"
-                        className="text-balance font-display font-black text-4xl sm:text-5xl md:text-6xl lg:text-[4.75rem] xl:text-[5.25rem] tracking-tight text-ink dark:text-white leading-[1.02] sm:leading-[1.02]"
+                        className="mcp-hero-title text-balance font-hero font-black text-4xl sm:text-5xl md:text-6xl lg:text-[4.75rem] xl:text-[5.25rem] tracking-tight text-ink dark:text-white leading-[1.02] sm:leading-[1.02]"
+                        style={{ fontFamily: "var(--font-hero, var(--font-display, 'Outfit', 'Plus Jakarta Sans', sans-serif))" }}
                     >
                         Experience walks out
                         <br />
