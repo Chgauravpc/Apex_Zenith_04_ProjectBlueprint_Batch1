@@ -46,6 +46,7 @@ _model: Optional[Any] = None
 _load_failed = False
 _lock = threading.Lock()
 _client: Optional[httpx.Client] = None
+_client_lock = threading.Lock()  # separate from _lock, which is held while the model loads
 _cloud_down_until = 0.0
 
 
@@ -80,9 +81,10 @@ def _get_model() -> Any:
 
 def _http() -> httpx.Client:
     global _client
-    if _client is None:
-        _client = httpx.Client(timeout=CLOUD_TIMEOUT)
-    return _client
+    with _client_lock:  # the backfill thread and requests share one connection pool
+        if _client is None:
+            _client = httpx.Client(timeout=CLOUD_TIMEOUT)
+        return _client
 
 
 def _retry_wait(attempt: int, response: Optional[httpx.Response]) -> float:
